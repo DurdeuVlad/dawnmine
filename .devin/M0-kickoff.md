@@ -13,6 +13,10 @@ Use the installed Flux skills explicitly:
 
 The scope and acceptance criteria are in the M0 issue. M0 is project scaffold and compatibility evidence only. Do not begin mine gameplay before reporting the M0 findings. Do not edit the existing KubeJS faction mine. The owner authorizes you to commit/push the M0 branch and merge its PR after every acceptance criterion passes, build and dedicated-server checks pass, a fresh independent flux-review passes, and flux-evaluate says complete. Do not merge on failed, blocked, or unsupported verification. Production release/deployment remains unauthorized.
 
+## Product direction governing later milestones
+
+The intended loop is a shared daily expedition: learn early depths, mine/fight/explore for useful resources, bank them safely, improve durable equipment between runs, then adapt to deeper threats. Gear solves demonstrated earlier-depth problems while later tiers introduce different readable tactical demands. The deepest intended content materially rewards coordinated teams. Mining, PvE, and exploration all contribute. The run resets daily, while equipment/progression materials and private Dispatch contents persist. Keep vanilla death/inventory behavior in the first version. Netherrack is off by default; if enabled later, configuration must constrain it to very rare extreme-depth generation. Admin onboarding/help/config/setup/status/validation and player messaging must be permission-aware, friendly, and targeted. Read `Progression.md` and the updated issues before work beyond M0. This is context only; M0 remains foundation and pack-audit work, with no gameplay implementation.
+
 Work in a local issue branch or Devin session branch. Leave a reviewable working tree/branch and report changed files, build/server commands and results, exact artifact evidence, risks, and the next useful milestone decision.
 
 

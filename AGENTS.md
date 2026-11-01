@@ -17,5 +17,9 @@ This repository is a collaborative server-mod project. Before work on every issu
 - Include all ores in the actual Rustic Craft 2 pack. Use common tags where present and explicitly catalog missing/unconventionally tagged ores.
 - Integrate Born in Chaos using verified facts from the pack's exact artifact. Do not change its global spawn, AI, or loot behavior for entities outside the mine.
 - Checkpoint storage is personal and persistent. Daily mine resets must not erase player inventories or personal Dispatch contents.
+- Gameplay target: early depth is learnable; mining, PvE, and exploration feed durable gear/material progression; upgrades solve an identified earlier-depth problem while deeper regions introduce different readable tactical counters; deepest content rewards a coordinated team and this must be proven in multiplayer.
+- Preserve vanilla death/inventory behavior in v1. Checkpoints create an informed bank-or-push choice; do not add a custom death penalty.
+- Netherrack generation defaults off. If enabled, the hard ceiling is one attempt per 256 eligible 16x16 chunk columns at deepest tier, a cluster up to three blocks; admins can make it rarer, never more common or shallower.
+- Provide friendly in-game admin help/setup/status/config/validation/recovery with server-side permission checks. Keep staff diagnostics private and player notices audience-targeted.
 - The owner has authorized issue work to be committed and pushed to the remote and merged on GitHub as it is completed. For each issue, meet its acceptance criteria, pass the required build/test/dedicated-server verification, obtain a fresh independent flux-review pass, and get a complete flux-evaluate verdict before merging its PR. Do not merge when verification is failed, blocked, or unsupported. Production deployment and public release remain unauthorized.
 

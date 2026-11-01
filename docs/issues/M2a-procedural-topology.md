@@ -19,7 +19,7 @@ A seed-driven topology planner produces a connected graph of route segments, cav
 
 - The user referenced the Crystal Hollows exploration model and approved a shared world.
 - Procedural block geometry is a product constraint; no authored building assets.
-- Daily seed replacement belongs to M6; M1 owns saved run identity.
+- Daily seed replacement belongs to M7; M1 owns saved run identity.
 - The actual mine bounds and maximum generation frontier are recorded by M1.
 
 ## Scope
@@ -39,7 +39,7 @@ No ore block selection/distribution, mob tables, GUI, storage, daily scheduler, 
 - Depends on M1 world bounds and run-state contract.
 - M2b consumes this topology representation.
 - Exact number/size of regions may be tuned from playtesting, but region progression must be data-driven.
-- Owner: server owner. Implementer: Devin. Reviewer: independent.
+- Product owner: Codex. Implementer: Devin. Reviewer: independent.
 
 ## Acceptance criteria
 
