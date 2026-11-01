@@ -1,0 +1,28 @@
+# Collaboration
+
+## Ownership
+
+- Product owner: Rustic Craft server owner. The owner decides gameplay policy, supported pack version, reset schedule, public/private release, and acceptance of player economy changes.
+- Implementer: Devin, working one GitHub issue/milestone at a time and using the installed Flux skills listed in AGENTS.md.
+- Planning and review support: Codex may prepare issue contracts, inspect changes, and give independent review. Devin's implementation claims require actual build/runtime evidence.
+
+## Work flow
+
+- Every implementation task starts from its linked GitHub issue and current milestone contract.
+- Before editing, the implementer invokes Flux routing and uses the smallest relevant skill set. Non-trivial tasks include discovery, plan, implementation, verification, independent review, and evaluation.
+- Each implementation is performed on an issue branch or local working branch. The PR body repeats intent, expectation, acceptance criteria, scope, non-goals, dependencies, test evidence, and unresolved risks.
+- An independent reviewer examines behavior, tests, boundaries, and unintended effects before an issue is presented as complete.
+- The owner reviews product-changing defaults (reset hour, mine dimensions/bounds, storage capacity, resource rates) before release.
+- No implementation commit is pushed, merged, released, or deployed without owner authorization.
+
+## Communication and handoff
+
+- GitHub issues are the source of task scope and acceptance evidence.
+- Decision.md is authoritative for accepted choices and unresolved product decisions.
+- Report blockers early. Do not convert missing pack/API evidence into a guessed implementation contract.
+- Keep changes within the standalone mod. The KubeJS faction-mine system is an external compatibility surface and must remain untouched.
+
+## Visibility and contributions
+
+- Repository visibility: private.
+- This project is not yet declared open source. Do not add a public contribution or support promise or choose a license without owner direction.

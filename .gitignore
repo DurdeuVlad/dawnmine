@@ -1,0 +1,25 @@
+# Gradle and Java build outputs
+.gradle/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Local run worlds and server data
+runs/
+run/
+world/
+logs/
+crash-reports/
+
+# IDE state
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
