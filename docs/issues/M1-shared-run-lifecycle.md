@@ -20,7 +20,7 @@ The mod persists a single active run with a run ID, seed, day identity, generate
 - Accepted experience and environment are in Business.md and Decision.md.
 - Target: Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248, Java 21.
 - All players share one active mine. The factions mine must remain unchanged.
-- Exact morning reset time is deferred to M6; this issue defines state needed for a safe reset, not the schedule.
+- Default morning reset is 06:00 in the configured server timezone; M7 implements scheduling. This issue defines shared state and safe ownership, not reset execution.
 
 ## Scope
 
@@ -38,7 +38,7 @@ No rich map geometry, ore placement, mobs, rewards, checkpoint GUI, Dispatch loc
 - Depends on M0 build, dedicated-server, and pack audit evidence.
 - Technical choice of dimension versus bounded area must follow prototype results; do not select it before evidence.
 - Generation bounds and per-tick budget must be recorded before M2.
-- Owner: server owner. Implementer: Devin. Reviewer: independent.
+- Product owner: Codex. Implementer: Devin. Reviewer: independent.
 
 ## Acceptance criteria
 

@@ -9,18 +9,19 @@
 
 ## Intent
 
-Give players a themed way to bank expedition loot at a checkpoint and find it at the surface, with more capacity than a standard Ender Chest.
+Give players a themed, reliable way to bank useful expedition materials at a checkpoint, retrieve them outside, and prepare durable upgrades between daily runs, with more capacity than a standard Ender Chest.
 
 ## Expectation
 
-A personal Dispatch locker is available at each generated checkpoint and the surface depot. The same player's inventory is visible at every terminal; another player cannot see or take it. It supports deposit and retrieval, handles full inventories safely, and survives disconnect, server restart, and daily mine reset.
+A personal Dispatch locker is available at each generated checkpoint and the surface depot. The same player's inventory is visible at every terminal; another player cannot see or take it. It supports deposit/retrieval, handles full inventories safely, survives disconnect/restart/daily reset, and makes materials available for durable upgrade recipes.
 
 ## Context that code cannot infer
 
 - User-approved behavior: checkpoints are inventory deposit stops and contents are retrievable outside.
 - The storage is private to each player and persistent across daily mine resets.
-- Capacity must exceed 27 slots; proposed minimum is 54 slots. Final capacity/expansion is owner-reviewable before release.
+- Accepted product default: exactly 54 personal slots, twice vanilla Ender Chest capacity. Do not add upgrade/paid capacity in this version.
 - This locker is a separate mine feature, not a change to vanilla Ender Chest contents.
+- Banked materials feed the audited progression economy in M6; see `Progression.md`.
 
 ## Scope
 
@@ -37,7 +38,7 @@ No shared team vault, trading, paid slots, auto-sorting/filters, item loss on de
 
 - Depends on M1 player-data persistence and M5a terminal locations.
 - Owner may change capacity before implementation; avoid an irreversible fixed storage schema.
-- Owner: server owner. Implementer: Devin. Reviewer: independent.
+- Product owner: Codex. Implementer: Devin. Reviewer: independent.
 
 ## Acceptance criteria
 

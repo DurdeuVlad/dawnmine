@@ -22,7 +22,9 @@ A Java 21 / NeoForge 21.1.248 mod builds and loads on a dedicated server running
 - Runtime target: Minecraft 1.21.1, NeoForge 21.1.248, Java 21, Rustic Craft 2 pack 2.2.2.
 - The pack catalog lists Born in Chaos 1.7.6 and GeckoLib 4.9.2; the exact deployed jars and IDs must be verified.
 - The user approved generated block geometry and procedural landmarks, no predefined buildings.
-- Every pack ore must be included across depth tiers, including Nether ores in the Chaos Depths.
+- Every pack ore must be included across depth tiers; quartz belongs in the Chaos Depths. Netherrack is explicitly excluded from default generation and is only a future operator-enabled, ultra-rare extreme-depth option.
+- Daily map/run state resets, but equipment and progression materials must persist; audit real pack recipes/items/equipment so later milestones can create a truthful upgrade path.
+- For now, Netherrack does not generate. A later operator setting may enable an ultra-rare extreme-depth option; default must remain off.
 - Existing KubeJS faction mines are explicitly out of scope and must not be edited.
 - This milestone is the first Devin implementation and test task. Use Flux routing and close the bounded issue with proof.
 
@@ -34,6 +36,7 @@ A Java 21 / NeoForge 21.1.248 mod builds and loads on a dedicated server running
 - Build the mod and load it on a dedicated NeoForge server with the target pack.
 - Inspect the exact BiC artifact and produce a compatibility report of candidate entity IDs with source evidence.
 - Enumerate ores from runtime common tags and pack artifact inspection; identify untagged blocks needing explicit IDs.
+- Audit relevant actual pack items, equipment tiers, crafting recipes, and mine materials/sinks to seed the later durable progression graph; include artifact/version/hash evidence.
 - Document exact tool versions, setup, commands, output, and remaining unknowns.
 
 ## Non-goals
@@ -46,17 +49,18 @@ A Java 21 / NeoForge 21.1.248 mod builds and loads on a dedicated server running
 
 - None for project setup.
 - Actual exact BiC and modpack jars may be missing locally; use the pack's pinned artifacts only and report retrieval gaps.
-- Reset time, mine bounds, and locker capacity remain later owner decisions and do not block M0.
-- Owner/product direction: server owner. Implementer: Devin. Keep the issue unassigned in GitHub if no verified Devin GitHub account is available; start via the local Devin CLI prompt.
+- Reset schedule default is 06:00 in configured server timezone; mine bounds, ore distribution, and locker capacity remain later decisions and do not block M0.
+- Product owner: Codex. Implementer: Devin. Keep the issue unassigned in GitHub if no verified Devin GitHub account is available; start via the local Devin CLI prompt.
 
 ## Acceptance criteria
 
 1. A clean Java 21 Gradle build succeeds against NeoForge 21.1.248 and Minecraft 1.21.1.
 2. A dedicated server starts with the new mod and the Rustic Craft 2 pack without client-only class errors or dependency conflicts.
 3. The compatibility report records the exact BiC jar/version and registry IDs for candidate hostile mobs, separating verified facts from candidates needing playtesting.
-4. The report compares pack ore blocks against the runtime common ore tags and lists every untagged or special-case ore that needs an explicit catalog entry. No claim of completeness is made without a reproducible catalog/audit.
-5. No source or configuration in the existing faction mine is changed.
-6. The issue handoff includes commands and actual outputs for build/server checks, a fresh independent Flux review, and a Flux evaluation verdict.
+4. The report compares pack ore blocks against runtime common ore tags and lists every untagged or special-case ore needing an explicit catalog entry. No completeness claim without reproducible audit.
+5. A separate progression appendix inventories real pack recipes/items/equipment relevant to mining, combat, protection, hazards, and crafting, distinguishes verified from unknown, and records exact artifacts.
+6. No source or configuration in the existing faction mine is changed.
+7. The issue handoff includes commands and actual outputs for build/server checks, a fresh independent Flux review, and a Flux evaluation verdict.
 
 ## Verification
 

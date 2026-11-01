@@ -39,7 +39,7 @@ No ore tables, mob spawns/rewards, storage persistence, final reset clock, custo
 - Depends on M1 area ownership and M2a topology.
 - M3 uses the resource-field placements; M4 uses encounter locations; M5 uses checkpoint locations.
 - Required chunk/tick budget is measured and recorded; no guessed performance claim.
-- Owner: server owner. Implementer: Devin. Reviewer: independent.
+- Product owner: Codex. Implementer: Devin. Reviewer: independent.
 
 ## Acceptance criteria
 
