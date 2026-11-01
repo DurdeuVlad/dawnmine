@@ -121,12 +121,13 @@ Target environment: Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248, J
 
 ## Issue contract map
 
-- M0: docs/issues/M0-foundation.md
-- M1: docs/issues/M1-shared-run-lifecycle.md
-- M2: docs/issues/M2a-procedural-topology.md and docs/issues/M2b-world-generation.md
-- M3: docs/issues/M3-ore-ecology.md
-- M4: docs/issues/M4a-bic-encounters.md and docs/issues/M4b-mine-rewards.md
-- M5: docs/issues/M5a-checkpoints-travel.md and docs/issues/M5b-dispatch-locker.md
-- M6: docs/issues/M6-daily-reset.md
-- M7: docs/issues/M7-pack-validation.md
+- M0: docs/issues/M0-foundation.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1
+- M1: docs/issues/M1-shared-run-lifecycle.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/2
+- M2: docs/issues/M2a-procedural-topology.md (#3) and docs/issues/M2b-world-generation.md (#4)
+- M3: docs/issues/M3-ore-ecology.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/5
+- M4: docs/issues/M4a-bic-encounters.md (#6) and docs/issues/M4b-mine-rewards.md (#7)
+- M5: docs/issues/M5a-checkpoints-travel.md (#8) and docs/issues/M5b-dispatch-locker.md (#9)
+- M6: docs/issues/M6-daily-reset.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/10
+- M7: docs/issues/M7-pack-validation.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/11
+
 

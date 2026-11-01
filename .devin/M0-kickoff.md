@@ -1,7 +1,7 @@
 # Devin kickoff — M0 only
 
 Repository: rusticcraft-public-mines
-First issue: M0 — Standalone mod foundation and pack compatibility (see docs/issues/M0-foundation.md and GitHub issue linked from README after creation).
+First issue: M0 — Standalone mod foundation and pack compatibility (docs/issues/M0-foundation.md). GitHub issue: https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1
 
 Use the installed Flux skills explicitly:
 
@@ -14,3 +14,4 @@ Use the installed Flux skills explicitly:
 The scope and acceptance criteria are in the M0 issue. M0 is project scaffold and compatibility evidence only. Do not begin mine gameplay before reporting the M0 findings. Do not edit the existing KubeJS faction mine. Do not commit, push, merge, publish, or deploy implementation changes.
 
 Work in a local issue branch or Devin session branch. Leave a reviewable working tree/branch and report changed files, build/server commands and results, exact artifact evidence, risks, and the next useful milestone decision.
+
