@@ -11,7 +11,8 @@ Use the installed Flux skills explicitly:
 4. Use /devin:flux-test and /devin:flux-verify for the requested build and dedicated-server evidence. User explicitly asked that this milestone be implemented and tested.
 5. Ask a fresh independent reviewer to use /devin:flux-review, then invoke /devin:flux-evaluate before reporting done.
 
-The scope and acceptance criteria are in the M0 issue. M0 is project scaffold and compatibility evidence only. Do not begin mine gameplay before reporting the M0 findings. Do not edit the existing KubeJS faction mine. Do not commit, push, merge, publish, or deploy implementation changes.
+The scope and acceptance criteria are in the M0 issue. M0 is project scaffold and compatibility evidence only. Do not begin mine gameplay before reporting the M0 findings. Do not edit the existing KubeJS faction mine. The owner authorizes you to commit/push the M0 branch and merge its PR after every acceptance criterion passes, build and dedicated-server checks pass, a fresh independent flux-review passes, and flux-evaluate says complete. Do not merge on failed, blocked, or unsupported verification. Production release/deployment remains unauthorized.
 
 Work in a local issue branch or Devin session branch. Leave a reviewable working tree/branch and report changed files, build/server commands and results, exact artifact evidence, risks, and the next useful milestone decision.
+
 

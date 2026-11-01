@@ -17,4 +17,5 @@ This repository is a collaborative server-mod project. Before work on every issu
 - Include all ores in the actual Rustic Craft 2 pack. Use common tags where present and explicitly catalog missing/unconventionally tagged ores.
 - Integrate Born in Chaos using verified facts from the pack's exact artifact. Do not change its global spawn, AI, or loot behavior for entities outside the mine.
 - Checkpoint storage is personal and persistent. Daily mine resets must not erase player inventories or personal Dispatch contents.
-- Do not commit, push, merge, publish, or deploy implementation changes without the owner's explicit authorization. The initial project-specification seed push was separately authorized.
+- The owner has authorized issue work to be committed and pushed to the remote and merged on GitHub as it is completed. For each issue, meet its acceptance criteria, pass the required build/test/dedicated-server verification, obtain a fresh independent flux-review pass, and get a complete flux-evaluate verdict before merging its PR. Do not merge when verification is failed, blocked, or unsupported. Production deployment and public release remain unauthorized.
+

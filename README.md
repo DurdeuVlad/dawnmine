@@ -10,7 +10,7 @@ Private GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mine
 
 ## Project status
 
-Planning and compatibility foundation. The first implementation task is the standalone mod scaffold and exact pack compatibility audit. No gameplay implementation is present yet.
+Planning and compatibility foundation. Devin has started M0: the standalone mod scaffold and exact pack compatibility audit. Mine gameplay is not implemented yet.
 
 ## Target environment
 
@@ -29,5 +29,6 @@ Planning and compatibility foundation. The first implementation task is the stan
 - docs/issues/: executable issue contracts, beginning with M0
 
 The existing KubeJS faction-mine system is outside this project and must remain unchanged.
+
 
 

@@ -13,7 +13,7 @@
 - Each implementation is performed on an issue branch or local working branch. The PR body repeats intent, expectation, acceptance criteria, scope, non-goals, dependencies, test evidence, and unresolved risks.
 - An independent reviewer examines behavior, tests, boundaries, and unintended effects before an issue is presented as complete.
 - The owner reviews product-changing defaults (reset hour, mine dimensions/bounds, storage capacity, resource rates) before release.
-- No implementation commit is pushed, merged, released, or deployed without owner authorization.
+- The owner has authorized issue-scoped implementation work to be committed, pushed, and merged on GitHub as it is completed. Merge only after acceptance criteria pass, required checks pass, an independent Flux review passes, and flux-evaluate returns complete. Do not merge failed, blocked, or unsupported verification. Production release and server deployment are not authorized.
 
 ## Communication and handoff
 
@@ -26,3 +26,4 @@
 
 - Repository visibility: private.
 - This project is not yet declared open source. Do not add a public contribution or support promise or choose a license without owner direction.
+

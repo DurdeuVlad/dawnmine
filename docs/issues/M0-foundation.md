@@ -40,7 +40,7 @@ A Java 21 / NeoForge 21.1.248 mod builds and loads on a dedicated server running
 
 - No mine world, generation algorithms, custom dimension, ore placement, entity spawning, checkpoint, storage, reset, faction-mine modification, or economy tuning.
 - Do not add custom loot or alter Born in Chaos behavior.
-- Do not commit, push, merge, publish, or deploy implementation changes.
+- Production release and server deployment are out of scope. Commit, push, and merge are authorized for this issue only after all acceptance criteria, build/dedicated-server checks, independent Flux review, and flux-evaluate pass.
 
 ## Dependencies and open decisions
 
@@ -79,3 +79,4 @@ Every implementation PR must repeat intent, expectation, acceptance criteria and
 - NeoForge setup and Java 21 reference: https://docs.neoforged.net/docs/1.21.1/gettingstarted/
 - NeoForge tag reference: https://docs.neoforged.net/docs/1.21.1/resources/server/tags/
 - Born in Chaos versions and loader support: https://modrinth.com/mod/borninchaos/versions
+
