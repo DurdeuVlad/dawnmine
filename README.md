@@ -4,7 +4,11 @@ Standalone server-side NeoForge mod for a shared, Crystal Hollows-style public m
 
 The mine is a large, connected, procedurally generated exploration space shared by all online players during a daily run. It grows as players explore, places every ore in the pack into depth-appropriate regions, and introduces stronger Born in Chaos encounters deeper down. Checkpoints provide safe travel and personal cargo storage. Each morning the shared mine warns players, evacuates them, and starts a fresh run while preserving their inventories and Dispatch lockers.
 
-## Repository\n\nPrivate GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mines\n\n## Project status
+## Repository
+
+Private GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mines
+
+## Project status
 
 Planning and compatibility foundation. The first implementation task is the standalone mod scaffold and exact pack compatibility audit. No gameplay implementation is present yet.
 
@@ -25,4 +29,5 @@ Planning and compatibility foundation. The first implementation task is the stan
 - docs/issues/: executable issue contracts, beginning with M0
 
 The existing KubeJS faction-mine system is outside this project and must remain unchanged.
+
 
