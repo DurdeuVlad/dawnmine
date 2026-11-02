@@ -9,9 +9,9 @@
 
 ## Exact Rustic Craft pack audit
 
-The audit used the pinned Rustic Craft 2 pack: Minecraft 1.21.1, NeoForge 21.1.248, Java 21.0.12, 283 pack mods, and Born in Chaos 1.7.6 (`born_in_chaos_[Neoforge]_1.21.1_1.7.6.jar`, SHA-256 `A0271A24DB8622434D9573C5E789D451A05C9211173885049284E1911E2499C7`). Public Mines was built from this commit's source and packaged as `publicmines-0.1.0.jar`, SHA-256 `E10A8CA5FFDA9B3F30264D118D98701BB1D44FE09D63D0F782C622A89848DE72`; that exact JAR is retained with the final audit artifacts.
+The audit used the pinned Rustic Craft 2 pack: Minecraft 1.21.1, NeoForge 21.1.248, Java 21.0.12, 283 pack mods, and Born in Chaos 1.7.6 (`born_in_chaos_[Neoforge]_1.21.1_1.7.6.jar`, SHA-256 `A0271A24DB8622434D9573C5E789D451A05C9211173885049284E1911E2499C7`). Public Mines was built from PR #31 head `2a1d3e3` and packaged as `publicmines-0.1.0.jar`, SHA-256 `417C6E0D3D2E30472DAEF33D4DE79ED698ECBC77D82F993B50B8BCC8620F050F`; that exact JAR is retained with the final audit artifacts.
 
-The server reached `Done (9.757s)!`; its exact-pack runtime command `/publicmine_audit_encounters` returned `passed=true`, `cases=8`, and no failures. The tested JAR SHA-256 was `E10A8CA5FFDA9B3F30264D118D98701BB1D44FE09D63D0F782C622A89848DE72`. The eight cases were:
+The server reached `Done (10.133s)!`; its exact-pack runtime command `/publicmine_audit_encounters` returned `passed=true`, `cases=8`, and no failures. The eight cases were:
 
 1. An unknown runtime entity ID caused its composition to fail closed without a substitute.
 2. `born_in_chaos_v1:infected_diamond_ore` invoked through its registered `onDestroyedByPlayer` callback spawned a Diamond Termite with current-run origin data and reset-cleaned both the entity and record.
