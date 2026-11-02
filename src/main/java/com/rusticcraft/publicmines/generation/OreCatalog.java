@@ -102,10 +102,12 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
     public record Completeness(int catalogEntries, int registeredEntries,
                                List<String> missingOreTagEntries,
                                List<String> unavailableCatalogEntries,
+                               List<String> unavailableCatalogDropItems,
                                List<String> unavailableEncounterEntities,
                                List<String> unassignedTiers, List<String> catalogErrors) {
         public boolean complete() {
             return missingOreTagEntries.isEmpty() && unavailableCatalogEntries.isEmpty()
+                    && unavailableCatalogDropItems.isEmpty()
                     && unavailableEncounterEntities.isEmpty()
                     && unassignedTiers.isEmpty() && catalogErrors.isEmpty();
         }
@@ -259,7 +261,14 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
                     .map(Entry::encounterEntity).distinct()
                     .filter(id -> entityRegistry.getOptional(id).isPresent())
                     .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
-            return completeness(taggedOreIds, registeredIds, registeredEncounterIds);
+            Registry<net.minecraft.world.item.Item> itemRegistry =
+                    level.registryAccess().registryOrThrow(Registries.ITEM);
+            Set<ResourceLocation> registeredDropItemIds = entries.values().stream()
+                    .filter(entry -> entry.kind() == Kind.RESOURCE)
+                    .flatMap(entry -> entry.nativeDropItems().stream()).distinct()
+                    .filter(id -> itemRegistry.getOptional(id).isPresent())
+                    .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+            return completeness(taggedOreIds, registeredIds, registeredEncounterIds, registeredDropItemIds);
         }
 
         Completeness completeness(Set<ResourceLocation> taggedOreIds,
@@ -270,6 +279,13 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
         Completeness completeness(Set<ResourceLocation> taggedOreIds,
                                   Set<ResourceLocation> registeredIds,
                                   Set<ResourceLocation> registeredEncounterIds) {
+            return completeness(taggedOreIds, registeredIds, registeredEncounterIds, Set.of());
+        }
+
+        Completeness completeness(Set<ResourceLocation> taggedOreIds,
+                                  Set<ResourceLocation> registeredIds,
+                                  Set<ResourceLocation> registeredEncounterIds,
+                                  Set<ResourceLocation> registeredDropItemIds) {
             TreeSet<String> missing = new TreeSet<>();
             for (ResourceLocation id : taggedOreIds) {
                 if (!entries.containsKey(id)) missing.add(id.toString());
@@ -278,6 +294,11 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
             for (ResourceLocation id : entries.keySet()) {
                 if (!registeredIds.contains(id)) unavailable.add(id.toString());
             }
+            TreeSet<String> unavailableDropItems = new TreeSet<>();
+            entries.values().stream().filter(entry -> entry.kind() == Kind.RESOURCE)
+                    .flatMap(entry -> entry.nativeDropItems().stream()).distinct()
+                    .filter(id -> !registeredDropItemIds.contains(id))
+                    .forEach(id -> unavailableDropItems.add(id.toString()));
             TreeSet<String> unavailableEntities = new TreeSet<>();
             entries.values().stream().filter(entry -> entry.kind() == Kind.ENCOUNTER)
                     .map(Entry::encounterEntity).distinct()
@@ -286,7 +307,8 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
             List<String> emptyTiers = java.util.Arrays.stream(Tier.values())
                     .filter(tier -> resourceEntries(tier).isEmpty()).map(Tier::id).toList();
             return new Completeness(entries.size(), registeredIds.size(), List.copyOf(missing),
-                    List.copyOf(unavailable), List.copyOf(unavailableEntities), emptyTiers, errors);
+                    List.copyOf(unavailable), List.copyOf(unavailableDropItems),
+                    List.copyOf(unavailableEntities), emptyTiers, errors);
         }
 
         public BlockState blockState(Entry entry) {
@@ -325,6 +347,7 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
         return "registered " + completeness.registeredEntries() + "/" + completeness.catalogEntries()
                 + ", missing ore-tag entries=" + completeness.missingOreTagEntries()
                 + ", unavailable=" + completeness.unavailableCatalogEntries()
+                + ", unavailable native drop items=" + completeness.unavailableCatalogDropItems()
                 + ", unavailable encounter entities=" + completeness.unavailableEncounterEntities()
                 + ", empty tiers=" + completeness.unassignedTiers()
                 + ", catalog errors=" + completeness.catalogErrors();

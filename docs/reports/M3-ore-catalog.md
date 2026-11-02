@@ -20,8 +20,10 @@ tracking so native break hooks cannot create untracked mobs.
 
 Completeness checks the resolved `c:ores`, `c:ores/silver`, and
 `fungidelight:truffle_ore` tags, every catalog block ID, all three native
-resource tiers, and each encounter entity ID. This closes the common-tag and
-explicit-mod-tag gaps for the pinned target pack.
+resource tiers, every declared native drop item ID, and each encounter entity
+ID. An unavailable block, drop item, or encounter entity makes completeness
+fail; it cannot be hidden by a randomized drop sample. This closes the
+common-tag and explicit-mod-tag gaps for the pinned target pack.
 
 ## Drop-source reconciliation
 

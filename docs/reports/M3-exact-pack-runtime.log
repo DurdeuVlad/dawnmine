@@ -1,14 +1,15 @@
-M3 exact-pack final artifact: SHA-256 BE62B0AF1B0382559CE1858BD1737759F9AE6E9EDAF1FA1C55544DEB9E33963A
-Dedicated test server: exact 283-JAR M0 baseline plus the Public Mines test artifact; isolated world publicmines-m3-audit-final-20261102.
-After startup, `/reload` retained catalog fingerprint 15661c507ce0; `publicmine_audit_ores` passed 60 player-break cases.
-Encounter checks in this artifact require exactly one newly spawned expected Diamond Termite and no item drops.
+M3 exact-pack final artifact: SHA-256 0497C2E41EA2FCA9FCF050C314A6A1D8AE0C2838B279A23FCC3DFDEE1DF58FE6
+Dedicated test server: exact 283-JAR M0 baseline plus the Public Mines test artifact; isolated world publicmines-m3-audit-final2-20261102.
+After startup, `/reload` retained catalog fingerprint 15661c507ce0; the post-reload `publicmine_audit_ores` command passed 60 player-break cases.
+The audit fails when any declared native drop item ID or encounter entity is unavailable, or when the block-hook scan reports an error.
+Encounter checks require exactly one newly spawned expected Diamond Termite and no item drops.
 
-[02Nov2026 15:18:30.325] [main/INFO] [com.rusticcraft.publicmines.generation.OreCatalog/]: [publicmines] Loaded 32 mine ore catalog entries (fingerprint 15661c507ce0).
-[02Nov2026 15:18:50.183] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Done (16.690s)! For help, type "help"
-[02Nov2026 15:18:50.187] [Server thread/INFO] [net.minecraft.server.rcon.thread.GenericThread/]: Thread RCON Listener started
-[02Nov2026 15:19:19.061] [Server thread/INFO] [com.rusticcraft.publicmines.command.OreBreakAuditCommand/]: [publicmines] Exact-pack ore break audit: 60 cases, passed=true, failures=[]
-[02Nov2026 15:19:19.259] [Server thread/INFO] [com.rusticcraft.publicmines.generation.OreBreakAudit/]: [publicmines][ore-hook-audit] registry_blocks=23256 blocks_with_class_hooks=1525 scan_errors=0
-[02Nov2026 15:19:33.024] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: [Rcon: Reloading!]
-[02Nov2026 15:19:37.971] [Server thread/INFO] [com.rusticcraft.publicmines.generation.OreCatalog/]: [publicmines] Loaded 32 mine ore catalog entries (fingerprint 15661c507ce0).
-[02Nov2026 15:19:44.936] [Server thread/INFO] [com.rusticcraft.publicmines.command.OreBreakAuditCommand/]: [publicmines] Exact-pack ore break audit: 60 cases, passed=true, failures=[]
-[02Nov2026 15:19:44.965] [Server thread/INFO] [com.rusticcraft.publicmines.generation.OreBreakAudit/]: [publicmines][ore-hook-audit] registry_blocks=23256 blocks_with_class_hooks=1525 scan_errors=0
+[02Nov2026 15:26:23.348] [main/INFO] [com.rusticcraft.publicmines.generation.OreCatalog/]: [publicmines] Loaded 32 mine ore catalog entries (fingerprint 15661c507ce0).
+[02Nov2026 15:26:42.391] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Done (15.752s)! For help, type "help"
+[02Nov2026 15:26:42.394] [Server thread/INFO] [net.minecraft.server.rcon.thread.GenericThread/]: Thread RCON Listener started
+[02Nov2026 15:27:08.145] [Server thread/INFO] [com.rusticcraft.publicmines.generation.OreBreakAudit/]: [publicmines][ore-hook-audit] registry_blocks=23256 blocks_with_class_hooks=1525 scan_errors=0
+[02Nov2026 15:27:08.199] [Server thread/INFO] [com.rusticcraft.publicmines.command.OreBreakAuditCommand/]: [publicmines] Exact-pack ore break audit: 60 cases, passed=true, failures=[]
+[02Nov2026 15:27:13.197] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: [Rcon: Reloading!]
+[02Nov2026 15:27:19.211] [Server thread/INFO] [com.rusticcraft.publicmines.generation.OreCatalog/]: [publicmines] Loaded 32 mine ore catalog entries (fingerprint 15661c507ce0).
+[02Nov2026 15:27:25.883] [Server thread/INFO] [com.rusticcraft.publicmines.generation.OreBreakAudit/]: [publicmines][ore-hook-audit] registry_blocks=23256 blocks_with_class_hooks=1525 scan_errors=0
+[02Nov2026 15:27:25.917] [Server thread/INFO] [com.rusticcraft.publicmines.command.OreBreakAuditCommand/]: [publicmines] Exact-pack ore break audit: 60 cases, passed=true, failures=[]

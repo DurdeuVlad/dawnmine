@@ -5,6 +5,8 @@ import static net.minecraft.commands.Commands.literal;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.generation.OreBreakAudit;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -34,20 +36,31 @@ public final class OreBreakAuditCommand {
         BlockPos testPos = new BlockPos(spawn.getX() + 8,
                 Math.min(level.getMaxBuildHeight() - 32, spawn.getY() + 96), spawn.getZ() + 8);
         OreBreakAudit.Result result = OreBreakAudit.run(level, testPos);
-        LOGGER.info("[publicmines] Exact-pack ore break audit: {} cases, passed={}, failures={}",
-                result.tested(), result.passed(), result.failed());
         OreBreakAudit.HookScanResult hooks = OreBreakAudit.findCodeDefinedBreakHooks();
+        boolean passed = isPassed(result, hooks);
+        List<String> failures = new ArrayList<>(result.failed());
+        hooks.scanErrors().forEach(error -> failures.add("block hook scan: " + error));
+        LOGGER.info("[publicmines] Exact-pack ore break audit: {} cases, passed={}, failures={}",
+                result.tested(), passed, failures);
         LOGGER.info("[publicmines] Code-defined block hook scan: {} registered blocks, {} hook-bearing blocks, {} scan errors.",
                 hooks.registeredBlocks(), hooks.hookedBlocks().size(), hooks.scanErrors().size());
-        source.sendSuccess(() -> Component.literal("Ore break audit "
-                + (result.passed() ? "passed" : "failed") + ": " + result.tested()
-                + " block/tool cases; code-hook scan found " + hooks.hookedBlocks().size()
-                + " hook-bearing blocks with " + hooks.scanErrors().size() + " scan errors. See server log."),
-                !result.passed() || !hooks.scanErrors().isEmpty());
-        if (!result.passed()) {
-            source.sendFailure(Component.literal(String.join("; ", result.failed())));
-            return 0;
+        String summary = "Ore break audit " + (passed ? "passed" : "failed") + ": "
+                + result.tested() + " block/tool cases; code-hook scan found "
+                + hooks.hookedBlocks().size() + " hook-bearing blocks with "
+                + hooks.scanErrors().size() + " scan errors. See server log.";
+        if (passed) {
+            source.sendSuccess(() -> Component.literal(summary), false);
+            return 1;
         }
-        return 1;
+        if (!failures.isEmpty()) {
+            source.sendFailure(Component.literal(String.join("; ", failures)));
+        } else {
+            source.sendFailure(Component.literal(summary));
+        }
+        return 0;
+    }
+
+    static boolean isPassed(OreBreakAudit.Result result, OreBreakAudit.HookScanResult hooks) {
+        return result.passed() && hooks.scanErrors().isEmpty();
     }
 }

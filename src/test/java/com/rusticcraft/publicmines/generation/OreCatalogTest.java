@@ -65,11 +65,31 @@ class OreCatalogTest {
                 id("minecraft:diamond_ore"), id("born_in_chaos_v1:infected_diamond_ore"));
 
         OreCatalog.Completeness missing = snapshot.completeness(Set.of(), blocks, Set.of());
-        OreCatalog.Completeness available = snapshot.completeness(Set.of(), blocks, Set.of(encounterEntity));
+        OreCatalog.Completeness available = snapshot.completeness(Set.of(), blocks, Set.of(encounterEntity),
+                Set.of(id("minecraft:raw_iron")));
 
         assertEquals(List.of(encounterEntity.toString()), missing.unavailableEncounterEntities());
         assertFalse(missing.complete());
         assertTrue(available.unavailableEncounterEntities().isEmpty());
+        assertTrue(available.complete());
+    }
+
+    @Test
+    void completenessReportsEveryUnavailableNativeDropItemId() {
+        OreCatalog.OreCatalogSnapshot snapshot = OreCatalog.parseSnapshot(Map.of(
+                RESOURCE_A, resource("minecraft:coal_ore", "upper", 4),
+                RESOURCE_B, resource("minecraft:gold_ore", "middle", 2),
+                id("publicmines:test/c"), resource("minecraft:diamond_ore", "chaos", 1)));
+        Set<ResourceLocation> blocks = Set.of(id("minecraft:coal_ore"), id("minecraft:gold_ore"),
+                id("minecraft:diamond_ore"));
+
+        OreCatalog.Completeness missing = snapshot.completeness(Set.of(), blocks, Set.of(), Set.of());
+        OreCatalog.Completeness available = snapshot.completeness(Set.of(), blocks, Set.of(),
+                Set.of(id("minecraft:raw_iron")));
+
+        assertEquals(List.of("minecraft:raw_iron"), missing.unavailableCatalogDropItems());
+        assertFalse(missing.complete());
+        assertTrue(available.unavailableCatalogDropItems().isEmpty());
         assertTrue(available.complete());
     }
 
