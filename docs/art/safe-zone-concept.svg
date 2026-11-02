@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="860" viewBox="0 0 1240 860" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <pattern id="stone2" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#7d7d7d"/>
+      <rect x="3" y="4" width="5" height="3" fill="#8a8a8a"/>
+      <rect x="10" y="10" width="4" height="3" fill="#6f6f6f"/>
+    </pattern>
+    <pattern id="ds2" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#4a4a52"/>
+      <rect x="2" y="3" width="6" height="3" fill="#57575f"/>
+      <rect x="9" y="10" width="5" height="3" fill="#3f3f47"/>
+    </pattern>
+    <pattern id="planks" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#a1662f"/>
+      <line x1="0" y1="8" x2="16" y2="8" stroke="#7a4a22" stroke-width="1"/>
+      <line x1="8" y1="0" x2="8" y2="8" stroke="#7a4a22" stroke-width="1"/>
+      <line x1="4" y1="8" x2="4" y2="16" stroke="#7a4a22" stroke-width="1"/>
+    </pattern>
+    <marker id="arr2" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#ef9a9a"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="860" fill="#17181c"/>
+  <text x="40" y="46" font-size="26" fill="#eceff1" font-weight="600">Checkpoint Safe Zone — builder concept (annotated)</text>
+  <text x="40" y="72" font-size="14" fill="#9aa0a6">Rustic Craft Public Mines · applies identically to arrival pad, every checkpoint pad, and the surface exit pad</text>
+
+  <!-- ============ LEFT: plan view of checkpoint alcove ============ -->
+  <text x="40" y="110" font-size="15" fill="#80cbc4" font-weight="600">PLAN — checkpoint alcove off the main route (1 square = 1 block)</text>
+
+  <!-- solid background = stone mass -->
+  <rect x="60" y="130" width="680" height="420" fill="url(#stone2)"/>
+  <rect x="60" y="430" width="680" height="120" fill="url(#ds2)"/>
+
+  <!-- corridor: 5-block carved envelope + 3-block open bore -->
+  <rect x="60" y="290" width="680" height="100" fill="#1a1a20" stroke="#37474f" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <rect x="60" y="310" width="680" height="60" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
+  <text x="120" y="284" font-size="12" fill="#b0bec5">main-route corridor · 3-block open bore inside a 5-block carved envelope</text>
+  <line x1="60" y1="340" x2="740" y2="340" stroke="#455a64" stroke-width="1" stroke-dasharray="10 8"/>
+  <text x="110" y="344" font-size="10" fill="#546e7a" text-anchor="middle">route axis</text>
+
+  <!-- alcove carved downward (south) off corridor -->
+  <rect x="330" y="390" width="160" height="140" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
+
+  <!-- checkpoint pad: 5x5 = 5 grid squares of 20px = 100px -->
+  <rect x="350" y="400" width="100" height="100" fill="url(#planks)" stroke="#d4a017" stroke-width="2"/>
+  <!-- grid on pad -->
+  <g stroke="#000" stroke-opacity="0.25">
+    <line x1="370" y1="400" x2="370" y2="500"/><line x1="390" y1="400" x2="390" y2="500"/>
+    <line x1="410" y1="400" x2="410" y2="500"/><line x1="430" y1="400" x2="430" y2="500"/>
+    <line x1="350" y1="420" x2="450" y2="420"/><line x1="350" y1="440" x2="450" y2="440"/>
+    <line x1="350" y1="460" x2="450" y2="460"/><line x1="350" y1="480" x2="450" y2="480"/>
+  </g>
+  <!-- safe zone outline: pad 5x5, dashed green -->
+  <rect x="350" y="400" width="100" height="100" fill="none" stroke="#69f0ae" stroke-width="3" stroke-dasharray="8 5"/>
+  <text x="400" y="392" font-size="11" fill="#69f0ae" text-anchor="middle" font-weight="600">5×5 pad = safe-zone floor</text>
+
+  <!-- concept props OUTSIDE the registered volume, on surrounding alcove cells -->
+  <rect x="332" y="404" width="18" height="18" fill="#6d4c41" stroke="#d4a017" stroke-width="1.5"/>
+  <text x="341" y="416" font-size="8" fill="#ffd54f" text-anchor="middle">D</text>
+  <rect x="458" y="404" width="18" height="18" fill="#6d4c41" stroke="#a1887f"/>
+  <text x="467" y="416" font-size="8" fill="#d7ccc8" text-anchor="middle">B</text>
+  <!-- floor torches on two pad cells (the only allowed placement) -->
+  <rect x="352" y="482" width="16" height="16" fill="#ffca28" stroke="#ff8f00"/>
+  <rect x="432" y="482" width="16" height="16" fill="#ffca28" stroke="#ff8f00"/>
+
+  <!-- mob held at boundary -->
+  <g>
+    <rect x="236" y="336" width="28" height="28" rx="4" fill="#7f1d1d" stroke="#ef9a9a" stroke-width="1.5"/>
+    <circle cx="246" cy="348" r="3" fill="#fca5a5"/><circle cx="254" cy="348" r="3" fill="#fca5a5"/>
+    <line x1="276" y1="350" x2="316" y2="404" stroke="#ef9a9a" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr2)"/>
+    <text x="196" y="296" font-size="11" fill="#ef9a9a">hostile mob — cannot enter or</text>
+    <text x="196" y="310" font-size="11" fill="#ef9a9a">push effects across the pad</text>
+  </g>
+
+  <!-- dimension callouts -->
+  <line x1="350" y1="544" x2="450" y2="544" stroke="#eceff1" stroke-width="1"/>
+  <text x="400" y="560" font-size="11" fill="#eceff1" text-anchor="middle">5 blocks</text>
+  <line x1="500" y1="400" x2="500" y2="500" stroke="#eceff1" stroke-width="1"/>
+  <text x="508" y="454" font-size="11" fill="#eceff1">5 blocks</text>
+
+  <!-- ============ RIGHT column: section + rules ============ -->
+  <!-- section view -->
+  <text x="790" y="110" font-size="15" fill="#80cbc4" font-weight="600">SECTION — pad volume (5×5×4)</text>
+  <rect x="790" y="130" width="410" height="150" fill="url(#ds2)"/>
+  <!-- air pocket -->
+  <rect x="830" y="150" width="220" height="110" fill="#0d0d0f" stroke="#37474f"/>
+  <!-- pad floor -->
+  <rect x="850" y="240" width="100" height="14" fill="url(#planks)" stroke="#d4a017" stroke-width="1.5"/>
+  <!-- clearance -->
+  <rect x="850" y="162" width="100" height="78" fill="#1b5e20" fill-opacity="0.22" stroke="#69f0ae" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="900" y="200" font-size="10" fill="#69f0ae" text-anchor="middle">3-block clearance</text>
+  <text x="900" y="270" font-size="10" fill="#d4a017" text-anchor="middle">pad floor (solid)</text>
+  <line x1="970" y1="162" x2="970" y2="254" stroke="#eceff1" stroke-width="1"/>
+  <text x="978" y="212" font-size="11" fill="#eceff1">4</text>
+  <text x="978" y="226" font-size="11" fill="#eceff1">blocks</text>
+
+  <!-- rules panel -->
+  <rect x="790" y="300" width="410" height="310" rx="8" fill="#121316" stroke="#37474f"/>
+  <text x="806" y="328" font-size="15" fill="#eceff1" font-weight="600">Enforced rules (server-side, M2c)</text>
+  <g font-size="12" fill="#c5cbd1">
+    <text x="806" y="356" fill="#69f0ae" font-weight="600">Inside the pad volume</text>
+    <text x="820" y="376">· No PvE — players cannot damage mobs,</text>
+    <text x="820" y="393">  mobs cannot damage players</text>
+    <text x="820" y="410">· Hostiles and combat effects stop at the edge</text>
+    <text x="806" y="438" fill="#ffd54f" font-weight="600">Everywhere in the mine</text>
+    <text x="820" y="458">· No PvP: no damage, knockback, or harmful</text>
+    <text x="820" y="475">  effects between players — ever</text>
+    <text x="820" y="492">· Mine only catalogued mine ores</text>
+    <text x="820" y="509">· Place only allowed floor torches</text>
+    <text x="806" y="537" fill="#80cbc4" font-weight="600">Why it exists</text>
+    <text x="820" y="557">· Banking-and-breather space between pushes</text>
+    <text x="820" y="574">· Foreman's Dispatch access (planned, M5b)</text>
+    <text x="820" y="591">· /publicmine checkpoint travel origin</text>
+  </g>
+
+  <!-- builder notes bottom right -->
+  <rect x="790" y="630" width="410" height="170" rx="8" fill="#121316" stroke="#37474f"/>
+  <text x="806" y="656" font-size="14" fill="#eceff1" font-weight="600">Builder notes (non-binding)</text>
+  <g font-size="12" fill="#c5cbd1">
+    <text x="820" y="678">· Generator carves the alcove + pad; dressing is</text>
+    <text x="820" y="694">  thematic: support beams, crate stacks, signage</text>
+    <text x="820" y="710">· Keep the pad cells walkable — props live on</text>
+    <text x="820" y="726">  cells around the pad, never inside the volume</text>
+    <text x="820" y="742">· D = Dispatch crate concept · B = notice board</text>
+    <text x="820" y="758">· Light = floor torches (the only placeable)</text>
+    <text x="820" y="774">· One checkpoint per region: Upper, Middle, Chaos</text>
+  </g>
+
+  <!-- legend strip -->
+  <rect x="40" y="580" width="700" height="220" rx="8" fill="#121316" stroke="#37474f"/>
+  <text x="56" y="606" font-size="14" fill="#eceff1" font-weight="600">Legend</text>
+  <rect x="60" y="622" width="18" height="18" fill="url(#planks)"/><text x="84" y="636" font-size="12" fill="#c5cbd1">supported 5×5 pad floor</text>
+  <rect x="60" y="650" width="18" height="18" fill="#10331c" stroke="#69f0ae" stroke-dasharray="4 3"/><text x="84" y="664" font-size="12" fill="#c5cbd1">safe-zone volume (pad + 3-block clearance)</text>
+  <rect x="60" y="678" width="18" height="18" fill="#0d0d0f" stroke="#37474f"/><text x="84" y="692" font-size="12" fill="#c5cbd1">carved air (corridor / alcove)</text>
+  <rect x="60" y="706" width="18" height="18" fill="#ffca28" stroke="#ff8f00"/><text x="84" y="720" font-size="12" fill="#c5cbd1">floor torch (only allowed placement)</text>
+  <rect x="60" y="734" width="18" height="18" fill="#7f1d1d"/><text x="84" y="748" font-size="12" fill="#c5cbd1">hostile — stopped at the boundary</text>
+  <text x="360" y="640" font-size="12" fill="#c5cbd1">Registered volumes (M5a): arrival pad · checkpoint</text>
+  <text x="360" y="657" font-size="12" fill="#c5cbd1">pads · the single overworld surface-exit pad.</text>
+  <text x="360" y="674" font-size="12" fill="#c5cbd1">Volume is registered in the run record — builders</text>
+  <text x="360" y="691" font-size="12" fill="#c5cbd1">do not resize it; they dress around it.</text>
+  <text x="360" y="718" font-size="12" fill="#c5cbd1">Travel UX: /publicmine checkpoints lists stations;</text>
+  <text x="360" y="735" font-size="12" fill="#c5cbd1">/publicmine checkpoint &lt;id&gt; · /publicmine leave</text>
+  <text x="360" y="752" font-size="12" fill="#c5cbd1">· Dispatch terminal at stations (planned, M5b)</text>
+</svg>

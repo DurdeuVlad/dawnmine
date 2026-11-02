@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="920" viewBox="0 0 1240 920" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <pattern id="bedrock" width="24" height="24" patternUnits="userSpaceOnUse">
+      <rect width="24" height="24" fill="#3a3a3a"/>
+      <rect x="2" y="2" width="9" height="9" fill="#565656"/>
+      <rect x="13" y="12" width="9" height="9" fill="#4a4a4a"/>
+      <rect x="14" y="3" width="7" height="6" fill="#2e2e2e"/>
+      <rect x="3" y="14" width="8" height="7" fill="#666"/>
+    </pattern>
+    <pattern id="stonefill" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#7d7d7d"/>
+      <rect x="3" y="4" width="5" height="3" fill="#8a8a8a"/>
+      <rect x="10" y="10" width="4" height="3" fill="#6f6f6f"/>
+    </pattern>
+    <pattern id="deepslate" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#4a4a52"/>
+      <rect x="2" y="3" width="6" height="3" fill="#57575f"/>
+      <rect x="9" y="10" width="5" height="3" fill="#3f3f47"/>
+    </pattern>
+    <pattern id="chaosfill" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#2e2a30"/>
+      <rect x="2" y="3" width="6" height="4" fill="#3f3944"/>
+      <rect x="9" y="9" width="5" height="4" fill="#55565e"/>
+    </pattern>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#ffd54f"/>
+    </marker>
+    <marker id="arrowSafe" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#69f0ae"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="920" fill="#17181c"/>
+  <text x="40" y="46" font-size="26" fill="#eceff1" font-weight="600">Entrance Hub — builder concept (annotated)</text>
+  <text x="40" y="72" font-size="14" fill="#9aa0a6">Rustic Craft Public Mines · handoff reference for the generated arrival/entrance area · not a schematic — the generator stays authoritative</text>
+
+  <!-- ============ LEFT: vertical section through the mine dimension ============ -->
+  <text x="40" y="110" font-size="15" fill="#80cbc4" font-weight="600">SECTION — publicmines:public_mine_v2 (scale approx.)</text>
+
+  <!-- dimension box: x 40..740, roof y140, floor y800 -->
+  <!-- bedrock roof -->
+  <rect x="60" y="140" width="680" height="14" fill="url(#bedrock)"/>
+  <text x="66" y="135" font-size="11" fill="#8e8e8e">bedrock roof · every chunk · Y 319</text>
+  <!-- void above surface -->
+  <rect x="60" y="154" width="680" height="120" fill="#101014"/>
+  <text x="390" y="200" font-size="12" fill="#5c6370" text-anchor="middle">sealed void above the plain — walls/roof unreachable in play</text>
+  <text x="390" y="218" font-size="12" fill="#5c6370" text-anchor="middle">(no flight path in: entry is teleport onto the pad only)</text>
+
+  <!-- stone slab Y62..-16 then deepslate to -64 -->
+  <rect x="60" y="274" width="680" height="335" fill="url(#stonefill)"/>
+  <rect x="60" y="609" width="680" height="165" fill="url(#deepslate)"/>
+  <!-- chaos palette band -->
+  <rect x="60" y="609" width="680" height="161" fill="url(#chaosfill)" fill-opacity="0.55"/>
+
+  <!-- bedrock floor -->
+  <rect x="60" y="774" width="680" height="14" fill="url(#bedrock)"/>
+  <text x="66" y="792" font-size="11" fill="#8e8e8e">bedrock floor · every chunk · Y -64</text>
+
+  <!-- bedrock walls -->
+  <rect x="46" y="140" width="14" height="648" fill="url(#bedrock)"/>
+  <rect x="740" y="140" width="14" height="648" fill="url(#bedrock)"/>
+  <text x="400" y="806" font-size="11" fill="#8e8e8e" text-anchor="middle">bedrock walls · boundary chunks only · X/Z ±1024 · 128×128 chunk shell</text>
+
+  <!-- region bands -->
+  <line x1="60" y1="437" x2="740" y2="437" stroke="#b0bec5" stroke-opacity="0.35" stroke-dasharray="6 5"/>
+  <line x1="60" y1="609" x2="740" y2="609" stroke="#b0bec5" stroke-opacity="0.35" stroke-dasharray="6 5"/>
+  <line x1="60" y1="770" x2="740" y2="770" stroke="#ef9a9a" stroke-opacity="0.4" stroke-dasharray="6 5"/>
+  <text x="66" y="306" font-size="12" fill="#90a4ae">UPPER GALLERIES · Y 56 → 24 · stone palette</text>
+  <text x="66" y="455" font-size="12" fill="#90a4ae">MIDDLE DESCENT · Y 24 → -16 · stone → deepslate</text>
+  <text x="66" y="628" font-size="12" fill="#ef9a9a">CHAOS DEPTHS · Y -16 → -56 · basalt / blackstone / deepslate · quartz · contained lava</text>
+
+  <!-- carved route (stylized) -->
+  <g fill="#0d0d0f" stroke="#37474f" stroke-width="1.5">
+    <rect x="150" y="330" width="150" height="34" rx="4"/>
+    <rect x="330" y="330" width="130" height="34" rx="4"/>
+    <rect x="150" y="360" width="26" height="120"/>
+    <rect x="150" y="470" width="200" height="34" rx="4"/>
+    <rect x="350" y="500" width="26" height="104"/>
+    <rect x="350" y="640" width="220" height="34" rx="4"/>
+    <rect x="540" y="672" width="30" height="70"/>
+    <rect x="430" y="742" width="200" height="26" rx="4"/>
+  </g>
+  <!-- corridor label -->
+  <text x="225" y="352" font-size="11" fill="#b0bec5" text-anchor="middle">main route</text>
+  <text x="462" y="658" font-size="11" fill="#b0bec5" text-anchor="middle">descending main route</text>
+
+  <!-- checkpoints in section -->
+  <rect x="352" y="470" width="86" height="34" rx="3" fill="#10331c" stroke="#69f0ae" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="395" y="491" font-size="10" fill="#69f0ae" text-anchor="middle">checkpoint pad</text>
+  <rect x="572" y="640" width="86" height="34" rx="3" fill="#10331c" stroke="#69f0ae" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="615" y="661" font-size="10" fill="#69f0ae" text-anchor="middle">checkpoint pad</text>
+
+  <!-- lava cup in chaos -->
+  <rect x="470" y="756" width="70" height="12" rx="3" fill="#e25822" stroke="#ff8a50" stroke-width="1"/>
+  <text x="505" y="750" font-size="10" fill="#ffab91" text-anchor="middle">contained lava cup</text>
+
+  <!-- ===== arrival pad + connector ===== -->
+  <!-- pad -->
+  <rect x="368" y="268" width="64" height="8" fill="#b0bec5" stroke="#eceff1" stroke-width="1"/>
+  <!-- safe zone volume -->
+  <rect x="364" y="230" width="72" height="44" fill="#1b5e20" fill-opacity="0.28" stroke="#69f0ae" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="400" y="226" font-size="11" fill="#69f0ae" text-anchor="middle" font-weight="600">arrival pad · 5×5×4 safe zone</text>
+  <!-- connector shaft descending right side of pad -->
+  <path d="M 420 276 L 460 276 L 460 330 L 420 330 Z" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
+  <line x1="440" y1="276" x2="440" y2="330" stroke="#ffd54f" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arrow)"/>
+  <text x="452" y="306" font-size="10" fill="#ffd54f">arrival connector</text>
+  <text x="452" y="318" font-size="10" fill="#ffd54f">(generated descent)</text>
+
+  <!-- Y axis -->
+  <line x1="60" y1="274" x2="40" y2="274" stroke="#78909c"/>
+  <text x="34" y="278" font-size="11" fill="#78909c" text-anchor="end">Y 62</text>
+  <line x1="60" y1="437" x2="40" y2="437" stroke="#78909c"/>
+  <text x="34" y="441" font-size="11" fill="#78909c" text-anchor="end">Y 24</text>
+  <line x1="60" y1="609" x2="40" y2="609" stroke="#78909c"/>
+  <text x="34" y="613" font-size="11" fill="#78909c" text-anchor="end">Y -16</text>
+  <line x1="60" y1="770" x2="40" y2="770" stroke="#78909c"/>
+  <text x="34" y="774" font-size="11" fill="#ef9a9a" text-anchor="end">Y -56</text>
+  <line x1="60" y1="774" x2="40" y2="774" stroke="#78909c"/>
+  <text x="34" y="788" font-size="11" fill="#78909c" text-anchor="end">Y -64</text>
+
+  <!-- ============ TOP-RIGHT: overworld inset ============ -->
+  <rect x="790" y="110" width="410" height="210" rx="8" fill="#0f1420" stroke="#37474f"/>
+  <text x="806" y="136" font-size="14" fill="#80cbc4" font-weight="600">OVERWORLD — surface depot (exit side)</text>
+  <!-- grass -->
+  <rect x="806" y="220" width="378" height="14" fill="#5d8c3f"/>
+  <rect x="806" y="234" width="378" height="40" fill="#795548"/>
+  <rect x="806" y="150" width="378" height="70" fill="#0f1420"/>
+  <!-- surface pad safe zone -->
+  <rect x="948" y="186" width="72" height="40" fill="#1b5e20" fill-opacity="0.30" stroke="#69f0ae" stroke-width="2" stroke-dasharray="6 4"/>
+  <rect x="954" y="214" width="60" height="8" fill="#b0bec5" stroke="#eceff1" stroke-width="1"/>
+  <text x="984" y="182" font-size="11" fill="#69f0ae" text-anchor="middle" font-weight="600">surface exit pad · 5×5×4</text>
+  <!-- depot props -->
+  <rect x="1108" y="198" width="20" height="20" fill="#a1662f" stroke="#d4a017" stroke-width="1.5"/>
+  <text x="1118" y="192" font-size="10" fill="#d4a017" text-anchor="middle">Dispatch depot</text>
+  <rect x="872" y="198" width="16" height="18" fill="#6d4c41" stroke="#a1887f"/>
+  <text x="880" y="192" font-size="10" fill="#a1887f" text-anchor="middle">notice board</text>
+  <!-- teleport arrow down -->
+  <line x1="984" y1="230" x2="430" y2="232" stroke="#69f0ae" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrowSafe)"/>
+  <text x="860" y="252" font-size="11" fill="#69f0ae">/publicmine enter → exact recorded pad</text>
+
+  <!-- ============ RIGHT: annotation panel ============ -->
+  <rect x="790" y="340" width="410" height="470" rx="8" fill="#121316" stroke="#37474f"/>
+  <text x="806" y="368" font-size="15" fill="#eceff1" font-weight="600">Handoff notes for builders</text>
+
+  <g font-size="12" fill="#c5cbd1">
+    <text x="806" y="396" font-weight="600" fill="#ffd54f">1 · What the generator already places</text>
+    <text x="820" y="416">5×5 stone arrival pad (arrival point [0, 63, 0],</text>
+    <text x="820" y="433">pad blocks at Y 62); connector carved from the</text>
+    <text x="820" y="450">pad edge down to the first Upper Galleries node.</text>
+
+    <text x="806" y="478" font-weight="600" fill="#ffd54f">2 · What builders may dress (non-binding)</text>
+    <text x="820" y="498">Foreman's camp look: tents, crates, lanterns,</text>
+    <text x="820" y="515">notice board, Dispatch depot props — around,</text>
+    <text x="820" y="532">never inside the 5×5×4 safe-zone volume.</text>
+
+    <text x="806" y="560" font-weight="600" fill="#69f0ae">3 · Safe zones (same rule everywhere)</text>
+    <text x="820" y="580">Arrival pad · every checkpoint pad · surface</text>
+    <text x="820" y="597">exit pad: 5×5 floor + 3-block clearance.</text>
+    <text x="820" y="614">No PvE inside; hostiles/effects cannot cross.</text>
+
+    <text x="806" y="642" font-weight="600" fill="#ef9a9a">4 · Hard boundaries</text>
+    <text x="820" y="662">Bedrock shell = floor Y-64 + roof Y 319 on all</text>
+    <text x="820" y="679">chunks, walls at X/Z ±1024. Entry/exit is</text>
+    <text x="820" y="696">teleport-only; nobody mines in from outside.</text>
+
+    <text x="806" y="724" font-weight="600" fill="#80cbc4">5 · Depth reads from the hub</text>
+    <text x="820" y="744">Warm stone (Upper) → cold deepslate (Middle)</text>
+    <text x="820" y="761">→ basalt/blackstone + lava glow (Chaos).</text>
+    <text x="820" y="778">Players should read danger from palette.</text>
+  </g>
+
+  <!-- legend -->
+  <rect x="40" y="830" width="1160" height="70" rx="8" fill="#121316" stroke="#37474f"/>
+  <text x="56" y="854" font-size="13" fill="#eceff1" font-weight="600">Legend</text>
+  <rect x="120" y="842" width="18" height="18" fill="url(#bedrock)"/><text x="144" y="856" font-size="12" fill="#c5cbd1">bedrock shell (generated, indestructible)</text>
+  <rect x="470" y="842" width="18" height="18" fill="#10331c" stroke="#69f0ae" stroke-dasharray="4 3"/><text x="494" y="856" font-size="12" fill="#c5cbd1">5×5×4 safe zone (no PvE)</text>
+  <rect x="760" y="842" width="18" height="18" fill="#0d0d0f" stroke="#37474f"/><text x="784" y="856" font-size="12" fill="#c5cbd1">generated carved route</text>
+  <rect x="960" y="842" width="18" height="12" fill="#e25822"/><text x="984" y="853" font-size="12" fill="#c5cbd1">contained lava</text>
+  <line x1="960" y1="880" x2="978" y2="880" stroke="#69f0ae" stroke-width="2" stroke-dasharray="5 4"/><text x="984" y="884" font-size="12" fill="#c5cbd1">teleport link</text>
+  <text x="56" y="884" font-size="11" fill="#8e8e8e">Real dims: shell 128×128 chunks (X/Z ±1024), stone skin −63…62, pad [0,63,0] · profile: topology_profiles/standard.json</text>
+</svg>
