@@ -17,12 +17,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -258,8 +260,56 @@ public final class MineEncounterManager {
         Entity entity = event.getEntity();
         if (entity.level() instanceof ServerLevel level
                 && level.dimension().equals(MineManager.MINE_DIMENSION)) {
-            MineManager.get(level.getServer()).data().unregisterMineEntity(entity.getUUID());
+            MineManager manager = MineManager.get(level.getServer());
+            MineRunData data = manager.data();
+            MineEntityOrigin origin = data.mineEntity(entity.getUUID());
+            if (origin != null) {
+                awardMineReward(level, entity, event.getSource().getEntity(), manager, data, origin);
+                data.unregisterMineEntity(entity.getUUID());
+            }
         }
+    }
+
+    private static void awardMineReward(ServerLevel level, Entity entity, Entity attacker,
+                                        MineManager manager, MineRunData data, MineEntityOrigin origin) {
+        if (!(entity instanceof Mob mob) || !(mob instanceof Enemy)
+                || !(attacker instanceof ServerPlayer player)) return;
+        MineRewardCatalog.Reward reward = MineRewardCatalog.forTier(origin.region());
+        BlockPos deathPos = entity.blockPosition();
+        boolean owned = manager.isOwned(level, origin.pos()) && manager.isOwned(level, deathPos)
+                && !data.isInSafeZone(level, deathPos);
+        boolean configured = origin.sourceId().startsWith("encounter:")
+                && isConfiguredEncounter(origin);
+        if (!MineRewardRules.eligible(origin, data.runId(), level.dimension(), deathPos,
+                owned, true, configured, reward)) return;
+        // Claim before rolling/delivery: duplicate death callbacks cannot reroll
+        // a failed chance or grant a second item. Claims persist for this run.
+        if (!data.claimMineReward(entity.getUUID())) return;
+        if (!MineRewardRules.rollSucceeded(reward.chanceBasisPoints(), level.getRandom().nextInt(10_000))) {
+            LOGGER.debug("[publicmines] Encounter {} in {} yielded no combat bonus (rate {}%).",
+                    origin.sourceId(), origin.region(), reward.chancePercent());
+            return;
+        }
+        int count = reward.minCount() + level.getRandom().nextInt(reward.maxCount() - reward.minCount() + 1);
+        ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(reward.itemId()), count);
+        player.getInventory().add(stack);
+        if (!stack.isEmpty()) player.drop(stack.copy(), false);
+        player.sendSystemMessage(Component.literal("Mine salvage: " + count + " "
+                + reward.itemId() + " (" + origin.region() + " encounter)"));
+        LOGGER.info("[publicmines] Combat reward player={} entity={} source={} tier={} item={} count={} chance={}% purpose={}",
+                player.getGameProfile().getName(), entity.getUUID(), origin.sourceId(), origin.region(),
+                reward.itemId(), count, reward.chancePercent(), reward.purpose());
+    }
+
+    private static boolean isConfiguredEncounter(MineEntityOrigin origin) {
+        MineEncounterCatalog.Profile profile = MineEncounterCatalog.forProfile(
+                TopologyProfiles.activeProfileId());
+        MineEncounterCatalog.Region region = profile == null ? null : profile.region(origin.region());
+        if (region == null) return false;
+        return region.compositions().stream()
+                .filter(composition -> origin.sourceId().startsWith("encounter:" + composition.id() + ":"))
+                .flatMap(composition -> composition.entities().stream())
+                .anyMatch(entityCount -> entityCount.entityId().equals(origin.entityType()));
     }
 
     @SubscribeEvent

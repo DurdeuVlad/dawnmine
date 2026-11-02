@@ -31,7 +31,7 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 6;
+    private static final int SCHEMA = 7;
     static final int MAX_GENERATION_SEGMENTS = 16_384;
     static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
     static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;
@@ -39,6 +39,7 @@ public class MineRunData extends SavedData {
     static final int MAX_MINE_ORE_ORIGINS = 65_536;
     static final int MAX_MINE_ENTITIES = 16_384;
     static final int MAX_ENCOUNTER_SITE_CLAIMS = 16_384;
+    static final int MAX_MINE_REWARD_CLAIMS = MAX_ENCOUNTER_SITE_CLAIMS * 8;
     static final int MAX_ENCOUNTER_SITE_ID_LENGTH = 128;
     static final int MAX_MINE_ENTITY_SOURCE_LENGTH = 128;
     static final int MAX_MINE_ENTITY_REGION_LENGTH = 64;
@@ -83,6 +84,8 @@ public class MineRunData extends SavedData {
     private final LinkedHashMap<ResourceLocation, SafeZone> safeZones = new LinkedHashMap<>();
     private final LinkedHashMap<OrePosition, MineOreOrigin> mineOreOrigins = new LinkedHashMap<>();
     private final LinkedHashMap<UUID, MineEntityOrigin> mineEntities = new LinkedHashMap<>();
+    /** Entity IDs claimed for bonus delivery; retained after death unregisters provenance. */
+    private final LinkedHashSet<UUID> mineRewardClaims = new LinkedHashSet<>();
     private final LinkedHashSet<String> encounterSiteClaims = new LinkedHashSet<>();
     /** Per-player surface return position captured on entry. */
     private final Map<UUID, ReturnPoint> returnPoints = new HashMap<>();
@@ -182,6 +185,11 @@ public class MineRunData extends SavedData {
             mineEntityTags.add(savedOrigin);
         }
         tag.put("mineEntities", mineEntityTags);
+        ListTag rewardClaims = new ListTag();
+        for (UUID uuid : mineRewardClaims) {
+            rewardClaims.add(net.minecraft.nbt.StringTag.valueOf(uuid.toString()));
+        }
+        tag.put("mineRewardClaims", rewardClaims);
         tag.put("encounterSiteClaims", saveStringSet(encounterSiteClaims));
         CompoundTag returns = new CompoundTag();
         for (Map.Entry<UUID, ReturnPoint> entry : returnPoints.entrySet()) {
@@ -242,6 +250,8 @@ public class MineRunData extends SavedData {
         mineOreOrigins.putAll(restored.mineOreOrigins);
         mineEntities.clear();
         mineEntities.putAll(restored.mineEntities);
+        mineRewardClaims.clear();
+        mineRewardClaims.addAll(restored.mineRewardClaims);
         encounterSiteClaims.clear();
         encounterSiteClaims.addAll(restored.encounterSiteClaims);
         returnPoints.clear();
@@ -303,6 +313,7 @@ public class MineRunData extends SavedData {
         }
         data.loadMineProtectionState(tag, savedSchema);
         data.loadMineEntityOrigins(tag, savedSchema);
+        data.loadMineRewardClaims(tag, savedSchema);
         data.loadEncounterSiteClaims(tag, savedSchema);
         CompoundTag returns = tag.getCompound("returnPoints");
         for (String key : returns.getAllKeys()) {
@@ -514,6 +525,22 @@ public class MineRunData extends SavedData {
         }
     }
 
+    private void loadMineRewardClaims(CompoundTag tag, int savedSchema) {
+        if (savedSchema < 7) return;
+        ListTag claims = tag.getList("mineRewardClaims", Tag.TAG_STRING);
+        if (claims.size() > MAX_MINE_REWARD_CLAIMS) {
+            markFailed("saved mine-reward claim count exceeds the supported limit; run '/publicmine recover repair'");
+            return;
+        }
+        for (Tag value : claims) {
+            try {
+                mineRewardClaims.add(UUID.fromString(value.getAsString()));
+            } catch (RuntimeException ignored) {
+                // Malformed claims are discarded; entity eligibility still requires live run provenance.
+            }
+        }
+    }
+
     private void loadEncounterSiteClaims(CompoundTag tag, int savedSchema) {
         if (savedSchema < 5 || !tag.contains("encounterSiteClaims")) {
             return;
@@ -675,6 +702,7 @@ public class MineRunData extends SavedData {
         this.safeZones.clear();
         this.mineOreOrigins.clear();
         this.mineEntities.clear();
+        this.mineRewardClaims.clear();
         this.encounterSiteClaims.clear();
         this.returnPoints.clear();
         this.status = RunStatus.INITIALIZING;
@@ -841,6 +869,22 @@ public class MineRunData extends SavedData {
         }
         setDirty();
         return true;
+    }
+
+    /** Atomically reserves the run-local one-time combat bonus for a tracked entity. */
+    public boolean claimMineReward(UUID uuid) {
+        MineEntityOrigin origin = uuid == null ? null : mineEntities.get(uuid);
+        if (origin == null || !origin.runId().equals(runId)
+                || mineRewardClaims.size() >= MAX_MINE_REWARD_CLAIMS
+                || !mineRewardClaims.add(uuid)) {
+            return false;
+        }
+        setDirty();
+        return true;
+    }
+
+    public boolean hasClaimedMineReward(UUID uuid) {
+        return uuid != null && mineRewardClaims.contains(uuid);
     }
 
     /** Claims a deterministic encounter site once for this run before spawning any entities there. */

@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "rewards": [
+    {
+      "tier": "upper",
+      "item": "minecraft:raw_iron",
+      "chanceBasisPoints": 2000,
+      "minCount": 1,
+      "maxCount": 1,
+      "purpose": "Iron feedstock for the pack's iron-to-steel equipment route.",
+      "sourceAndSink": "Mine-only upper-region encounters; smelt into iron ingots and blast into magistuarmory:steel_ingot for steel weapon recipes."
+    },
+    {
+      "tier": "middle",
+      "item": "werewolves:raw_silver",
+      "chanceBasisPoints": 1000,
+      "minCount": 1,
+      "maxCount": 1,
+      "purpose": "Silver equipment material for the pack's silver weapon route.",
+      "sourceAndSink": "Mine-only middle-region encounters; smelt into werewolves:silver_ingot for the pack's silver weapon recipes."
+    },
+    {
+      "tier": "chaos",
+      "item": "minecraft:diamond",
+      "chanceBasisPoints": 200,
+      "minCount": 1,
+      "maxCount": 1,
+      "purpose": "Rare input toward diamond equipment; the exact strength of this step is reserved for M8 group balance review.",
+      "sourceAndSink": "Mine-only chaos-region encounters; use in the pack's diamond equipment recipes. Existing Diamond Termite shard drops are unchanged and receive no second bonus."
+    }
+  ]
+}

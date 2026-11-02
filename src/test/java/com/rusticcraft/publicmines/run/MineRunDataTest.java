@@ -28,12 +28,32 @@ class MineRunDataTest {
         CompoundTag saved = original.save(new CompoundTag(), null);
         MineRunData restored = MineRunData.load(saved, null);
 
-        assertEquals(6, restored.schema());
+        assertEquals(7, restored.schema());
         assertEquals(RunStatus.READY, restored.status());
         assertEquals("standard", restored.topologyProfile());
         assertEquals("a".repeat(64), restored.topologyFingerprint());
         assertEquals(42, restored.topologyNodes());
         assertEquals(41, restored.topologyEdges());
+    }
+
+    @Test
+    void mineRewardClaimIsTrackedOncePersistsAndClearsWithRun() {
+        MineRunData data = readyRun();
+        OwnedVolume owned = ownedVolume("reward_region", -16, -64, -16, 255, 320, 255);
+        data.addOwnedVolume(owned);
+        java.util.UUID mob = java.util.UUID.randomUUID();
+        assertTrue(data.registerMineEntity(mob, ResourceLocation.parse("minecraft:zombie"),
+                MineManager.MINE_DIMENSION, new BlockPos(4, 20, 4), "encounter:test:node", "upper"));
+
+        assertTrue(data.claimMineReward(mob));
+        assertFalse(data.claimMineReward(mob), "same encounter cannot claim twice");
+        assertTrue(data.unregisterMineEntity(mob));
+
+        MineRunData restored = MineRunData.load(data.save(new CompoundTag(), null), null);
+        assertTrue(restored.hasClaimedMineReward(mob), "death claim must outlive provenance unregister");
+        assertFalse(restored.claimMineReward(mob), "untracked stale UUID cannot claim after reload");
+        restored.beginNewRun("2026-11-03-2", 2, 84L, "2026-11-03");
+        assertFalse(restored.hasClaimedMineReward(mob), "claims are scoped to one daily run");
     }
 
     @Test
@@ -50,7 +70,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(6, migrated.schema());
+        assertEquals(7, migrated.schema());
         assertEquals(RunStatus.FAILED, migrated.status());
         assertTrue(migrated.lastError().contains("/publicmine recover repair"));
     }
@@ -58,14 +78,14 @@ class MineRunDataTest {
     @Test
     void futureSchemaFailsClosedAndIsPreservedVerbatim() {
         CompoundTag future = new CompoundTag();
-        future.putInt("schema", 7);
+        future.putInt("schema", 8);
         future.putString("status", RunStatus.READY.name());
         future.putString("futureField", "owned by newer mod version");
         CompoundTag original = future.copy();
 
         MineRunData loaded = MineRunData.load(future, null);
 
-        assertEquals(7, loaded.schema());
+        assertEquals(8, loaded.schema());
         assertTrue(loaded.hasUnsupportedSchema());
         assertEquals(RunStatus.FAILED, loaded.status());
         assertTrue(loaded.lastError().contains("update Public Mines"));
@@ -116,7 +136,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema2, null);
 
-        assertEquals(6, migrated.schema());
+        assertEquals(7, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertEquals("a".repeat(64), migrated.topologyFingerprint());
         assertEquals("", migrated.generationPlanFingerprint());
@@ -136,7 +156,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema3, null);
 
-        assertEquals(6, migrated.schema());
+        assertEquals(7, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertTrue(migrated.safeZones().isEmpty());
         assertTrue(migrated.mineOreOrigins().isEmpty());
@@ -310,7 +330,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(6, migrated.schema());
+        assertEquals(7, migrated.schema());
         assertTrue(migrated.mineEntities().isEmpty());
         assertFalse(migrated.hasClaimedEncounterSite("node:m001"));
     }
@@ -329,7 +349,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(6, migrated.schema());
+        assertEquals(7, migrated.schema());
         assertTrue(migrated.mineEntities().isEmpty());
         assertTrue(migrated.hasClaimedEncounterSite("node:m001"));
     }

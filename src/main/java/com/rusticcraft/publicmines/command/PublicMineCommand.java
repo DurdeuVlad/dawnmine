@@ -11,6 +11,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.generation.OreCatalog;
+import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineRunData;
 import com.rusticcraft.publicmines.run.OwnedVolume;
@@ -46,6 +47,8 @@ public final class PublicMineCommand {
 
         root.then(literal("help").executes(ctx -> help(ctx.getSource())));
         root.then(literal("status").executes(ctx -> status(ctx.getSource())));
+        root.then(literal("rewards").requires(src -> src.hasPermission(ADMIN_LEVEL))
+                .executes(ctx -> rewardStatus(ctx.getSource())));
         root.then(literal("enter").executes(ctx -> enter(ctx)));
         root.then(literal("leave").executes(ctx -> leave(ctx)));
         root.then(literal("exit").executes(ctx -> leave(ctx)));
@@ -98,6 +101,7 @@ public final class PublicMineCommand {
             lines.add("");
             lines.add("Staff commands (operator level " + ADMIN_LEVEL + "+):");
             lines.add("  /publicmine status            - full run diagnostics");
+            lines.add("  /publicmine rewards           - show depth combat bonus rates and purposes");
             lines.add("  /publicmine setup validate    - check what is missing");
             lines.add("  /publicmine setup initialize  - create or repair the mine (safe to re-run)");
             lines.add("  /publicmine config get [key]  - show settings");
@@ -166,6 +170,12 @@ public final class PublicMineCommand {
                 : "off (default)"));
         lines.add("Next steps: '/publicmine setup validate' for checks, '/publicmine help' for commands.");
         MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static int rewardStatus(CommandSourceStack src) {
+        MineMessages.tell(src, "Configured mine combat bonuses: " + MineRewardCatalog.adminSummary());
+        MineMessages.tell(src, "These per-encounter rates are configurable by data pack; final balance is subject to M8 playtests.");
         return 1;
     }
 

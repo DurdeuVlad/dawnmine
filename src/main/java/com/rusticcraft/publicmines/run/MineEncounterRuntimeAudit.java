@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.encounter.MineEncounterCatalog;
 import com.rusticcraft.publicmines.encounter.MineEncounterManager;
+import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
 import com.rusticcraft.publicmines.topology.NodeKind;
 import com.rusticcraft.publicmines.topology.TopoNode;
 import com.rusticcraft.publicmines.topology.TopoPos;
@@ -27,15 +28,18 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.common.NeoForge;
 
 /** Isolated, opt-in exact-pack audit for native infected-ore encounters inside the mine. */
 public final class MineEncounterRuntimeAudit {
@@ -56,7 +60,7 @@ public final class MineEncounterRuntimeAudit {
             failures = List.copyOf(failures);
         }
 
-        public boolean passed() { return cases == INFECTED_ORES.size() + 6 && failures.isEmpty(); }
+        public boolean passed() { return cases == INFECTED_ORES.size() + 12 && failures.isEmpty(); }
     }
 
     public static Result run(ServerLevel mine) {
@@ -105,6 +109,7 @@ public final class MineEncounterRuntimeAudit {
         completed += failures.isEmpty() && evidence.stream()
                 .anyMatch(line -> line.startsWith("missing runtime entity:")) ? 1 : 0;
         Map<BlockPos, BlockState> originalBlocks = new LinkedHashMap<>();
+        Set<UUID> createdAuditDrops = new java.util.HashSet<>();
         try {
             var cookie = CommonListenerCookie.createInitial(
                     new GameProfile(UUID.randomUUID(), "mine-encounter-audit"), false);
@@ -183,10 +188,13 @@ public final class MineEncounterRuntimeAudit {
                 }
             }
             completed += auditScheduledEncounters(mine, manager, data, originalBlocks, evidence, failures);
+            completed += auditCombatRewards(mine, data, player, originalBlocks, createdAuditDrops,
+                    evidence, failures);
         } catch (RuntimeException exception) {
             failures.add(exception.getClass().getSimpleName() + ": " + exception.getMessage());
         } finally {
             MineEncounterManager.cleanupRun(mine, data, data.runId());
+            removeAuditDrops(mine, createdAuditDrops);
             restoreBlocks(mine, originalBlocks);
             if (connection != null) connection.disconnect(Component.literal("M4a exact-pack audit complete"));
             data.restoreSnapshot(original, mine.registryAccess());
@@ -305,6 +313,205 @@ public final class MineEncounterRuntimeAudit {
         }
         MineEncounterManager.cleanupRun(mine, data, data.runId());
         return cases;
+    }
+
+    private static int auditCombatRewards(ServerLevel mine, MineRunData data,
+            ServerPlayer player, Map<BlockPos, BlockState> originalBlocks,
+            Set<UUID> createdAuditDrops, List<String> evidence, List<String> failures) {
+        int cases = 0;
+        MineRewardCatalog.Reward upperReward = MineRewardCatalog.forTier("upper");
+        if (upperReward == null || BuiltInRegistries.ITEM.getOptional(upperReward.itemId()).isEmpty()) {
+            failures.add("upper combat reward or its runtime item is unavailable");
+            return cases;
+        }
+        BlockPos center = new BlockPos(500, 90, 500);
+        preparePlatform(mine, originalBlocks, center, true);
+        var type = BuiltInRegistries.ENTITY_TYPE.getOptional(
+                ResourceLocation.parse("born_in_chaos_v1:decrepit_skeleton")).orElse(null);
+        if (type == null) {
+            failures.add("decrepit skeleton entity for combat reward audit is unavailable");
+            return cases;
+        }
+        int before = countItem(player, upperReward.itemId());
+        Mob rewarded = null;
+        DamageSource playerAttack = mine.damageSources().playerAttack(player);
+        // At the bundled 20% upper-tier rate, 64 independent eligible kills
+        // make a healthy reward smoke test while keeping this opt-in audit fast.
+        for (int index = 0; index < 64 && rewarded == null; index++) {
+            BlockPos pos = center.offset(index % 4, 0, index % 4);
+            Entity created = type.create(mine);
+            if (!(created instanceof Mob mob) || !(mob instanceof Enemy)) {
+                if (created != null) created.discard();
+                failures.add("decrepit skeleton did not create a hostile Mob");
+                return cases;
+            }
+            mob.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);
+            mob.getPersistentData().putString("publicminesRunId", data.runId());
+            mob.getPersistentData().putString("publicminesSourceId", "encounter:upper_lone_pursuer:m4b_reward_audit");
+            mob.getPersistentData().putString("publicminesRegion", "upper");
+            if (!mine.addFreshEntity(mob) || !data.isTrackedMineEntity(mob.getUUID())) {
+                mob.discard();
+                failures.add("eligible combat reward fixture was not tracked by the mine");
+                return cases;
+            }
+            player.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);
+            // Post the real NeoForge death callback with a direct player damage
+            // source. Calling hurt() triggers third-party Werewolves sync for
+            // this offline audit player, which requires a real modded client.
+            postAuditDeath(mob, playerAttack);
+            if (countItem(player, upperReward.itemId()) > before) rewarded = mob;
+            if (rewarded == null) mob.discard();
+        }
+        if (rewarded == null) {
+            failures.add("64 direct upper-tier player kills produced no configured combat reward");
+            return cases;
+        }
+        cases++;
+        int afterReward = countItem(player, upperReward.itemId());
+        evidence.add("upper direct-player death callback: item=" + upperReward.itemId() + ", count="
+                + (afterReward - before) + ", configured rate=" + upperReward.chancePercent() + "%");
+
+        postAuditDeath(rewarded, playerAttack);
+        if (countItem(player, upperReward.itemId()) == afterReward
+                && data.hasClaimedMineReward(rewarded.getUUID())) {
+            cases++;
+            evidence.add("duplicate death callback: no duplicate bonus");
+        } else {
+            failures.add("replayed death callback granted a duplicate combat bonus");
+        }
+        rewarded.discard();
+
+        int beforeEnvironmental = countItem(player, upperReward.itemId());
+        BlockPos environmentalPos = center.offset(300, 0, 0);
+        Mob environmental = trackedAuditMob(mine, data, type, environmentalPos,
+                "encounter:upper_lone_pursuer:m4b_environmental_audit");
+        if (environmental == null) {
+            failures.add("could not create environmental eligibility fixture");
+        } else {
+            postAuditDeath(environmental, mine.damageSources().inFire());
+        }
+        if (environmental == null || countItem(player, upperReward.itemId()) != beforeEnvironmental) {
+            failures.add("environmental encounter death was not excluded from mine bonuses");
+        } else {
+            cases++;
+            evidence.add("environmental kill: no combat bonus");
+        }
+        if (environmental != null) environmental.discard();
+
+        int beforeMobAttacker = countItem(player, upperReward.itemId());
+        BlockPos mobAttackerPos = center.offset(40, 0, 0);
+        Mob mobAttackerTarget = trackedAuditMob(mine, data, type, mobAttackerPos,
+                "encounter:upper_lone_pursuer:m4b_mob_attacker_audit");
+        Entity attackerEntity = EntityType.ZOMBIE.create(mine);
+        if (mobAttackerTarget == null || !(attackerEntity instanceof Mob hostileAttacker)) {
+            if (attackerEntity != null) attackerEntity.discard();
+            failures.add("could not create non-player combat attribution fixtures");
+        } else {
+            hostileAttacker.moveTo(mobAttackerPos.getX() + 1.0, mobAttackerPos.getY(),
+                    mobAttackerPos.getZ() + 0.5, 0.0F, 0.0F);
+            mine.addFreshEntity(hostileAttacker);
+            postAuditDeath(mobAttackerTarget, mine.damageSources().mobAttack(hostileAttacker));
+            if (countItem(player, upperReward.itemId()) == beforeMobAttacker) {
+                cases++;
+                evidence.add("non-player mob kill: no combat bonus");
+            } else {
+                failures.add("non-player mob kill received a mine combat bonus");
+            }
+            mobAttackerTarget.discard();
+            hostileAttacker.discard();
+        }
+
+        int beforeOutside = countItem(player, upperReward.itemId());
+        BlockPos outsidePos = new BlockPos(PublicMineConfig.mineRegionRadiusChunks() * 16 + 64, 90, 1200);
+        Mob outside = trackedAuditMob(mine, data, type, center.offset(100, 0, 0),
+                "encounter:upper_lone_pursuer:m4b_outside_audit");
+        if (outside == null) {
+            failures.add("could not create outside-bound eligibility fixture");
+        } else {
+            outside.moveTo(outsidePos.getX() + 0.5, outsidePos.getY(), outsidePos.getZ() + 0.5, 0.0F, 0.0F);
+            mine.getChunkAt(outsidePos);
+            postAuditDeath(outside, playerAttack);
+            if (countItem(player, upperReward.itemId()) == beforeOutside) {
+                cases++;
+                evidence.add("tracked encounter killed outside owned mine bounds: no bonus");
+            } else {
+                failures.add("tracked encounter killed outside owned mine bounds received a bonus");
+            }
+            outside.discard();
+        }
+
+        int beforeNatural = countItem(player, upperReward.itemId());
+        Mob natural = (Mob) type.create(mine);
+        if (natural != null) {
+            natural.moveTo(center.getX() + 0.5, center.getY(), center.getZ() + 0.5, 0.0F, 0.0F);
+            mine.addFreshEntity(natural);
+            postAuditDeath(natural, playerAttack);
+        }
+        if (natural != null && countItem(player, upperReward.itemId()) == beforeNatural) {
+            cases++;
+            evidence.add("untracked natural mob player kill: no mine bonus");
+        } else {
+            failures.add("untracked natural mob received a mine combat bonus");
+        }
+        if (natural != null) natural.discard();
+        return cases;
+    }
+
+    private static void postAuditDeath(Mob mob, DamageSource source) {
+        try {
+            var constructor = MineEncounterManager.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            constructor.newInstance().onTrackedMobDeath(
+                    new net.neoforged.neoforge.event.entity.living.LivingDeathEvent(mob, source));
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Could not invoke the mine death listener audit", exception);
+        }
+    }
+
+    private static Mob trackedAuditMob(ServerLevel mine, MineRunData data,
+            net.minecraft.world.entity.EntityType<?> type, BlockPos pos, String sourceId) {
+        mine.getChunkAt(pos);
+        Entity created = type.create(mine);
+        if (!(created instanceof Mob mob) || !(mob instanceof Enemy)) {
+            if (created != null) created.discard();
+            return null;
+        }
+        mob.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0.0F, 0.0F);
+        mob.getPersistentData().putString("publicminesRunId", data.runId());
+        mob.getPersistentData().putString("publicminesSourceId", sourceId);
+        mob.getPersistentData().putString("publicminesRegion", "upper");
+        if (!mine.addFreshEntity(mob) || !data.isTrackedMineEntity(mob.getUUID())) {
+            mob.discard();
+            return null;
+        }
+        return mob;
+    }
+
+    private static int countItem(ServerPlayer player, ResourceLocation itemId) {
+        var item = BuiltInRegistries.ITEM.getOptional(itemId).orElse(null);
+        if (item == null) return 0;
+        return player.getInventory().items.stream()
+                .filter(stack -> stack.is(item))
+                .mapToInt(ItemStack::getCount).sum();
+    }
+
+    private static void recordAuditDrops(ServerLevel mine, BlockPos center,
+                                         Set<UUID> existingItems, Set<UUID> ownedDrops) {
+        mine.getEntitiesOfClass(ItemEntity.class, new AABB(center).inflate(4.0))
+                .stream().map(Entity::getUUID).filter(id -> !existingItems.contains(id))
+                .forEach(ownedDrops::add);
+    }
+
+    private static Set<UUID> itemIdsNear(ServerLevel mine, BlockPos center) {
+        return mine.getEntitiesOfClass(ItemEntity.class, new AABB(center).inflate(4.0)).stream()
+                .map(Entity::getUUID).collect(java.util.stream.Collectors.toSet());
+    }
+
+    private static void removeAuditDrops(ServerLevel mine, Set<UUID> ownedDrops) {
+        for (UUID id : ownedDrops) {
+            Entity entity = mine.getEntity(id);
+            if (entity instanceof ItemEntity) entity.discard();
+        }
     }
 
     private static boolean addEncounterFixtures(ServerLevel mine, MineRunData data,
