@@ -5,6 +5,8 @@ import com.rusticcraft.publicmines.command.PublicMineCommand;
 import com.rusticcraft.publicmines.command.OreBreakAuditCommand;
 import com.rusticcraft.publicmines.command.MineEncounterAuditCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.dispatch.DispatchManager;
+import com.rusticcraft.publicmines.dispatch.DispatchGameTests;
 import com.rusticcraft.publicmines.generation.MineGenerator;
 import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
@@ -23,9 +25,11 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.slf4j.Logger;
@@ -52,6 +56,7 @@ public class PublicMines {
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
@@ -65,6 +70,7 @@ public class PublicMines {
         event.register(MineProtectionGameTests.class);
         event.register(MineEncounterGameTests.class);
         event.register(OreBreakGameTests.class);
+        event.register(DispatchGameTests.class);
     }
 
     private void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -82,6 +88,13 @@ public class PublicMines {
     }
 
     private void onServerTick(ServerTickEvent.Post event) {
+        DispatchManager.get(event.getServer()).tick();
         MineGenerator.get(event.getServer()).onServerTick(event);
+    }
+
+    private void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            DispatchManager.get(player.getServer()).onPlayerLogout(player);
+        }
     }
 }

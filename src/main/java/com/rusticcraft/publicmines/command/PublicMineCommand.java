@@ -9,6 +9,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.dispatch.DispatchManager;
 import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
@@ -61,6 +62,7 @@ public final class PublicMineCommand {
                 .then(argument("id", StringArgumentType.word()).suggests(CHECKPOINT_IDS)
                         .executes(ctx -> checkpoint(ctx.getSource(),
                                 StringArgumentType.getString(ctx, "id")))));
+        root.then(literal("dispatch").executes(PublicMineCommand::dispatch));
 
         root.then(literal("setup").requires(src -> src.hasPermission(ADMIN_LEVEL))
                 .executes(ctx -> setupUsage(ctx.getSource()))
@@ -108,6 +110,7 @@ public final class PublicMineCommand {
         lines.add("  /publicmine leave   - return to the surface (also: exit)");
         lines.add("  /publicmine checkpoints - list shared generated checkpoints");
         lines.add("  /publicmine checkpoint <id> - travel to a generated checkpoint");
+        lines.add("  /publicmine dispatch - open your private 54-slot Foreman's Dispatch at a checkpoint or surface depot");
         if (admin) {
             lines.add("");
             lines.add("Staff commands (operator level " + ADMIN_LEVEL + "+):");
@@ -309,6 +312,16 @@ public final class PublicMineCommand {
                 yield 0;
             }
         };
+    }
+
+    private static int dispatch(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack src = ctx.getSource();
+        ServerPlayer player = src.getPlayer();
+        if (player == null) {
+            MineMessages.tell(src, "Only in-game players can open Foreman's Dispatch.");
+            return 0;
+        }
+        return DispatchManager.get(src.getServer()).open(player) ? 1 : 0;
     }
 
     // ------------------------------------------------------------------
