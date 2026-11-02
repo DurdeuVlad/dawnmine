@@ -1,0 +1,80 @@
+{
+  "id": "standard",
+  "totalPopulationCap": 28,
+  "regions": [
+    {
+      "id": "upper",
+      "populationCap": 8,
+      "compositions": [
+        {
+          "id": "upper_lone_pursuer",
+          "weight": 3,
+          "threat": "One Born in Chaos melee pursuer pressures players who stop to mine.",
+          "counterplay": "Keep a clear retreat lane and use corners to break pursuit.",
+          "entities": [
+            { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 1 }
+          ]
+        },
+        {
+          "id": "upper_two_pursuers",
+          "weight": 1,
+          "threat": "Two melee pursuers make a narrow dead end costly to hold.",
+          "counterplay": "Retreat through a wider junction and avoid letting both close together.",
+          "entities": [
+            { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "middle",
+      "populationCap": 12,
+      "compositions": [
+        {
+          "id": "middle_melee_pair",
+          "weight": 3,
+          "threat": "A quicker armored melee fighter contests space alongside a pursuer.",
+          "counterplay": "Focus one target, kite around a junction, and avoid being cornered.",
+          "entities": [
+            { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 1 },
+            { "id": "born_in_chaos_v1:bone_imp", "count": 1 }
+          ]
+        },
+        {
+          "id": "middle_two_imp_push",
+          "weight": 1,
+          "threat": "Two fast melee attackers can close from different angles.",
+          "counterplay": "Use the room perimeter, keep moving, and regroup before re-engaging.",
+          "entities": [
+            { "id": "born_in_chaos_v1:bone_imp", "count": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chaos",
+      "populationCap": 16,
+      "compositions": [
+        {
+          "id": "chaos_imp_and_pursuers",
+          "weight": 3,
+          "threat": "An armored, faster attacker and two pursuers divide attention in a large chamber.",
+          "counterplay": "Coordinate target focus, keep the exit visible, and use distance to reset the fight.",
+          "entities": [
+            { "id": "born_in_chaos_v1:bone_imp", "count": 1 },
+            { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 2 }
+          ]
+        },
+        {
+          "id": "chaos_imp_surge",
+          "weight": 1,
+          "threat": "Three fast armored attackers create a mobile swarm rather than a stationary damage race.",
+          "counterplay": "Fight from open space, call focus targets, and peel attackers off teammates.",
+          "entities": [
+            { "id": "born_in_chaos_v1:bone_imp", "count": 3 }
+          ]
+        }
+      ]
+    }
+  ]
+}

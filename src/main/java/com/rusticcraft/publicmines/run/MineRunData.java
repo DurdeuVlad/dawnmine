@@ -31,12 +31,17 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 4;
+    private static final int SCHEMA = 6;
     static final int MAX_GENERATION_SEGMENTS = 16_384;
     static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
     static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;
     static final int MAX_SAFE_ZONES = 1_024;
     static final int MAX_MINE_ORE_ORIGINS = 65_536;
+    static final int MAX_MINE_ENTITIES = 16_384;
+    static final int MAX_ENCOUNTER_SITE_CLAIMS = 16_384;
+    static final int MAX_ENCOUNTER_SITE_ID_LENGTH = 128;
+    static final int MAX_MINE_ENTITY_SOURCE_LENGTH = 128;
+    static final int MAX_MINE_ENTITY_REGION_LENGTH = 64;
 
     private int schema = SCHEMA;
     private RunStatus status = RunStatus.UNINITIALIZED;
@@ -77,6 +82,8 @@ public class MineRunData extends SavedData {
     private final List<OwnedVolume> ownedVolumes = new ArrayList<>();
     private final LinkedHashMap<ResourceLocation, SafeZone> safeZones = new LinkedHashMap<>();
     private final LinkedHashMap<OrePosition, MineOreOrigin> mineOreOrigins = new LinkedHashMap<>();
+    private final LinkedHashMap<UUID, MineEntityOrigin> mineEntities = new LinkedHashMap<>();
+    private final LinkedHashSet<String> encounterSiteClaims = new LinkedHashSet<>();
     /** Per-player surface return position captured on entry. */
     private final Map<UUID, ReturnPoint> returnPoints = new HashMap<>();
 
@@ -88,6 +95,13 @@ public class MineRunData extends SavedData {
     }
     public record MineOreOrigin(String runId, ResourceKey<Level> dimension,
                                 BlockPos pos, ResourceLocation blockId) {}
+    public record MineEntityOrigin(UUID uuid, String runId, ResourceLocation entityType,
+                                   ResourceKey<Level> dimension, BlockPos pos,
+                                   String sourceId, String region) {
+        public MineEntityOrigin {
+            pos = pos.immutable();
+        }
+    }
     private record OrePosition(ResourceKey<Level> dimension, BlockPos pos) {}
 
     public static SavedData.Factory<MineRunData> factory() {
@@ -154,6 +168,21 @@ public class MineRunData extends SavedData {
             oreOrigins.add(savedOrigin);
         }
         tag.put("mineOreOrigins", oreOrigins);
+        ListTag mineEntityTags = new ListTag();
+        for (MineEntityOrigin origin : mineEntities.values()) {
+            CompoundTag savedOrigin = new CompoundTag();
+            savedOrigin.putString("uuid", origin.uuid().toString());
+            savedOrigin.putString("runId", origin.runId());
+            savedOrigin.putString("entityType", origin.entityType().toString());
+            savedOrigin.putString("dim", origin.dimension().location().toString());
+            savedOrigin.putIntArray("pos", new int[] {
+                    origin.pos().getX(), origin.pos().getY(), origin.pos().getZ()});
+            savedOrigin.putString("sourceId", origin.sourceId());
+            savedOrigin.putString("region", origin.region());
+            mineEntityTags.add(savedOrigin);
+        }
+        tag.put("mineEntities", mineEntityTags);
+        tag.put("encounterSiteClaims", saveStringSet(encounterSiteClaims));
         CompoundTag returns = new CompoundTag();
         for (Map.Entry<UUID, ReturnPoint> entry : returnPoints.entrySet()) {
             ReturnPoint r = entry.getValue();
@@ -211,6 +240,10 @@ public class MineRunData extends SavedData {
         safeZones.putAll(restored.safeZones);
         mineOreOrigins.clear();
         mineOreOrigins.putAll(restored.mineOreOrigins);
+        mineEntities.clear();
+        mineEntities.putAll(restored.mineEntities);
+        encounterSiteClaims.clear();
+        encounterSiteClaims.addAll(restored.encounterSiteClaims);
         returnPoints.clear();
         returnPoints.putAll(restored.returnPoints);
         setDirty();
@@ -269,6 +302,8 @@ public class MineRunData extends SavedData {
             }
         }
         data.loadMineProtectionState(tag, savedSchema);
+        data.loadMineEntityOrigins(tag, savedSchema);
+        data.loadEncounterSiteClaims(tag, savedSchema);
         CompoundTag returns = tag.getCompound("returnPoints");
         for (String key : returns.getAllKeys()) {
             CompoundTag rt = returns.getCompound(key);
@@ -442,6 +477,69 @@ public class MineRunData extends SavedData {
         }
     }
 
+    private void loadMineEntityOrigins(CompoundTag tag, int savedSchema) {
+        if (savedSchema < 6) {
+            return;
+        }
+        ListTag origins = tag.getList("mineEntities", Tag.TAG_COMPOUND);
+        if (origins.size() > MAX_MINE_ENTITIES) {
+            mineEntities.clear();
+            markFailed("saved mine-entity count exceeds the supported limit; run '/publicmine recover repair'");
+            return;
+        }
+        for (Tag element : origins) {
+            try {
+                CompoundTag saved = (CompoundTag) element;
+                UUID uuid = UUID.fromString(saved.getString("uuid"));
+                String savedRunId = saved.getString("runId");
+                ResourceLocation entityType = ResourceLocation.parse(saved.getString("entityType"));
+                ResourceLocation dimensionId = ResourceLocation.parse(saved.getString("dim"));
+                int[] coordinates = saved.getIntArray("pos");
+                if (coordinates.length != 3) continue;
+                BlockPos pos = new BlockPos(coordinates[0], coordinates[1], coordinates[2]);
+                String sourceId = saved.getString("sourceId");
+                String region = saved.getString("region");
+                ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
+                if (!savedRunId.equals(runId) || sourceId.isBlank()
+                        || sourceId.length() > MAX_MINE_ENTITY_SOURCE_LENGTH
+                        || region.isBlank() || region.length() > MAX_MINE_ENTITY_REGION_LENGTH
+                        || !dimension.equals(MineManager.MINE_DIMENSION) || !isOwned(dimension, pos)) {
+                    continue;
+                }
+                mineEntities.putIfAbsent(uuid, new MineEntityOrigin(uuid, savedRunId,
+                        entityType, dimension, pos, sourceId, region));
+            } catch (RuntimeException ignored) {
+                // An invalid entity-origin record must not grant mine ownership.
+            }
+        }
+    }
+
+    private void loadEncounterSiteClaims(CompoundTag tag, int savedSchema) {
+        if (savedSchema < 5 || !tag.contains("encounterSiteClaims")) {
+            return;
+        }
+        Tag stored = tag.get("encounterSiteClaims");
+        if (!(stored instanceof ListTag list)) {
+            markFailed("saved encounter-site claims are malformed; run '/publicmine recover repair'");
+            return;
+        }
+        if (list.size() > MAX_ENCOUNTER_SITE_CLAIMS) {
+            markFailed("saved encounter-site claim count exceeds the supported limit; run '/publicmine recover repair'");
+        }
+        int limit = Math.min(list.size(), MAX_ENCOUNTER_SITE_CLAIMS);
+        for (int i = 0; i < limit; i++) {
+            Tag value = list.get(i);
+            if (!(value instanceof net.minecraft.nbt.StringTag stringTag)) {
+                markFailed("saved encounter-site claims contain a non-string entry; run '/publicmine recover repair'");
+                continue;
+            }
+            String siteId = stringTag.getAsString();
+            if (isValidEncounterSiteId(siteId)) {
+                encounterSiteClaims.add(siteId);
+            }
+        }
+    }
+
     private void readSegmentIds(CompoundTag tag, String key, LinkedHashSet<String> destination) {
         if (!tag.contains(key)) {
             return;
@@ -531,6 +629,15 @@ public class MineRunData extends SavedData {
     public List<OwnedVolume> ownedVolumes() { return List.copyOf(ownedVolumes); }
     public List<SafeZone> safeZones() { return List.copyOf(safeZones.values()); }
     public List<MineOreOrigin> mineOreOrigins() { return List.copyOf(mineOreOrigins.values()); }
+    public List<MineEntityOrigin> mineEntities() { return List.copyOf(mineEntities.values()); }
+    public MineEntityOrigin mineEntity(UUID uuid) { return uuid == null ? null : mineEntities.get(uuid); }
+    public boolean isTrackedMineEntity(UUID uuid) {
+        MineEntityOrigin origin = uuid == null ? null : mineEntities.get(uuid);
+        return origin != null && origin.runId().equals(runId);
+    }
+    public boolean hasClaimedEncounterSite(String siteId) {
+        return isValidEncounterSiteId(siteId) && encounterSiteClaims.contains(siteId);
+    }
     public String generationPlanFingerprint() { return generationPlanFingerprint; }
     public boolean generationNetherrackEnabled() { return generationNetherrackEnabled; }
     public int generationNetherrackInterval() { return generationNetherrackInterval; }
@@ -567,6 +674,8 @@ public class MineRunData extends SavedData {
         this.ownedVolumes.clear();
         this.safeZones.clear();
         this.mineOreOrigins.clear();
+        this.mineEntities.clear();
+        this.encounterSiteClaims.clear();
         this.returnPoints.clear();
         this.status = RunStatus.INITIALIZING;
         setDirty();
@@ -698,6 +807,65 @@ public class MineRunData extends SavedData {
             return true;
         }
         return false;
+    }
+
+    /** Registers an entity owned by the active mine run at an owned position. */
+    public boolean registerMineEntity(UUID uuid, ResourceLocation entityType,
+                                      ResourceKey<Level> dimension, BlockPos pos,
+                                      String sourceId, String region) {
+        if (runId.isBlank() || uuid == null || entityType == null || dimension == null || pos == null
+                || !dimension.equals(MineManager.MINE_DIMENSION) || !isOwned(dimension, pos)
+                || sourceId == null || sourceId.isBlank()
+                || sourceId.length() > MAX_MINE_ENTITY_SOURCE_LENGTH
+                || region == null || region.isBlank()
+                || region.length() > MAX_MINE_ENTITY_REGION_LENGTH) {
+            return false;
+        }
+        MineEntityOrigin candidate = new MineEntityOrigin(uuid, runId, entityType,
+                dimension, pos, sourceId, region);
+        MineEntityOrigin previous = mineEntities.get(uuid);
+        if (previous != null) {
+            return previous.equals(candidate);
+        }
+        if (mineEntities.size() >= MAX_MINE_ENTITIES) {
+            return false;
+        }
+        mineEntities.put(uuid, candidate);
+        setDirty();
+        return true;
+    }
+
+    public boolean unregisterMineEntity(UUID uuid) {
+        if (uuid == null || mineEntities.remove(uuid) == null) {
+            return false;
+        }
+        setDirty();
+        return true;
+    }
+
+    /** Claims a deterministic encounter site once for this run before spawning any entities there. */
+    public boolean claimEncounterSite(String siteId) {
+        if (!isValidEncounterSiteId(siteId) || encounterSiteClaims.size() >= MAX_ENCOUNTER_SITE_CLAIMS
+                || encounterSiteClaims.contains(siteId)) {
+            return false;
+        }
+        encounterSiteClaims.add(siteId);
+        setDirty();
+        return true;
+    }
+
+    private static boolean isValidEncounterSiteId(String siteId) {
+        if (siteId == null || siteId.isBlank() || siteId.length() > MAX_ENCOUNTER_SITE_ID_LENGTH) {
+            return false;
+        }
+        for (int i = 0; i < siteId.length(); i++) {
+            char c = siteId.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9') || c == ':' || c == '_' || c == '-')) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isOwned(Level level, BlockPos pos) {

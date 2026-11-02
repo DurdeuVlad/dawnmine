@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
@@ -51,6 +52,7 @@ import net.neoforged.neoforge.event.level.PistonEvent;
 import net.neoforged.neoforge.event.level.BlockEvent.FluidPlaceBlockEvent;
 import net.neoforged.neoforge.event.level.BlockEvent.BlockToolModificationEvent;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import org.slf4j.Logger;
 
 /** Server-side interaction, terrain, and combat protections for the active public mine. */
@@ -305,6 +307,47 @@ public final class MineProtectionEvents {
         if (launchedInSafeZone) {
             projectile.getPersistentData().putBoolean(SAFE_ZONE_LAUNCH_TAG, true);
         }
+    }
+
+    /** Hostile entities loaded or spawned inside an active safe zone never join the world. */
+    @SubscribeEvent
+    public void onHostileJoinSafeZone(EntityJoinLevelEvent event) {
+        Entity hostile = event.getEntity();
+        if (!(hostile instanceof Enemy)
+                || !(event.getLevel() instanceof ServerLevel level)
+                || !isMineWorld(level)) return;
+        MineRunData data = MineManager.get(level.getServer()).data();
+        if (intersectsSafeZone(data, level, hostile)) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** Also removes hostiles that walk or teleport into a zone after joining. */
+    @SubscribeEvent
+    public void onHostileTickInSafeZone(EntityTickEvent.Pre event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Enemy)
+                || !(entity.level() instanceof ServerLevel level)
+                || !isMineWorld(level)) return;
+        MineRunData data = MineManager.get(level.getServer()).data();
+        if (intersectsSafeZone(data, level, entity)) {
+            entity.discard();
+        }
+    }
+
+    private static boolean intersectsSafeZone(MineRunData data, ServerLevel level, Entity entity) {
+        AABB bounds = entity.getBoundingBox();
+        String activeRunId = data.runId();
+        return data.safeZones().stream()
+                .filter(zone -> zone.runId().equals(activeRunId)
+                        && zone.volume().dimension().equals(level.dimension()))
+                .map(MineRunData.SafeZone::volume)
+                .anyMatch(volume -> bounds.maxX > volume.min().getX()
+                        && bounds.minX < volume.max().getX() + 1.0
+                        && bounds.maxY > volume.min().getY()
+                        && bounds.minY < volume.max().getY() + 1.0
+                        && bounds.maxZ > volume.min().getZ()
+                        && bounds.minZ < volume.max().getZ() + 1.0);
     }
 
     private static boolean hasSafeZoneProjectileOrigin(List<Entity> sources) {
