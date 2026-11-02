@@ -213,7 +213,12 @@ A second review of the committed PR head found and resolved:
   logic, and if truly nothing is safe the player stays in the mine and the
   command reports failure.
 - **Malformed SavedData risk:** invalid persisted dimension ids and corrupt
-  `OwnedVolume` entries can no longer throw inside the load path.
+  `OwnedVolume`/return-point entries can no longer throw inside the load
+  path (`ResourceLocationException` is not an `IllegalArgumentException`;
+  the return-point loop now catches `RuntimeException`).
+- **Honest failure reporting:** a failed `/publicmine enter` or `leave`
+  previously told the player "staff have been notified" without notifying
+  anyone; both paths now alert online operators and the server log.
 
 ---
 

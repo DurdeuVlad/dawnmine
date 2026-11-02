@@ -197,7 +197,12 @@ public final class PublicMineCommand {
                         "Mine arrival pad failed its safety check for " + player.getGameProfile().getName()
                                 + "; run '/publicmine recover repair'");
             }
-            case FAILED -> MineMessages.tell(src, "Something went wrong entering the mine - staff have been notified.");
+            case FAILED -> {
+                MineMessages.tell(src, "Something went wrong entering the mine - staff have been notified.");
+                MineMessages.notifyAdmins(src.getServer(), ADMIN_LEVEL,
+                        "Enter teleport failed for " + player.getGameProfile().getName()
+                                + ": " + outcome.detail());
+            }
         }
         return outcome.ok() ? 1 : 0;
     }
@@ -220,6 +225,10 @@ public final class PublicMineCommand {
             }
             case FAILED -> {
                 MineMessages.tell(src, "Something went wrong leaving the mine - staff have been notified.");
+                MineMessages.notifyAdmins(src.getServer(), ADMIN_LEVEL,
+                        "Leave teleport failed for " + player.getGameProfile().getName()
+                                + "; they are still inside the mine (run "
+                                + MineManager.get(src.getServer()).data().runId() + ")");
                 yield 0;
             }
         };

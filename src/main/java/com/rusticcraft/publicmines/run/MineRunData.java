@@ -142,8 +142,9 @@ public class MineRunData extends SavedData {
                 data.returnPoints.put(uuid, new ReturnPoint(
                         dim, rt.getDouble("x"), rt.getDouble("y"), rt.getDouble("z"),
                         rt.getFloat("yaw"), rt.getFloat("pitch")));
-            } catch (IllegalArgumentException ignored) {
-                // drop malformed entries rather than failing the whole load
+            } catch (RuntimeException ignored) {
+                // drop malformed entries (bad UUIDs, bad dimension ids) rather
+                // than failing the whole load
             }
         }
         return data;
