@@ -369,29 +369,36 @@ public class MineManager {
             return LeaveResult.NOT_INSIDE;
         }
         ServerLevel overworld = server.overworld();
-        ServerLevel destination;
-        double x, y, z;
+        ServerLevel destination = overworld;
+        double x = 0.0, y = 0.0, z = 0.0;
         float yaw = 0.0F, pitch = 0.0F;
         MineRunData.ReturnPoint back = data.returnPoint(player.getUUID());
         ServerLevel backLevel = back == null ? null : server.getLevel(back.dimension());
-        if (back != null && backLevel != null
-                && isSafeLanding(backLevel, BlockPos.containing(back.x(), back.y(), back.z()))) {
-            destination = backLevel;
-            x = back.x(); y = back.y(); z = back.z();
-            yaw = back.yaw(); pitch = back.pitch();
-        } else {
+        BlockPos landing = null;
+        if (back != null && backLevel != null) {
+            landing = findSafeLanding(backLevel, BlockPos.containing(back.x(), back.y(), back.z()));
+            if (landing != null) {
+                destination = backLevel;
+                x = back.x(); y = landing.getY(); z = back.z();
+                yaw = back.yaw(); pitch = back.pitch();
+            }
+        }
+        if (landing == null) {
             // No usable return point (or it is no longer safe to stand on):
             // fall back to the recorded surface exit, then world spawn.
-            BlockPos spawn = data.surfaceExit();
-            if (spawn == null || !isSafeLanding(overworld, spawn)) {
-                spawn = overworld.getSharedSpawnPos();
+            for (BlockPos candidate : new BlockPos[] {
+                    data.surfaceExit() != null ? data.surfaceExit() : overworld.getSharedSpawnPos(),
+                    overworld.getSharedSpawnPos()}) {
+                landing = findSafeLanding(destination, candidate);
+                if (landing != null) {
+                    x = landing.getX() + 0.5; y = landing.getY(); z = landing.getZ() + 0.5;
+                    break;
+                }
             }
-            if (!isSafeLanding(overworld, spawn)) {
-                // Nothing safe to teleport to; keep the player where they are.
-                return LeaveResult.FAILED;
-            }
-            destination = overworld;
-            x = spawn.getX() + 0.5; y = spawn.getY(); z = spawn.getZ() + 0.5;
+        }
+        if (landing == null) {
+            // Nothing safe to teleport to; keep the player where they are.
+            return LeaveResult.FAILED;
         }
         try {
             player.teleportTo(destination, x, y, z, yaw, pitch);
@@ -400,6 +407,27 @@ public class MineManager {
         }
         data.clearReturnPoint(player.getUUID());
         return LeaveResult.LEFT;
+    }
+
+    /** The nearest position where a player can stand without falling or
+     * suffocating, searching down first (respawn-style) then a few blocks up. */
+    private BlockPos findSafeLanding(ServerLevel level, BlockPos base) {
+        if (isSafeLanding(level, base)) {
+            return base;
+        }
+        for (int dy = -1; dy >= -32 && base.getY() + dy > level.getMinBuildHeight(); dy--) {
+            BlockPos pos = base.offset(0, dy, 0);
+            if (isSafeLanding(level, pos)) {
+                return pos;
+            }
+        }
+        for (int dy = 1; dy <= 8 && base.getY() + dy < level.getMaxBuildHeight() - 1; dy++) {
+            BlockPos pos = base.offset(0, dy, 0);
+            if (isSafeLanding(level, pos)) {
+                return pos;
+            }
+        }
+        return null;
     }
 
     /** True when a player can stand at pos without falling or suffocating:

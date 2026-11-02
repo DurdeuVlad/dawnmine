@@ -207,9 +207,11 @@ A second review of the committed PR head found and resolved:
 - **Arrival check/teleport mismatch:** `enter()` checked the fixed
   `ARRIVAL` pad but teleported to the persisted arrival point; the safety
   check now validates the actual teleport target.
-- **Unsafe leave fallback:** the surface-exit/world-spawn fallback is now
-  safety-checked with the same landing rule; if no destination is safe the
-  player stays in the mine and the command reports failure.
+- **Unsafe leave fallback:** the stored return point, the surface exit, and
+  world spawn are each validated with a solid-ground+headroom rule; the code
+  scans down (then up) for the nearest safe landing like vanilla respawn
+  logic, and if truly nothing is safe the player stays in the mine and the
+  command reports failure.
 - **Malformed SavedData risk:** invalid persisted dimension ids and corrupt
   `OwnedVolume` entries can no longer throw inside the load path.
 
