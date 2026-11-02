@@ -9,7 +9,9 @@ import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
 import com.rusticcraft.publicmines.gametest.OreBreakGameTests;
 import com.rusticcraft.publicmines.generation.PublicMineWorldgen;
+import com.rusticcraft.publicmines.protection.MineProtectionEvents;
 import com.rusticcraft.publicmines.run.MineManager;
+import com.rusticcraft.publicmines.run.MineProtectionGameTests;
 import com.rusticcraft.publicmines.topology.TopologyProfiles;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -38,6 +40,7 @@ public class PublicMines {
     public PublicMines(IEventBus modEventBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, PublicMineConfig.SPEC);
         PublicMineWorldgen.register(modEventBus);
+        MineProtectionEvents.register();
         modEventBus.addListener(this::onRegisterGameTests);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
@@ -52,6 +55,7 @@ public class PublicMines {
 
     private void onRegisterGameTests(RegisterGameTestsEvent event) {
         event.register(MineLifecycleGameTests.class);
+        event.register(MineProtectionGameTests.class);
         event.register(OreBreakGameTests.class);
     }
 

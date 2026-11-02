@@ -342,6 +342,9 @@ public final class MineGenerator {
         BlockState replacement = blockFor(operation, pos, y);
         BlockState existing = mine.getBlockState(pos);
         if (existing.equals(replacement)) {
+            if (operation.kind() == SegmentGeometry.BlockKind.ORE) {
+                recordOreOrigin(mine, pos, replacement, operation);
+            }
             return false;
         }
         if (!existing.isAir() && !isMinePaletteBlock(existing)) {
@@ -350,7 +353,20 @@ public final class MineGenerator {
             return false;
         }
         mine.setBlock(pos, replacement, Block.UPDATE_CLIENTS);
+        if (operation.kind() == SegmentGeometry.BlockKind.ORE) {
+            recordOreOrigin(mine, pos, replacement, operation);
+        }
         return true;
+    }
+
+    private void recordOreOrigin(ServerLevel mine, BlockPos pos, BlockState expected,
+                                 SegmentGeometry.BlockOperation operation) {
+        ResourceLocation blockId = ResourceLocation.parse(operation.blockId());
+        if (!mine.getBlockState(pos).equals(expected)
+                || !manager.data().recordMineOre(mine, pos, blockId)) {
+            throw new IllegalStateException("could not register generated ore provenance for "
+                    + blockId + " at " + MineManager.describePos(pos));
+        }
     }
 
     private BlockState blockFor(SegmentGeometry.BlockOperation operation, BlockPos pos, int y) {
