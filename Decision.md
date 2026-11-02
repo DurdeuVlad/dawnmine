@@ -4,6 +4,12 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 
 ## Accepted decisions
 
+### Codex is product owner
+
+- Status: Accepted by owner.
+- Decision: Codex owns the product direction, issue/milestone acceptance, and reversible defaults while the server owner is hands-off.
+- Consequence: Devin may choose implementation details that satisfy the contract; product-scope changes and acceptance are decided by Codex. Server operators receive only bounded in-game configuration controls. Production deployment remains separately unauthorized.
+
 ### Progress across days through persistent capability
 
 - Status: Accepted by owner direction (“leave with useful items so you can go even deeper the next time”).
@@ -55,13 +61,26 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 
 - Status: Accepted by owner.
 - Decision: Warn and teleport players still inside to the surface, clear/reseed the shared mine, and preserve player inventories and Dispatch storage.
-- Default schedule: 06:00 in the configured server timezone; admins can change it through validated server configuration.
+- Product default: configurable 06:00 in the configured server timezone; operators can change it through the supported in-game configuration command.
 - Durable player equipment/material progression and private Dispatch contents are outside reset-owned state and must persist.
 
 ### Checkpoints and personal Dispatch storage
 
 - Status: Accepted by owner.
-- Decision: Checkpoints support teleporting into/out of the shared mine and accessing a personal persistent item locker at checkpoints and outside. First version uses exactly 54 private slots with no paid/upgrade expansion.
+- Decision: Checkpoints support teleporting into/out of the shared mine and accessing a personal persistent item locker at checkpoints and outside. Locker capacity must exceed a vanilla Ender Chest.
+- Product default: at least 54 slots in v1; expansion behavior is deferred.
+
+### Preserve native death and inventory behavior in v1
+
+- Status: Accepted by owner.
+- Decision: Preserve the existing vanilla/server-pack death, respawn, and unbanked inventory behavior. Add no Public Mines death penalty.
+- Consequence: Expedition tension comes from route, encounter, hazard, time, and bank-or-push choices; any future change to death or item loss requires a new product decision.
+
+### Mod identity for the standalone mod
+
+- Status: Implementation decision recorded for M0.
+- Decision: The mod uses mod ID `publicmines`, package `com.rusticcraft.publicmines`, display name `Rustic Craft Public Mines`, and initial version `0.1.0`. The audit-only helper mod `publicmines_auditprobe` lives under `tools/audit/runtime-tag-probe` and is installed only in disposable audit servers, never shipped to the live pack.
+- Evidence: a scan of all 300 mod descriptor files across the pinned 283-JAR Rustic Craft 2 2.2.2 server set found no other `publicmines*` mod ID; both JARs load on the exact-pack dedicated server. See [docs/reports/M0-runtime-audit.md](docs/reports/M0-runtime-audit.md).
 
 ## Proposed technical defaults
 
@@ -85,10 +104,10 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 
 ## Open decisions
 
-- Morning reset default: 06:00 in the configured server timezone, adjustable by a validated admin setting; status/help shows the effective next reset. This is the product default unless server evidence shows it is unsafe.
+- Reset schedule: implement a configurable 06:00 server-timezone default and expose the effective schedule; adjust only if server playtests or operational evidence show a need.
 - Dimension versus isolated region placement, world bounds, maximum generation frontier, and cleanup strategy: M0/M1 technical decision backed by a disposable server prototype.
+- Dispatch expansion model beyond the 54-slot minimum: deferred; test usability and storage costs before adding upgrades.
 - Which Born in Chaos mobs fit each depth tier and which special encounters are safe in confined geometry: verify from the exact 1.7.6 jar and test in M4.
-- Death and unbanked inventory behavior: first version retains vanilla rules; create no extra mod-specific death penalty.
 - Exact upgrade chain, recipes/materials, and encounter/group thresholds: resolve from the M0 pack audit and multiplayer playtests; do not infer from item names.
 
 ## Revisit conditions

@@ -10,7 +10,7 @@ Private GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mine
 
 ## Project status
 
-Planning and compatibility foundation. Devin has started M0: the standalone mod scaffold and exact pack compatibility audit. Mine gameplay is not implemented yet.
+M0 is active. The shared worktree contains the standalone mod scaffold and exact-pack compatibility evidence; implementation and acceptance checks are still in progress. No mine gameplay milestone is complete yet.
 
 ## Target environment
 

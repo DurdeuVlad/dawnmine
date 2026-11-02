@@ -1,0 +1,63 @@
+M0 exact-pack dedicated-server smoke and pack-only control
+Date: 2026-11-02
+Environment: Minecraft 1.21.1, NeoForge 21.1.248, Java 21.0.12, Rustic Craft 2 2.2.2 pack (283 manifest JARs)
+Both runs used the same disposable server directory, configuration, world setup, and harness. The baseline temporarily omitted only publicmines-0.1.0.jar and publicmines_auditprobe-0.1.0.jar. No production server was used.
+
+Full run: C:\m0s-audit\audit-run-5.log
+Tested add-ons: publicmines-0.1.0.jar and publicmines_auditprobe-0.1.0.jar
+Public Mines JAR SHA-256: D7A7E33F8074EDB993CE391BA6D5CCC1168C577AFAB48A36D398226ADA92103C
+Probe JAR SHA-256: A920E739106CA451AA2ADAF3305E096CB2DD03DB5B72EF445C34B1FF23D3A858
+Observed lines:
+[02:28:08.657] RuntimeDistCleaner: Attempted to load class net/minecraft/client/Minecraft for invalid dist DEDICATED_SERVER
+[02:29:02] DedicatedServer: Done (11.197s)! For help, type "help"
+Executing post-boot command: publicmines-audit block-tags
+[02:29:02] RuntimeTagProbe: Rustic Craft Public Mines loaded (isolated runtime audit helper)
+[02:29:02] PublicMines: Rustic Craft Public Mines loaded (server-safe M0 scaffold; no gameplay features active)
+[02:29:28] MinecraftServer: Wrote 77854 block/tag rows to reports\runtime-block-tags.tsv
+[02:29:40] AllTheLeaks: Seems like server is stuck while trying to close. Read messages above about stuck threads!
+Harness: Server shutdown completed cleanly; process exit code 0. The AllTheLeaks warning occurred before harness completion.
+
+Pack-only baseline: C:\m0s-audit\audit-baseline.log
+Tested add-ons: none (both add-on JARs temporarily removed)
+Observed lines:
+[02:31:38.764] RuntimeDistCleaner: Attempted to load class net/minecraft/client/Minecraft for invalid dist DEDICATED_SERVER
+[02:32:33] DedicatedServer: Done (11.534s)! For help, type "help"
+[02:33:11] AllTheLeaks: Seems like server is stuck while trying to close. Read messages above about stuck threads!
+Harness: Server shutdown completed cleanly; process exit code 0. The AllTheLeaks warning occurred before harness completion.
+
+Error-message comparison:
+The comparison selected lines containing /ERROR], removed each varying log prefix through the first /ERROR] marker, then compared entry multisets.
+Normalized entries: 465 in the full run, 465 in the baseline.
+Difference: no entries unique to either run; the two error-entry multisets were identical.
+Source log SHA-256: full 314BD5CDFC5AF219BDD7A8EC1C72A1ADC9E252C137988F9B084E8144819C9D40; baseline 2593E498B606ED3CA2F0960ABDD0BB5920CDAD31F67EB055C1E69EDDBEE4FE10.
+The normalized entry multisets are preserved in M0-smoke-error-comparison.csv (463 distinct entries, each with full-run and baseline counts).
+Conclusion: the full-pack startup/data errors observed in this smoke test were present in the pack-only baseline. This is attribution for this environment and run, not a claim that the errors are harmless or that all pack resources were validated.
+
+The full source logs and runtime output are retained in C:\m0s-audit. The runtime TSV is summarized into M0-runtime-block-tags.tsv.gz; its generator is tools/audit/summarize_m0.py.
+
+Re-verification run (independent session, same day): C:\m0s-audit\audit-run-6.log
+A second session rebuilt the mod from the checked-out source (`gradlew clean build`) and re-ran the same isolated exact-pack server with the rebuilt JAR and the same probe. The rebuilt publicmines-0.1.0.jar has SHA-256 080FDFE831C8CF546E26B4909C972735C6713602B8A2EF216F1BE6CB716CCBEB; all three archive entries (PublicMines.class, MANIFEST.MF, neoforge.mods.toml) are byte-identical to the originally tested JAR D7A7E33F8074EDB993CE391BA6D5CCC1168C577AFAB48A36D398226ADA92103C — only JAR entry timestamps differ.
+Observed lines:
+[03:29:06] DedicatedServer: Done (11.591s)! For help, type "help"
+[03:29:06] RuntimeTagProbe: Rustic Craft Public Mines loaded (isolated runtime audit helper)
+[03:29:06] PublicMines: Rustic Craft Public Mines loaded (server-safe M0 scaffold; no gameplay features active)
+[03:29:33] MinecraftServer: Wrote 77854 block/tag rows to reports\runtime-block-tags.tsv
+[03:29:57] MinecraftServer: Stopping the server
+The run shut down cleanly with process exit code 0; no AllTheLeaks stuck-thread warning appeared in this run. The freshly written runtime-block-tags.tsv is identical to the earlier dump (SHA-256 1AD376814FB485DF6864B5A62A8E0FF48E499218FA6B9F1A4BAC987659EB335F). Normalized /ERROR] entries numbered 465 in both run 5 and run 6; the only multiset difference was an encoding artifact in a single pack-baseline KubeJS Prison message, so the pack-baseline error set — including the RuntimeDistCleaner dedicated-server client-class errors — was unchanged by the rebuilt JAR.
+Log SHA-256: D8A613E5165C18D3D0DC44D8155EBA5AC09959B10A8D86C724E0D677CDB2AEF4.
+
+Third verification run (independent session, same day): C:\m0s-audit\audit-run-7.log
+The audit probe was extended with an `item-tags` subcommand (checked-in source now builds to SHA-256 7BC1A503815CB3C3B26D15CFF8E7A94FBFBAF1E3C8606B2FEFD61471D6CBDCFF) and the same isolated exact-pack server was run again with the rebuilt Public Mines JAR (SHA-256 080FDFE831C8CF546E26B4909C972735C6713602B8A2EF216F1BE6CB716CCBEB).
+Observed lines:
+[04:05:26] DedicatedServer: Done (10.898s)! For help, type "help"
+[04:05:26] RuntimeTagProbe: Rustic Craft Public Mines loaded (isolated runtime audit helper)
+[04:05:27] PublicMines: Rustic Craft Public Mines loaded (server-safe M0 scaffold; no gameplay features active)
+[04:05:53] MinecraftServer: Wrote 77854 tag rows to reports\runtime-block-tags.tsv
+[04:06:13] MinecraftServer: Wrote 78491 tag rows to reports\runtime-item-tags.tsv
+[04:06:43] MinecraftServer: Stopping the server
+The run shut down cleanly with process exit code 0. The block-tag TSV is again identical to the earlier dumps (SHA-256 1AD376814FB485DF6864B5A62A8E0FF48E499218FA6B9F1A4BAC987659EB335F). The item-tag TSV SHA-256 is 6D1A89EF2AA82266E6707BE3350B0CF4AFA3F8A363C639543E92391A969E3311, compressed into M0-runtime-item-tags.tsv.gz.
+Log SHA-256: BF1B61E04132A63ECC2B713CB7299D1D8D0F0494E9574DBB86275269F8C07BE0.
+
+Loot-smoke verification run: C:\m0s-audit\audit-run-9.log
+Same isolated exact-pack server (extended probe build SHA-256 7BC1A503815CB3C3B26D15CFF8E7A94FBFBAF1E3C8606B2FEFD61471D6CBDCFF, Public Mines JAR SHA-256 080FDFE831C8CF546E26B4909C972735C6713602B8A2EF216F1BE6CB716CCBEB). After Done (11.899s), the console force-loaded the test chunk and, for each of the 99 ore/resource candidates, ran `setblock 100 100 100 <block>` then `loot spawn 100 100 100 mine 100 100 100 minecraft:diamond_pickaxe`. The console's `Dropped N [item] from loot table <id>` lines were recorded per candidate; 67 candidates produced item stacks and 32 produced none (the two Born in Chaos infected diamond ores, minecraft:sculk_vein, and 29 realmrpg_skeletons prop blocks). The server exited cleanly with code 0. Per-candidate results: M0-native-loot-smoke.csv.
+Log SHA-256 (final flushed file): 2E16A9E05B26FCDC1ED72128A7127441D639A6E8F1AFD8281AE97144DBDBA440. An immutable compressed copy is checked in as M0-loot-smoke-run-9.log.gz (SHA-256 1AAD58F39F1A32B7D1D1C4F8B723041DB6F90C6C68B884BC11F5CCD197DC6EDE); decompressing it yields exactly the source log above. An earlier recorded hash was taken before the shutdown output finished flushing and is superseded.

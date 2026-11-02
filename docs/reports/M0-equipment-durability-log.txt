@@ -1,0 +1,15 @@
+Selected lines copied verbatim from the exact-pack server startup log.
+Source: C:\m0s-audit\logs\latest.log
+Source SHA-256: 4EA5D798A14816B5A6FC655E471527727CCDF5966CEBF48FC7DDD8B6DBCA12C7
+Pack: Rustic Craft 2 2.2.2 server set (283 expected JARs), Minecraft 1.21.1, NeoForge 21.1.248
+
+[02Nov2026 02:51:11.563] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:silver_greatsword -> 420
+[02Nov2026 02:51:11.789] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:iron_greatsword -> 720
+[02Nov2026 02:51:11.622] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:steel_greatsword -> 1200
+[02Nov2026 02:51:11.684] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:diamond_greatsword -> 2400
+[02Nov2026 02:51:11.873] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:silver_longsword -> 350
+[02Nov2026 02:51:11.836] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:iron_longsword -> 600
+[02Nov2026 02:51:11.661] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:steel_longsword -> 1000
+[02Nov2026 02:51:11.819] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] spartan_weaponry_unofficial:diamond_longsword -> 2000
+[02Nov2026 02:51:11.958] [modloading-sync-worker/INFO] [KubeJS Startup/]: [Material durability] Updated 1452 items (387 armor/shields, 101 kept at higher defaults).
+[02Nov2026 02:51:35.825] [Server thread/INFO] [net.minecraft.server.dedicated.DedicatedServer/]: Done (11.605s)! For help, type "help"

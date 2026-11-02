@@ -1,0 +1,100 @@
+block_id,tool_context,loot_table,observed_outcome,observed_item_id,observed_count,log_timestamp
+abyssal_decor:ceiling_quartz_lamp,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/ceiling_quartz_lamp,1 [Quartz Lamp],,1,04:56:26
+abyssal_decor:ceiling_quartz_lamp_on,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/ceiling_quartz_lamp_on,1 [Quartz Lamp],,1,04:56:26
+abyssal_decor:floor_quartz_lamp,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/floor_quartz_lamp,1 [Quartz Lamp],,1,04:56:26
+abyssal_decor:floor_quartz_lamp_on,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/floor_quartz_lamp_on,1 [Quartz Lamp],,1,04:56:26
+abyssal_decor:jade_lamp_off,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/jade_lamp_off,1 [Jade Lamp],,1,04:56:26
+abyssal_decor:jade_lamp_on,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/jade_lamp_on,1 [Jade Lamp],,1,04:56:26
+abyssal_decor:jade_lantern_on,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/jade_lantern_on,1 [Jade Lantern],,1,04:56:26
+abyssal_decor:seabrass_ore,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/seabrass_ore,1 [Raw Seabrass],,1,04:56:26
+abyssal_decor:wall_jade_lamp,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/wall_jade_lamp,1 [Jade Lamp],,1,04:56:26
+abyssal_decor:wall_jade_lamp_on,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/wall_jade_lamp_on,1 [Jade Lamp],,1,04:56:26
+abyssal_decor:wall_quartz_lamp,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/wall_quartz_lamp,1 [Quartz Lamp],,1,04:56:26
+abyssal_decor:wall_quartz_lamp_on,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/wall_quartz_lamp_on,1 [Quartz Lamp],,1,04:56:26
+amendments:hexalia/wall_salt_lamp,minecraft:diamond_pickaxe (no enchantments),minecraft:empty,1 [Salt Lamp],,1,04:56:26
+born_in_chaos_v1:dark_metal_deposit,minecraft:diamond_pickaxe (no enchantments),born_in_chaos_v1:blocks/dark_metal_deposit,1 [Piece of Dark Metal],,1,04:56:26
+born_in_chaos_v1:infected_deepslate_diamond_ore,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:26
+born_in_chaos_v1:infected_diamond_ore,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:26
+butchery:deepslate_sulfur_ore,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/deepslate_sulfur_ore,4 [Sulfur],,4,04:56:26
+butchery:salt_block,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/salt_block,2 [Salt],,2,04:56:27
+butchery:salt_formation_base,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/salt_formation_base,1 [Salt],,1,04:56:27
+butchery:salt_formation_frustum,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/salt_formation_frustum,1 [Salt],,1,04:56:28
+butchery:salt_formation_middle,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/salt_formation_middle,1 [Salt],,1,04:56:28
+butchery:salt_formation_tip,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/salt_formation_tip,1 [Salt],,1,04:56:29
+butchery:sulfur_ore,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/sulfur_ore,4 [Sulfur],minecraft:redstone,4,04:56:29
+create:deepslate_zinc_ore,minecraft:diamond_pickaxe (no enchantments),create:blocks/deepslate_zinc_ore,1 [Raw Zinc],create:raw_zinc,1,04:56:30
+create:zinc_ore,minecraft:diamond_pickaxe (no enchantments),create:blocks/zinc_ore,1 [Raw Zinc],create:raw_zinc,1,04:56:30
+diagonalwalls:hearthandharvest/polished_salt_wall,minecraft:diamond_pickaxe (no enchantments),hearthandharvest:blocks/polished_salt_wall,1 [Polished Salt Wall],hearthandharvest:polished_salt_wall,1,04:56:31
+fungidelight:truffle_dirt,minecraft:diamond_pickaxe (no enchantments),fungidelight:blocks/truffle_dirt,2 [Truffle],fungidelight:truffle,2,04:56:31
+hearthandharvest:heavily_licked_salt_block,minecraft:diamond_pickaxe (no enchantments),hearthandharvest:blocks/heavily_licked_salt_block,1 [Salt],hearthandharvest:salt,1,04:56:32
+hearthandharvest:lightly_licked_salt_block,minecraft:diamond_pickaxe (no enchantments),hearthandharvest:blocks/lightly_licked_salt_block,2 [Salt],hearthandharvest:salt,2,04:56:32
+hearthandharvest:salt_block,minecraft:diamond_pickaxe (no enchantments),hearthandharvest:blocks/salt_block,4 [Salt],hearthandharvest:salt,4,04:56:33
+hearthandharvest:well_licked_salt_block,minecraft:diamond_pickaxe (no enchantments),hearthandharvest:blocks/well_licked_salt_block,2 [Salt],hearthandharvest:salt,2,04:56:33
+hexalia:salt_block,minecraft:diamond_pickaxe (no enchantments),hexalia:blocks/salt_block,1 [Salt],hexalia:salt,1,04:56:34
+horror_element_mod:destroyed_door_iron,minecraft:diamond_pickaxe (no enchantments),horror_element_mod:blocks/destroyed_door_iron,3 [Iron Ingot],minecraft:iron_ingot,3,04:56:34
+horror_element_mod:destroyed_door_iron_fell,minecraft:diamond_pickaxe (no enchantments),horror_element_mod:blocks/destroyed_door_iron_fell,3 [Iron Ingot],minecraft:iron_ingot,3,04:56:35
+horror_element_mod:hospital_bed,minecraft:diamond_pickaxe (no enchantments),horror_element_mod:blocks/hospital_bed,3 [Iron Ingot],minecraft:iron_ingot,3,04:56:35
+horror_element_mod:severed_hand,minecraft:diamond_pickaxe (no enchantments),horror_element_mod:blocks/severed_hand,1 [Iron Ingot],minecraft:iron_ingot,1,04:56:36
+jewelry:deepslate_gem_vein,minecraft:diamond_pickaxe (no enchantments),jewelry:blocks/deepslate_gem_vein,1 [Malachite],additional_rpg_jewelry:malachite,1,04:56:36
+jewelry:gem_vein,minecraft:diamond_pickaxe (no enchantments),jewelry:blocks/gem_vein,1 [Malachite],additional_rpg_jewelry:malachite,1,04:56:37
+kaleidoscope_cookery:crystal_lamb_chop,minecraft:diamond_pickaxe (no enchantments),kaleidoscope_cookery:blocks/crystal_lamb_chop,1 [Crystal Lamb Chop],kaleidoscope_cookery:crystal_lamb_chop,1,04:56:37
+minecraft:ancient_debris,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/ancient_debris,1 [Ancient Debris],minecraft:ancient_debris,1,04:56:38
+minecraft:coal_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/coal_ore,1 [Coal],minecraft:coal,1,04:56:38
+minecraft:copper_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/copper_ore,4 [Raw Copper],minecraft:raw_copper,4,04:56:39
+minecraft:deepslate_coal_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_coal_ore,1 [Coal],minecraft:coal,1,04:56:39
+minecraft:deepslate_copper_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_copper_ore,2 [Raw Copper],minecraft:raw_copper,2,04:56:40
+minecraft:deepslate_diamond_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_diamond_ore,1 [Diamond],minecraft:diamond,1,04:56:40
+minecraft:deepslate_emerald_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_emerald_ore,1 [Emerald],minecraft:emerald,1,04:56:41
+minecraft:deepslate_gold_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_gold_ore,1 [Raw Gold],minecraft:raw_gold,1,04:56:41
+minecraft:deepslate_iron_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_iron_ore,1 [Raw Iron],minecraft:raw_iron,1,04:56:42
+minecraft:deepslate_lapis_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_lapis_ore,5 [Lapis Lazuli],minecraft:lapis_lazuli,5,04:56:42
+minecraft:deepslate_redstone_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_redstone_ore,4 [Redstone Dust],minecraft:redstone,4,04:56:43
+minecraft:diamond_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/diamond_ore,1 [Diamond],minecraft:diamond,1,04:56:43
+minecraft:emerald_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/emerald_ore,1 [Emerald],minecraft:emerald,1,04:56:44
+minecraft:gold_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/gold_ore,1 [Raw Gold],minecraft:raw_gold,1,04:56:44
+minecraft:iron_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/iron_ore,1 [Raw Iron],minecraft:raw_iron,1,04:56:45
+minecraft:lapis_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/lapis_ore,4 [Lapis Lazuli],minecraft:lapis_lazuli,4,04:56:45
+minecraft:nether_gold_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/nether_gold_ore,5 [Gold Nugget],minecraft:gold_nugget,5,04:56:46
+minecraft:nether_quartz_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/nether_quartz_ore,1 [Nether Quartz],minecraft:quartz,1,04:56:46
+minecraft:redstone_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/redstone_ore,5 [Redstone Dust],minecraft:redstone,5,04:56:47
+minecraft:sculk_vein,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:47
+realmrpg_skeletons:bow_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/bow_skeleton,2 [String],minecraft:string,2,04:56:48
+realmrpg_skeletons:buried_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:48
+realmrpg_skeletons:burnt_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/burnt_skeleton,3 [Fire Charge],minecraft:fire_charge,3,04:56:49
+realmrpg_skeletons:cactus_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:49
+realmrpg_skeletons:chorus_tangled_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:50
+realmrpg_skeletons:common_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/common_skeleton,2 [Cooked Chicken],minecraft:cooked_chicken,2,04:56:50
+realmrpg_skeletons:crimson_tangled_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:51
+realmrpg_skeletons:crystal_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:51
+realmrpg_skeletons:devastated_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:52
+realmrpg_skeletons:dragon_burnt_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:52
+realmrpg_skeletons:dripstone_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:53
+realmrpg_skeletons:duelist_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:53
+realmrpg_skeletons:dungeon_crawler_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:54
+realmrpg_skeletons:dusty_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:54
+realmrpg_skeletons:explorer_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/explorer_skeleton,1 [Compass],minecraft:compass,1,04:56:55
+realmrpg_skeletons:frozen_waterdrop_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:55
+realmrpg_skeletons:fungus_gatherer_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:56
+realmrpg_skeletons:headache_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:56
+realmrpg_skeletons:headless_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:57
+realmrpg_skeletons:lucky_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/lucky_skeleton,2 [Golden Carrot],minecraft:golden_carrot,2,04:56:57
+realmrpg_skeletons:melted_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:58
+realmrpg_skeletons:mossy_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:58
+realmrpg_skeletons:neutralized_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:59
+realmrpg_skeletons:pierced_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:56:59
+realmrpg_skeletons:shroom_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:00
+realmrpg_skeletons:slain_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:00
+realmrpg_skeletons:snow_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:01
+realmrpg_skeletons:spider_victim_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:01
+realmrpg_skeletons:stalactite_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:02
+realmrpg_skeletons:swimmer_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:02
+realmrpg_skeletons:thief_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:03
+realmrpg_skeletons:trident_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:03
+realmrpg_skeletons:unsaved_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/unsaved_skeleton,1 [Saddle],minecraft:saddle,1,04:57:04
+realmrpg_skeletons:waterdrop_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:04
+realmrpg_skeletons:webbed_skeleton,minecraft:diamond_pickaxe (no enchantments),,0 items,,,04:57:05
+realmrpg_skeletons:winter_skeleton,minecraft:diamond_pickaxe (no enchantments),realmrpg_skeletons:blocks/winter_skeleton,3 [Lapis Lazuli],minecraft:lapis_lazuli,3,04:57:05
+rusticutils:charcoal_layer,minecraft:diamond_pickaxe (no enchantments),rusticutils:blocks/charcoal_layer,1 [Charcoal],minecraft:charcoal,1,04:57:06
+vampirism:tent_main,minecraft:diamond_pickaxe (no enchantments),vampirism:blocks/tent_main,1 [Tent],vampirism:item_tent,1,04:57:06
+werewolves:deepslate_silver_ore,minecraft:diamond_pickaxe (no enchantments),werewolves:blocks/deepslate_silver_ore,1 [Raw Silver],werewolves:raw_silver,1,04:57:07
+werewolves:silver_ore,minecraft:diamond_pickaxe (no enchantments),werewolves:blocks/silver_ore,1 [Raw Silver],werewolves:raw_silver,1,04:57:07
