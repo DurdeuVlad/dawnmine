@@ -195,7 +195,10 @@ public final class PublicMineCommand {
         List<ServerPlayer> inside = manager.occupants();
         lines.add("Players inside: " + inside.size()
                 + (inside.isEmpty() ? "" : " (" + names(inside) + ")"));
-        lines.add("Entry: " + (data.status().entryAllowed() ? "open" : "closed"));
+        // Entry is open only when the run admits it AND no reset transaction
+        // still owns the mine - enter() enforces the same two conditions.
+        lines.add("Entry: " + (data.status().entryAllowed() && !data.resetInProgress()
+                ? "open" : "closed"));
         MineDailyReset reset = MineDailyReset.get(src.getServer());
         lines.add("Daily reset: " + manager.effectiveResetDescription()
                 + "  |  next: " + reset.nextResetDescription());
