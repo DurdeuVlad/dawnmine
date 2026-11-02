@@ -3,6 +3,7 @@ package com.rusticcraft.publicmines.run;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.PublicMines;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.topology.MineTopology;
 import com.rusticcraft.publicmines.topology.TopologyException;
@@ -155,6 +156,14 @@ public class MineManager {
         if (!shellError.isEmpty()) {
             data.markFailed("mine boundary validation failed: " + shellError);
             steps.add(Step.fail("boundary shell", shellError));
+            return steps;
+        }
+
+        OreCatalog.Completeness oreCatalog = OreCatalog.active().completeness(mine);
+        if (!oreCatalog.complete()) {
+            String detail = OreCatalog.describe(oreCatalog);
+            data.markFailed("ore catalog is incomplete: " + detail);
+            steps.add(Step.fail("ore catalog", detail));
             return steps;
         }
 
@@ -347,6 +356,13 @@ public class MineManager {
                 ? Check.pass("boundary shell", "bounded flat generator matches the configured mine radius")
                 : Check.fail("boundary shell", shellError));
 
+        OreCatalog.Completeness oreCatalog = mine == null ? null : OreCatalog.active().completeness(mine);
+        checks.add(oreCatalog == null
+                ? Check.fail("ore catalog", "mine dimension is not loaded; catalog cannot be checked")
+                : oreCatalog.complete()
+                        ? Check.pass("ore catalog", OreCatalog.describe(oreCatalog))
+                        : Check.fail("ore catalog", OreCatalog.describe(oreCatalog)));
+
         checks.add(PublicMineConfig.isValidTimeZone(PublicMineConfig.resetTimeZoneName())
                 ? Check.pass("reset timezone", "reset clock uses " + PublicMineConfig.resetZoneId()
                         + (PublicMineConfig.resetTimeZoneName().equalsIgnoreCase("server")
@@ -379,6 +395,11 @@ public class MineManager {
         checks.add(shellError.isEmpty()
                 ? Check.pass("shell ownership", "saved active bounds match the enclosing bedrock shell")
                 : Check.fail("shell ownership", shellError));
+        OreCatalog.Completeness oreCatalog = mine == null ? null : OreCatalog.active().completeness(mine);
+        checks.add(oreCatalog != null && oreCatalog.complete()
+                ? Check.pass("ore catalog", OreCatalog.describe(oreCatalog))
+                : Check.fail("ore catalog", oreCatalog == null
+                        ? "mine dimension is not loaded" : OreCatalog.describe(oreCatalog)));
         if (data.runId().isEmpty() || data.seed() == 0) {
             checks.add(Check.fail("run record", "run is READY but run id or seed is missing; run '/publicmine recover repair'"));
         } else {

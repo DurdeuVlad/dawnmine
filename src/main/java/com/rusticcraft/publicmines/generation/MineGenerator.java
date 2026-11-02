@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -49,7 +50,7 @@ public final class MineGenerator {
     private static final int FRONTIER_DISTANCE = 28;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "public-mines-segment-geometry-v1";
+    private static final String GEOMETRY_VERSION = "public-mines-segment-geometry-v2-ore-catalog";
 
     private static MineGenerator instance;
 
@@ -136,6 +137,13 @@ public final class MineGenerator {
         if (!shellError.isEmpty()) {
             manager.failGeneration("mine boundary validation failed: " + shellError);
             LOGGER.error("[publicmines] Refusing generation because boundary validation failed: {}", shellError);
+            return false;
+        }
+        OreCatalog.Completeness oreCompleteness = OreCatalog.active().completeness(mine);
+        if (!oreCompleteness.complete()) {
+            manager.failGeneration("ore catalog is incomplete: " + OreCatalog.describe(oreCompleteness));
+            LOGGER.error("[publicmines] Refusing generation because the ore catalog is incomplete: {}",
+                    OreCatalog.describe(oreCompleteness));
             return false;
         }
         try {
@@ -278,7 +286,7 @@ public final class MineGenerator {
                     break;
                 }
                 long operationStarted = System.nanoTime();
-                if (applyOperation(mine, blockPos, operation.kind(), position.y())) {
+                if (applyOperation(mine, blockPos, operation, position.y())) {
                     writes++;
                 }
                 segmentMaxOperationNanos = Math.max(segmentMaxOperationNanos,
@@ -314,7 +322,9 @@ public final class MineGenerator {
             String nodeId = id.substring("node:".length());
             TopoNode node = topology.node(nodeId);
             if (node != null) {
-                return SegmentGeometry.node(topology, node, topology.bounds(), ARRIVAL);
+                SegmentGeometry.SegmentPlan room = SegmentGeometry.node(topology, node,
+                        topology.bounds(), ARRIVAL);
+                return OrePlacementPlanner.addOres(node, room, OreCatalog.active(), manager.data().seed());
             }
         } else if (id.startsWith("edge:")) {
             TopoEdge edge = edgesBySegmentId.get(id);
@@ -328,8 +338,8 @@ public final class MineGenerator {
     }
 
     private boolean applyOperation(ServerLevel mine, BlockPos pos,
-                                   SegmentGeometry.BlockKind kind, int y) {
-        BlockState replacement = blockFor(kind, pos, y);
+                                   SegmentGeometry.BlockOperation operation, int y) {
+        BlockState replacement = blockFor(operation, pos, y);
         BlockState existing = mine.getBlockState(pos);
         if (existing.equals(replacement)) {
             return false;
@@ -343,7 +353,8 @@ public final class MineGenerator {
         return true;
     }
 
-    private BlockState blockFor(SegmentGeometry.BlockKind kind, BlockPos pos, int y) {
+    private BlockState blockFor(SegmentGeometry.BlockOperation operation, BlockPos pos, int y) {
+        SegmentGeometry.BlockKind kind = operation.kind();
         if (kind == SegmentGeometry.BlockKind.OPEN) {
             return Blocks.CAVE_AIR.defaultBlockState();
         }
@@ -352,6 +363,11 @@ public final class MineGenerator {
         }
         if (kind == SegmentGeometry.BlockKind.HAZARD_SOURCE) {
             return Blocks.LAVA.defaultBlockState();
+        }
+        if (kind == SegmentGeometry.BlockKind.ORE) {
+            ResourceLocation blockId = ResourceLocation.parse(operation.blockId());
+            return OreCatalog.active().blockState(OreCatalog.active().entry(blockId)
+                    .orElseThrow(() -> new IllegalStateException("unregistered ore catalog id " + blockId)));
         }
         String region = regionForY(y);
         if ("chaos".equals(region)) {
@@ -380,36 +396,23 @@ public final class MineGenerator {
 
     private boolean isNetherrackClusterBlock(BlockPos pos) {
         MineRunData data = manager.data();
-        if (!data.generationNetherrackEnabled()) {
-            return false;
-        }
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
-        long hash = chunkHash(chunkX, chunkZ);
-        int interval = data.generationNetherrackInterval();
-        if (Math.floorMod(hash, interval) != 0) {
-            return false;
-        }
         var chaos = TopologyProfiles.active().regions().stream()
                 .filter(region -> "chaos".equals(region.id())).findFirst().orElse(null);
         if (chaos == null) {
             return false;
         }
-        int clusterHeight = PublicMineConfig.NETHERRACK_CLUSTER_MAX_BLOCKS;
-        int span = chaos.topY() - chaos.bottomY() - clusterHeight + 1;
-        if (span < 1) {
-            return false;
-        }
-        int targetX = chunkX * 16 + Math.floorMod((int) (hash >>> 32), 16);
-        int targetZ = chunkZ * 16 + Math.floorMod((int) (hash >>> 16), 16);
-        int baseY = chaos.bottomY() + Math.floorMod((int) hash, span);
-        return pos.getX() == targetX && pos.getZ() == targetZ
-                && pos.getY() >= baseY && pos.getY() < baseY + clusterHeight;
+        return NetherrackPlacementPolicy.select(data.seed(), data.generationNetherrackEnabled(),
+                        data.generationNetherrackInterval(), chunkX, chunkZ,
+                        chaos.topY(), chaos.bottomY())
+                .filter(cluster -> NetherrackPlacementPolicy.contains(cluster,
+                        pos.getX(), pos.getY(), pos.getZ()))
+                .isPresent();
     }
 
     private long chunkHash(int x, int z) {
-        return mix(manager.data().seed() ^ ((long) x * 0x9E3779B97F4A7C15L)
-                ^ ((long) z * 0xC2B2AE3D27D4EB4FL));
+        return NetherrackPlacementPolicy.chunkHash(manager.data().seed(), x, z);
     }
 
     private long blockHash(BlockPos pos) {
@@ -477,7 +480,8 @@ public final class MineGenerator {
     private String generationFingerprint(TopologyPlan plan, boolean netherrackEnabled,
                                         int netherrackInterval) {
         String input = GEOMETRY_VERSION + "\n" + plan.fingerprint() + "\n"
-                + "netherrack=" + netherrackEnabled + ":" + netherrackInterval;
+                + "netherrack=" + netherrackEnabled + ":" + netherrackInterval + "\n"
+                + "ore-catalog=" + OreCatalog.active().fingerprint();
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256")
                     .digest(input.getBytes(StandardCharsets.UTF_8));

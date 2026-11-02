@@ -1,0 +1,371 @@
+{
+  "schema": 1,
+  "ores": [
+    {
+      "block": "minecraft:coal_ore",
+      "tier": "upper",
+      "weight": 5,
+      "max_vein_size": 3,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:wooden_pickaxe",
+      "native_drop_items": [
+        "minecraft:coal"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_coal_ore",
+      "tier": "upper",
+      "weight": 3,
+      "max_vein_size": 3,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:wooden_pickaxe",
+      "native_drop_items": [
+        "minecraft:coal"
+      ]
+    },
+    {
+      "block": "minecraft:copper_ore",
+      "tier": "upper",
+      "weight": 5,
+      "max_vein_size": 3,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:stone_pickaxe",
+      "native_drop_items": [
+        "minecraft:raw_copper"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_copper_ore",
+      "tier": "upper",
+      "weight": 3,
+      "max_vein_size": 3,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:stone_pickaxe",
+      "native_drop_items": [
+        "minecraft:raw_copper"
+      ]
+    },
+    {
+      "block": "minecraft:iron_ore",
+      "tier": "upper",
+      "weight": 5,
+      "max_vein_size": 3,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:raw_iron"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_iron_ore",
+      "tier": "upper",
+      "weight": 3,
+      "max_vein_size": 3,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:raw_iron"
+      ]
+    },
+    {
+      "block": "create:zinc_ore",
+      "tier": "upper",
+      "weight": 3,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "create:raw_zinc"
+      ]
+    },
+    {
+      "block": "create:deepslate_zinc_ore",
+      "tier": "upper",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "create:raw_zinc"
+      ]
+    },
+    {
+      "block": "butchery:sulfur_ore",
+      "tier": "upper",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": false,
+      "minimum_tested_tool": "minecraft:air",
+      "native_drop_items": [
+        "butchery:sulfur"
+      ]
+    },
+    {
+      "block": "butchery:deepslate_sulfur_ore",
+      "tier": "upper",
+      "weight": 1,
+      "max_vein_size": 2,
+      "requires_correct_tool": false,
+      "minimum_tested_tool": "minecraft:air",
+      "native_drop_items": [
+        "butchery:sulfur"
+      ]
+    },
+    {
+      "block": "fungidelight:truffle_dirt",
+      "tier": "upper",
+      "weight": 1,
+      "max_vein_size": 2,
+      "requires_correct_tool": false,
+      "minimum_tested_tool": "minecraft:air",
+      "native_drop_items": [
+        "fungidelight:truffle"
+      ]
+    },
+    {
+      "block": "minecraft:gold_ore",
+      "tier": "middle",
+      "weight": 3,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:raw_gold"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_gold_ore",
+      "tier": "middle",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:raw_gold"
+      ]
+    },
+    {
+      "block": "minecraft:nether_gold_ore",
+      "tier": "middle",
+      "weight": 1,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:wooden_pickaxe",
+      "native_drop_items": [
+        "minecraft:gold_nugget"
+      ]
+    },
+    {
+      "block": "minecraft:lapis_ore",
+      "tier": "middle",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:stone_pickaxe",
+      "native_drop_items": [
+        "minecraft:lapis_lazuli"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_lapis_ore",
+      "tier": "middle",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:stone_pickaxe",
+      "native_drop_items": [
+        "minecraft:lapis_lazuli"
+      ]
+    },
+    {
+      "block": "minecraft:redstone_ore",
+      "tier": "middle",
+      "weight": 3,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:redstone"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_redstone_ore",
+      "tier": "middle",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:redstone"
+      ]
+    },
+    {
+      "block": "werewolves:silver_ore",
+      "tier": "middle",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:stone_pickaxe",
+      "native_drop_items": [
+        "werewolves:raw_silver"
+      ]
+    },
+    {
+      "block": "werewolves:deepslate_silver_ore",
+      "tier": "middle",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:stone_pickaxe",
+      "native_drop_items": [
+        "werewolves:raw_silver"
+      ]
+    },
+    {
+      "block": "abyssal_decor:seabrass_ore",
+      "tier": "middle",
+      "weight": 1,
+      "max_vein_size": 2,
+      "requires_correct_tool": false,
+      "minimum_tested_tool": "minecraft:air",
+      "native_drop_items": [
+        "abyssal_decor:raw_seabrass"
+      ]
+    },
+    {
+      "block": "jewelry:gem_vein",
+      "tier": "middle",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "additional_rpg_jewelry:aquamarine",
+        "additional_rpg_jewelry:malachite",
+        "jewelry:citrine",
+        "jewelry:jade",
+        "jewelry:ruby",
+        "jewelry:sapphire",
+        "jewelry:tanzanite",
+        "jewelry:topaz"
+      ]
+    },
+    {
+      "block": "minecraft:diamond_ore",
+      "tier": "chaos",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:diamond"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_diamond_ore",
+      "tier": "chaos",
+      "weight": 2,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:diamond"
+      ]
+    },
+    {
+      "block": "minecraft:emerald_ore",
+      "tier": "chaos",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:emerald"
+      ]
+    },
+    {
+      "block": "minecraft:deepslate_emerald_ore",
+      "tier": "chaos",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "minecraft:emerald"
+      ]
+    },
+    {
+      "block": "minecraft:ancient_debris",
+      "tier": "chaos",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:diamond_pickaxe",
+      "native_drop_items": [
+        "minecraft:ancient_debris"
+      ]
+    },
+    {
+      "block": "minecraft:nether_quartz_ore",
+      "tier": "chaos",
+      "weight": 4,
+      "max_vein_size": 2,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:wooden_pickaxe",
+      "native_drop_items": [
+        "minecraft:quartz"
+      ]
+    },
+    {
+      "block": "jewelry:deepslate_gem_vein",
+      "tier": "chaos",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "additional_rpg_jewelry:aquamarine",
+        "additional_rpg_jewelry:malachite",
+        "jewelry:citrine",
+        "jewelry:jade",
+        "jewelry:ruby",
+        "jewelry:sapphire",
+        "jewelry:tanzanite",
+        "jewelry:topaz"
+      ]
+    },
+    {
+      "block": "born_in_chaos_v1:dark_metal_deposit",
+      "tier": "chaos",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:iron_pickaxe",
+      "native_drop_items": [
+        "born_in_chaos_v1:pieceofdarkmetal"
+      ]
+    },
+    {
+      "block": "born_in_chaos_v1:infected_diamond_ore",
+      "tier": "chaos",
+      "kind": "encounter",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:diamond_pickaxe",
+      "native_drop_items": [],
+      "encounter_entity": "born_in_chaos_v1:diamond_termite"
+    },
+    {
+      "block": "born_in_chaos_v1:infected_deepslate_diamond_ore",
+      "tier": "chaos",
+      "kind": "encounter",
+      "weight": 1,
+      "max_vein_size": 1,
+      "requires_correct_tool": true,
+      "minimum_tested_tool": "minecraft:diamond_pickaxe",
+      "native_drop_items": [],
+      "encounter_entity": "born_in_chaos_v1:diamond_termite"
+    }
+  ]
+}
