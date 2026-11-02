@@ -4,18 +4,20 @@
 
 This is a static scan of recipe JSON resources from the pinned Rustic Craft 2 2.2.2 server mod JAR set, supplemented by the specific runtime durability values below. It identifies candidate material-processing and equipment recipes for product planning. It does not prove recipes load at runtime, other item statistics, mining drops, or combat effects. It is not a complete equipment balance review.
 
-The scan checked 25,417 recipe resources across the 283 expected pack JARs and found 3,856 material/equipment candidate rows. 5 recipe resources failed JSON parsing and are excluded; they need explicit follow-up if they are relevant. The full candidate index is [M0-recipe-equipment-candidates.csv.gz](M0-recipe-equipment-candidates.csv.gz).
+The scan checked 25,417 recipe resources across the 283 expected pack JARs and found 4,903 material/equipment candidate rows. 5 recipe resources failed JSON parsing and are excluded; they need explicit follow-up if they are relevant. The full candidate index is [M0-recipe-equipment-candidates.csv.gz](M0-recipe-equipment-candidates.csv.gz).
 
-Candidate index SHA-256: `E7A130122A84A9EA47B672344A1572ABF0421A1697F08A10FAB4DB1F7FC33D7F`.
+Candidate index SHA-256: `6ED1344CD7E53B471ACCE7B7003DBA27A663E3C1E4BFD6EECA441C0BEF9C556F`.
 
 The report generator verifies each expected pack JAR SHA-256 against [M0-server-mods.sha256](M0-server-mods.sha256), rejects missing or modified pack JARs, and rejects unexpected JARs other than the two documented audit additions.
 
+Candidate rows are classified by resolved runtime item tags from the exact-pack `/publicmines-audit item-tags` dump where available, falling back to a name lexicon. Detection basis counts: {'lexicon': 1501, 'tag': 4028}. Runtime item/tag snapshot SHA-256: `6D1A89EF2AA82266E6707BE3350B0CF4AFA3F8A363C639543E92391A969E3311` (uncompressed source `reports/runtime-item-tags.tsv`, 78,491 rows).
+
 ## Pack-grounded progression hooks
 
-- Steel: 2 indexed recipe row(s) produce `magistuarmory:steel_ingot`; 454 equipment candidate rows mention steel. The direct processing recipe ID is `magistuarmory:furnace/steel_ingot_blasting` in `epic-knights-1.21.1-neoforge-10.12.jar` (`data/magistuarmory/recipe/furnace/steel_ingot_blasting.json`): one `minecraft:iron_ingot` input becomes one `magistuarmory:steel_ingot` with 0.5 XP and 40-tick cook time. Steel weapon recipes can therefore support an iron-to-steel combat upgrade gate; this does not establish steel mining-tool availability or player unlock pacing.
+- Steel: 2 indexed recipe row(s) produce `magistuarmory:steel_ingot`; 569 equipment candidate rows mention steel. The direct processing recipe ID is `magistuarmory:furnace/steel_ingot_blasting` in `epic-knights-1.21.1-neoforge-10.12.jar` (`data/magistuarmory/recipe/furnace/steel_ingot_blasting.json`): one `minecraft:iron_ingot` input becomes one `magistuarmory:steel_ingot` with 0.5 XP and 40-tick cook time. Steel weapon recipes can therefore support an iron-to-steel combat upgrade gate; this does not establish steel mining-tool availability or player unlock pacing.
   The steel shortsword recipe (`magistuarmory:steel_shortsword`) uses `#c:ingots/steel` and `#magistuarmory:hilts` in `epic-knights-1.21.1-neoforge-10.12.jar` (`data/magistuarmory/recipe/steel_shortsword.json`).
-- Silver: 152 candidate recipe row(s) mention silver in a candidate weapon/armor recipe. The silver shortsword recipe (`magistuarmory:silver_shortsword`) uses `#c:ingots/silver` and `#magistuarmory:hilts` in `epic-knights-1.21.1-neoforge-10.12.jar` (`data/magistuarmory/recipe/silver_shortsword.json`). These are candidate hooks for a silver-specific combat gate; the pack recipe data does not prove which Born in Chaos mobs require silver damage.
-- Ore-derived item outputs can be cross-referenced with the 29-row runtime candidate scan, but recipe tables alone do not prove that an ore block drops the listed item in gameplay.
+- Silver: 180 candidate recipe row(s) mention silver in a candidate weapon/armor recipe. The silver shortsword recipe (`magistuarmory:silver_shortsword`) uses `#c:ingots/silver` and `#magistuarmory:hilts` in `epic-knights-1.21.1-neoforge-10.12.jar` (`data/magistuarmory/recipe/silver_shortsword.json`). These are candidate hooks for a silver-specific combat gate; the pack recipe data does not prove which Born in Chaos mobs require silver damage.
+- Ore-derived item outputs can be cross-referenced with the 99-row runtime candidate scan, but recipe tables alone do not prove that an ore block drops the listed item in gameplay.
 
 ## Runtime durability evidence
 
@@ -32,7 +34,7 @@ This verifies a runtime **durability** progression for these named items. It doe
 
 ## Limits and follow-up
 
-- The scan follows standard recipe JSON resource directories, the `result`/`results` output keys, and common input key names. Custom serializers may encode inputs or results differently; this index should not be treated as exhaustive for code-defined recipes. The equipment candidate lexicon is word-list based and can still miss unusually named gear.
+- The scan follows standard recipe JSON resource directories, the `result`/`results` output keys, and common input key names. Custom serializers may encode inputs or results differently; this index should not be treated as exhaustive for code-defined recipes. Equipment detection uses resolved runtime item tags where present and falls back to a name lexicon (1,501 of 5,529 classification entries); untagged items with non-lexicon names can still be missed. Hazard-specific equipment (for example fire/lava protection items) is not separately classified.
 - Static recipe presence is not proof of active conditions, datapack override order, runtime recipe-book exposure, item attribute values beyond the specific durability log entries above, tool mining speed, or combat damage.
 - Verify candidate recipe availability, native ore drops, item combat attributes, mining performance, and any material-specific effects in a disposable server before finalizing tier rewards.
 - This report adds evidence to M0 but does not close M0 or replace the required gameplay and equipment review.
@@ -43,6 +45,7 @@ This verifies a runtime **durability** progression for these named items. It doe
 python tools\audit\summarize_recipe_equipment.py `
   --mods-dir C:\m0s-audit\mods `
   --expected-pack-hashes docs\reports\M0-server-mods.sha256 `
+  --runtime-item-tags C:\m0s-audit\reports\runtime-item-tags.tsv `
   --out-dir docs\reports
 ```
 

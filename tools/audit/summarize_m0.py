@@ -39,35 +39,76 @@ def read_runtime_tags(path: Path):
     return raw, rows, all_blocks, tags_by_block
 
 
-def registry_candidate_ids(all_blocks: set[str], tags_by_block: dict[str, set[str]]) -> list[str]:
-    common = {
-        block
-        for block, tags in tags_by_block.items()
-        if any(tag == "c:ores" or tag.startswith("c:ores/") for tag in tags)
-    }
-    mod_specific = {
-        block
-        for block, tags in tags_by_block.items()
-        if any(re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:") for tag in tags)
-    }
-    id_candidates = {
-        block for block in all_blocks if block.split(":", 1)[1].endswith("_ore")
-    }
-    return sorted(common | mod_specific | id_candidates)
+# Ore-like block-name signals beyond the *_ore convention, found by a
+# name sweep over the full runtime block registry. `salt` is matched as a
+# token so names like `basalt` are not swept in.
+ORE_NAME_SWEEP_RE = re.compile(r"(deposit|vein|formation)", re.IGNORECASE)
 
 
-def jar_evidence(mods_dir: Path, candidates: list[str]):
-    evidence = {
-        block: {
-            "blockstate": "",
-            "blockstate_jar": "",
-            "loot": "",
-            "loot_jar": "",
-            "outputs": [],
-        }
-        for block in candidates
-    }
-    hashes: dict[str, str] = {}
+def ore_like_name(name: str) -> bool:
+    return bool(ORE_NAME_SWEEP_RE.search(name)) or any(
+        token.startswith("salt") for token in name.split("_")
+    )
+
+
+# Loot outputs that indicate a block is a material source rather than decor.
+# Matched against the item path (after the namespace).
+MATERIAL_OUTPUT_RE = re.compile(
+    r"(raw_|_ore$|_ingot|_nugget|_gem\b|citrine|jade|ruby|sapphire|tanzanite|topaz|"
+    r"quartz|diamond$|emerald$|coal$|lapis|redstone$|(?:^|_)salt(?:_|$)|sulfur|"
+    r"pieceofdarkmetal|shard$|crystal$|amethyst|charcoal$)",
+    re.IGNORECASE,
+)
+
+
+def registry_candidate_ids(
+    all_blocks: set[str],
+    tags_by_block: dict[str, set[str]],
+    outputs_by_block: dict[str, set[str]] | None = None,
+) -> dict[str, str]:
+    """Return candidate block_id -> candidate basis category."""
+    out: dict[str, str] = {}
+
+    def put(block: str, basis: str) -> None:
+        out.setdefault(block, basis)
+
+    for block in all_blocks:
+        tags = tags_by_block.get(block, set())
+        name = block.split(":", 1)[1]
+        if any(tag == "c:ores" or tag.startswith("c:ores/") for tag in tags):
+            put(block, "resolved common c:ores family")
+            continue
+        if any(
+            re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:")
+            for tag in tags
+        ):
+            put(block, "resolved mod-specific ore tag")
+            continue
+        if name.endswith("_ore"):
+            put(block, "runtime block registry ID ends in _ore; no ore-family tag found")
+            continue
+        if ore_like_name(name):
+            if outputs_by_block is None:
+                put(block, "runtime name sweep: ore-like block name")
+                continue
+            outputs = outputs_by_block.get(block)
+            if outputs is None or any(o != block for o in outputs):
+                put(block, "runtime name sweep: ore-like name with material drops or unevaluated loot")
+            continue
+        if outputs_by_block is not None:
+            outputs = outputs_by_block.get(block)
+            if outputs and any(
+                MATERIAL_OUTPUT_RE.search(o.rsplit(":", 1)[-1]) and o != block
+                for o in outputs
+            ):
+                put(block, "runtime loot-output sweep: material drops, no ore signals")
+    return out
+
+
+def jar_evidence(mods_dir: Path):
+    """Scan every pack JAR: blockstate resources and all block loot tables."""
+    blockstates: dict[str, tuple[str, str]] = {}
+    loot_tables: dict[str, tuple[str, str, list[str]]] = {}
     for jar in sorted(mods_dir.glob("*.jar")):
         try:
             with zipfile.ZipFile(jar) as archive:
@@ -75,9 +116,7 @@ def jar_evidence(mods_dir: Path, candidates: list[str]):
                     if name.startswith("assets/") and "/blockstates/" in name and name.endswith(".json"):
                         namespace = name.split("/")[1]
                         block = f"{namespace}:{name.rsplit('/', 1)[1][:-5]}"
-                        if block in evidence and not evidence[block]["blockstate"]:
-                            evidence[block]["blockstate"] = name
-                            evidence[block]["blockstate_jar"] = jar.name
+                        blockstates.setdefault(block, (name, jar.name))
                     elif (
                         name.startswith("data/")
                         and ("/loot_table/blocks/" in name or "/loot_tables/blocks/" in name)
@@ -86,10 +125,8 @@ def jar_evidence(mods_dir: Path, candidates: list[str]):
                         namespace = name.split("/")[1]
                         block_path = name.split("/blocks/", 1)[1][:-5]
                         block = f"{namespace}:{block_path}"
-                        if block not in evidence or evidence[block]["loot"]:
+                        if block in loot_tables:
                             continue
-                        evidence[block]["loot"] = name
-                        evidence[block]["loot_jar"] = jar.name
                         try:
                             table = json.loads(archive.read(name))
                             outputs: set[str] = set()
@@ -105,25 +142,32 @@ def jar_evidence(mods_dir: Path, candidates: list[str]):
                                         visit(child)
 
                             visit(table)
-                            evidence[block]["outputs"] = sorted(outputs)
+                            loot_tables[block] = (name, jar.name, sorted(outputs))
                         except (json.JSONDecodeError, UnicodeDecodeError):
-                            pass
+                            loot_tables[block] = (name, jar.name, [])
         except zipfile.BadZipFile:
             continue
-
-    for row in evidence.values():
-        for key in ("blockstate_jar", "loot_jar"):
-            jar_name = row[key]
-            if jar_name:
-                if jar_name not in hashes:
-                    hashes[jar_name] = sha256(mods_dir / jar_name)
-                row[key + "_sha"] = hashes[jar_name]
-            else:
-                row[key + "_sha"] = ""
-    return evidence
+    return blockstates, loot_tables
 
 
-def write_ore_candidates(out_dir: Path, candidates, tags_by_block, evidence) -> None:
+def jar_hashes(mods_dir: Path, jar_names: set[str]) -> dict[str, str]:
+    return {name: sha256(mods_dir / name) for name in sorted(jar_names)}
+
+
+BASIS_ASSESSMENT = {
+    "resolved common c:ores family": "common-tagged resource candidate; confirm mine tier and native drops",
+    "resolved mod-specific ore tag": "special mod-tagged candidate; confirm intended mining/drop behavior",
+    "runtime name sweep: ore-like name with material drops or unevaluated loot": (
+        "name-sweep candidate (deposit/vein/formation/salt); material drops; confirm ore-tier classification"
+    ),
+    "runtime name sweep: ore-like block name": "name-sweep candidate; loot evidence unavailable",
+    "runtime loot-output sweep: material drops, no ore signals": (
+        "loot-sweep candidate; material drops without ore signals; classify as ore tier vs salvage/loot node"
+    ),
+}
+
+
+def write_ore_candidates(out_dir: Path, candidates: dict[str, str], tags_by_block, blockstates, loot_tables, hashes) -> int:
     path = out_dir / "M0-ore-candidates.csv"
     fields = [
         "block_id",
@@ -141,7 +185,8 @@ def write_ore_candidates(out_dir: Path, candidates, tags_by_block, evidence) -> 
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
-        for block in candidates:
+        for block in sorted(candidates):
+            basis = candidates[block]
             tags = sorted(
                 tag
                 for tag in tags_by_block.get(block, set())
@@ -149,23 +194,13 @@ def write_ore_candidates(out_dir: Path, candidates, tags_by_block, evidence) -> 
                 or tag.startswith("c:ores/")
                 or (re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:"))
             )
-            item = evidence[block]
-            common = any(tag == "c:ores" or tag.startswith("c:ores/") for tag in tags)
-            specific = any(
-                re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:")
-                for tag in tags
-            )
-            if common:
-                basis = "resolved common c:ores family"
-                assessment = "common-tagged resource candidate; confirm mine tier and native drops"
-            elif specific:
-                basis = "resolved mod-specific ore tag"
-                assessment = "special mod-tagged candidate; confirm intended mining/drop behavior"
-            else:
-                basis = "runtime block registry ID ends in _ore; no ore-family tag found"
+            bs_res, bs_jar = blockstates.get(block, ("", ""))
+            lt = loot_tables.get(block, ("", "", []))
+            assessment = BASIS_ASSESSMENT.get(basis)
+            if basis == "runtime block registry ID ends in _ore; no ore-family tag found":
                 assessment = (
                     "untagged ore-name candidate; inspect loot table and verify native block-break behavior"
-                    if item["loot"]
+                    if lt[0]
                     else "untagged ore-name candidate; static drop behavior unresolved; verify in game"
                 )
             if block == "minecraft:ancient_debris":
@@ -175,16 +210,17 @@ def write_ore_candidates(out_dir: Path, candidates, tags_by_block, evidence) -> 
                     "block_id": block,
                     "runtime_ore_tags": ";".join(tags),
                     "candidate_basis": basis,
-                    "blockstate_resource": item["blockstate"],
-                    "blockstate_source_jar": item["blockstate_jar"] or "Minecraft 1.21.1 built-in",
-                    "blockstate_source_sha256": item["blockstate_jar_sha"],
-                    "loot_table_resource": item["loot"],
-                    "loot_source_jar": item["loot_jar"] or "Minecraft 1.21.1 built-in or absent",
-                    "loot_source_sha256": item["loot_jar_sha"],
-                    "static_item_outputs": ";".join(item["outputs"]),
+                    "blockstate_resource": bs_res,
+                    "blockstate_source_jar": bs_jar or "Minecraft 1.21.1 built-in",
+                    "blockstate_source_sha256": hashes.get(bs_jar, "") if bs_jar else "",
+                    "loot_table_resource": lt[0],
+                    "loot_source_jar": lt[1] or "Minecraft 1.21.1 built-in or absent",
+                    "loot_source_sha256": hashes.get(lt[1], "") if lt[1] else "",
+                    "static_item_outputs": ";".join(lt[2]),
                     "assessment": assessment,
                 }
             )
+    return len(candidates)
 
 
 def read_bic_registration_dump(path: Path):
@@ -292,14 +328,23 @@ def main() -> int:
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     raw, rows, all_blocks, tags_by_block = read_runtime_tags(args.runtime_tags)
-    candidates = registry_candidate_ids(all_blocks, tags_by_block)
-    evidence = jar_evidence(args.mods_dir, candidates)
+    blockstates, loot_tables = jar_evidence(args.mods_dir)
+    outputs_by_block = {block: set(entry[2]) for block, entry in loot_tables.items()}
+    candidates = registry_candidate_ids(all_blocks, tags_by_block, outputs_by_block)
+    needed_jars = {
+        jar
+        for block in candidates
+        for pair in (blockstates.get(block, ("", "")), loot_tables.get(block, ("", "", [])))
+        for jar in (pair[1],)
+        if jar
+    }
+    hashes = jar_hashes(args.mods_dir, needed_jars)
     registrations = read_bic_registration_dump(args.bic_javap)
 
     (args.out_dir / "M0-runtime-block-tags.tsv.gz").write_bytes(
         gzip.compress(raw, compresslevel=9, mtime=0)
     )
-    write_ore_candidates(args.out_dir, candidates, tags_by_block, evidence)
+    write_ore_candidates(args.out_dir, candidates, tags_by_block, blockstates, loot_tables, hashes)
     write_bic_entities(args.out_dir, registrations)
     rewrite_pack_hashes(
         args.out_dir,

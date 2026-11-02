@@ -45,3 +45,19 @@ Observed lines:
 [03:29:57] MinecraftServer: Stopping the server
 The run shut down cleanly with process exit code 0; no AllTheLeaks stuck-thread warning appeared in this run. The freshly written runtime-block-tags.tsv is identical to the earlier dump (SHA-256 1AD376814FB485DF6864B5A62A8E0FF48E499218FA6B9F1A4BAC987659EB335F). Normalized /ERROR] entries numbered 465 in both run 5 and run 6; the only multiset difference was an encoding artifact in a single pack-baseline KubeJS Prison message, so the pack-baseline error set — including the RuntimeDistCleaner dedicated-server client-class errors — was unchanged by the rebuilt JAR.
 Log SHA-256: D8A613E5165C18D3D0DC44D8155EBA5AC09959B10A8D86C724E0D677CDB2AEF4.
+
+Third verification run (independent session, same day): C:\m0s-audit\audit-run-7.log
+The audit probe was extended with an `item-tags` subcommand (checked-in source now builds to SHA-256 7BC1A503815CB3C3B26D15CFF8E7A94FBFBAF1E3C8606B2FEFD61471D6CBDCFF) and the same isolated exact-pack server was run again with the rebuilt Public Mines JAR (SHA-256 080FDFE831C8CF546E26B4909C972735C6713602B8A2EF216F1BE6CB716CCBEB).
+Observed lines:
+[04:05:26] DedicatedServer: Done (10.898s)! For help, type "help"
+[04:05:26] RuntimeTagProbe: Rustic Craft Public Mines loaded (isolated runtime audit helper)
+[04:05:27] PublicMines: Rustic Craft Public Mines loaded (server-safe M0 scaffold; no gameplay features active)
+[04:05:53] MinecraftServer: Wrote 77854 tag rows to reports\runtime-block-tags.tsv
+[04:06:13] MinecraftServer: Wrote 78491 tag rows to reports\runtime-item-tags.tsv
+[04:06:43] MinecraftServer: Stopping the server
+The run shut down cleanly with process exit code 0. The block-tag TSV is again identical to the earlier dumps (SHA-256 1AD376814FB485DF6864B5A62A8E0FF48E499218FA6B9F1A4BAC987659EB335F). The item-tag TSV SHA-256 is 6D1A89EF2AA82266E6707BE3350B0CF4AFA3F8A363C639543E92391A969E3311, compressed into M0-runtime-item-tags.tsv.gz.
+Log SHA-256: BF1B61E04132A63ECC2B713CB7299D1D8D0F0494E9574DBB86275269F8C07BE0.
+
+Loot-smoke verification run: C:\m0s-audit\audit-run-9.log
+Same isolated exact-pack server (extended probe build SHA-256 7BC1A503815CB3C3B26D15CFF8E7A94FBFBAF1E3C8606B2FEFD61471D6CBDCFF, Public Mines JAR SHA-256 080FDFE831C8CF546E26B4909C972735C6713602B8A2EF216F1BE6CB716CCBEB). After Done (11.899s), the console force-loaded the test chunk and, for each of the 99 ore/resource candidates, ran `setblock 100 100 100 <block>` then `loot spawn 100 100 100 mine 100 100 100 minecraft:diamond_pickaxe`. The console's `Dropped N [item] from loot table <id>` lines were recorded per candidate; 67 candidates produced item stacks and 32 produced none (the two Born in Chaos infected diamond ores, minecraft:sculk_vein, and 29 realmrpg_skeletons prop blocks). The server exited cleanly with code 0. Per-candidate results: M0-native-loot-smoke.csv.
+Log SHA-256: 6A7E9332C0D8D8AEE51ED81884056CA21DAB4288715BDDBA27A9293A2B988652.

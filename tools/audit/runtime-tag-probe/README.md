@@ -1,6 +1,6 @@
 # Runtime tag probe
 
-This is an audit-only NeoForge mod. It exports the loaded block registry and each block holder's resolved tag memberships to `reports/runtime-block-tags.tsv` when an operator runs `/publicmines-audit block-tags`.
+This is an audit-only NeoForge mod. It exports the loaded block registry and each block holder's resolved tag memberships to `reports/runtime-block-tags.tsv` when an operator runs `/publicmines-audit block-tags`, and the equivalent item registry/tag dump to `reports/runtime-item-tags.tsv` with `/publicmines-audit item-tags`.
 
 Build it from the repository root:
 

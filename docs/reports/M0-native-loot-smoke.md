@@ -2,24 +2,26 @@
 
 ## Run
 
-This exact-pack server-console run evaluated the runtime loot table for every one of the 29 current ore candidates. It used Minecraft 1.21.1, NeoForge 21.1.248, Java 21.0.12, all 283 Rustic Craft 2 2.2.2 pack JARs, plus `publicmines-0.1.0.jar` and `publicmines_auditprobe-0.1.0.jar`. The isolated server reached `Done (11.048s)!`. The results table is [M0-native-loot-smoke.csv](M0-native-loot-smoke.csv).
+This exact-pack server-console run evaluated the runtime loot table for every one of the 99 ore/resource candidates in [M0-ore-candidates.csv](M0-ore-candidates.csv). It used Minecraft 1.21.1, NeoForge 21.1.248, Java 21.0.12, all 283 Rustic Craft 2 2.2.2 pack JARs, plus `publicmines-0.1.0.jar` and `publicmines_auditprobe-0.1.0.jar`. The isolated server reached `Done (11.899s)!` and exited cleanly with code 0. The results table is [M0-native-loot-smoke.csv](M0-native-loot-smoke.csv).
 
-For each candidate, the server ran `setblock 100 100 100 <block>` and then `loot spawn 100 100 100 mine 100 100 100 minecraft:diamond_pickaxe`, followed by an item-entity data query. The test chunk had been force-loaded for the run; the test block and force-load were removed before shutdown.
+For each candidate, the server ran `setblock 100 100 100 <block>` and then `loot spawn 100 100 100 mine 100 100 100 minecraft:diamond_pickaxe`, recording the console's `Dropped N [item] from loot table <id>` output and, where the spawned stack was observable, an item-entity data query. The test chunk had been force-loaded for the run.
 
-Archived source log: `C:\\m0s-audit\\logs\\2026-11-02-7.log.gz` (gzip SHA-256 `0D7A7780FB3EE419F31DB569473CDCAD8134A4B42A907495D002FB18215A8720`)
+Source log: `C:\m0s-audit\audit-run-9.log` (SHA-256 `6A7E9332C0D8D8AEE51ED81884056CA21DAB4288715BDDBA27A9293A2B988652`). The checked-in result CSV contains the normalized per-candidate outcome and server log timestamp.
 
-Decompressed source log SHA-256: `2CDBBCFFEB337DB8938E38A60E239F93B539E0B8B2E1DEEA92D4FCDD3B91B4F8`. The checked-in result CSV contains the normalized per-candidate output and server log timestamp.
+An earlier run on the original 29-candidate table used the same harness; its archived log is `C:\m0s-audit\logs\2026-11-02-7.log.gz` (gzip SHA-256 `0D7A7780FB3EE419F31DB569473CDCAD8134A4B42A907495D002FB18215A8720`, decompressed SHA-256 `2CDBBCFFEB337DB8938E38A60E239F93B539E0B8B2E1DEEA92D4FCDD3B91B4F8`). Its results for those 29 blocks are consistent with the expanded run: the same two candidates produced zero items both times.
 
 ## Results
 
-- Runtime loot tables evaluated: 29 / 29 candidates.
-- Tables producing item stacks with the diamond-pickaxe context: 27.
-- Tables producing zero items: 2 — `born_in_chaos_v1:infected_diamond_ore` and `born_in_chaos_v1:infected_deepslate_diamond_ore`.
-- These two Born in Chaos infected ore candidates produce no direct item under the tested runtime table/tool context. Their player-break behavior appears to make them encounter nodes instead; see below.
+- Runtime loot tables evaluated: 99 / 99 candidates.
+- Tables producing item stacks with the diamond-pickaxe context: 67.
+- Tables producing zero items: 32 — `born_in_chaos_v1:infected_diamond_ore`, `born_in_chaos_v1:infected_deepslate_diamond_ore`, `minecraft:sculk_vein`, and 29 `realmrpg_skeletons:*` prop blocks.
+- The two Born in Chaos infected ore candidates produce no direct item under the tested runtime table/tool context. Their player-break behavior appears to make them encounter nodes instead; see below.
+- The name-sweep additions evaluated as material-producing: `born_in_chaos_v1:dark_metal_deposit` dropped dark metal pieces, `jewelry:gem_vein`/`deepslate_gem_vein` dropped gem items, and the Butchery/Hearth-and-Harvest/Hexalia salt blocks dropped salt.
+- The 29 zero-dropping `realmrpg_skeletons:*` props list material outputs in their static loot JSON but produced nothing in this `/loot ... mine` context — conditions such as tool requirements are unresolved; they are catalogued as loot-sweep candidates, not verified drops.
 
 ## Evidence limits
 
-`/loot ... mine` evaluates the resolved server loot table with a supplied tool context. It is stronger than reading static JSON because it includes runtime datapack/loot resolution, but it does not perform a real player break and does not trigger custom player-break hooks, player-specific conditions, enchantments, or progression requirements. One trial was run per candidate. Randomized counts are observations from this run, not expected yields or balance estimates.
+`/loot ... mine` evaluates the resolved server loot table with a supplied tool context. It is stronger than reading static JSON because it includes runtime datapack/loot resolution, but it does not perform a real player break and does not trigger custom player-break hooks, player-specific conditions, enchantments, or progression requirements. One trial was run per candidate. Randomized counts are observations from this run, not expected yields or balance estimates. `observed_item_id` is populated only where the spawned stack was queryable in the same tick; the `Dropped ... from loot table` console lines are authoritative for all rows.
 
 ## Born in Chaos infected-ore encounter connection
 

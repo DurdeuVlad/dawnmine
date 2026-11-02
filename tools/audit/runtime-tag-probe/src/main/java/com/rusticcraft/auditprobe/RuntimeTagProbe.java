@@ -7,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -39,19 +38,21 @@ public class RuntimeTagProbe {
         event.getDispatcher().register(Commands.literal("publicmines-audit")
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("block-tags")
-                        .executes(context -> dumpBlockTags(context.getSource()))));
+                        .executes(context -> dumpTags(context.getSource(), BuiltInRegistries.BLOCK, Registries.BLOCK, "block_id", "runtime-block-tags.tsv")))
+                .then(Commands.literal("item-tags")
+                        .executes(context -> dumpTags(context.getSource(), BuiltInRegistries.ITEM, Registries.ITEM, "item_id", "runtime-item-tags.tsv"))));
     }
 
-    private int dumpBlockTags(net.minecraft.commands.CommandSourceStack source) {
+    private <T> int dumpTags(net.minecraft.commands.CommandSourceStack source, net.minecraft.core.Registry<T> registry,
+                             net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<T>> registryKey, String idColumn, String fileName) {
         try {
-            Path output = Path.of("reports", "runtime-block-tags.tsv");
+            Path output = Path.of("reports", fileName);
             Files.createDirectories(output.getParent());
             List<String> rows = new ArrayList<>();
-            rows.add("block_id\ttag_id");
-            for (var entry : BuiltInRegistries.BLOCK.entrySet()) {
-                Block block = entry.getValue();
-                var id = BuiltInRegistries.BLOCK.getKey(block);
-                var holder = BuiltInRegistries.BLOCK.getHolder(ResourceKey.create(Registries.BLOCK, id)).orElse(null);
+            rows.add(idColumn + "\ttag_id");
+            for (var entry : registry.entrySet()) {
+                var id = registry.getKey(entry.getValue());
+                var holder = registry.getHolder(ResourceKey.create(registryKey, id)).orElse(null);
                 if (holder == null) {
                     rows.add(id + "\t");
                     continue;
@@ -62,11 +63,12 @@ public class RuntimeTagProbe {
             }
             rows.subList(1, rows.size()).sort(Comparator.naturalOrder());
             Files.write(output, rows);
-            source.sendSuccess(() -> Component.literal("Wrote " + (rows.size() - 1) + " block/tag rows to " + output), true);
+            String name = fileName;
+            source.sendSuccess(() -> Component.literal("Wrote " + (rows.size() - 1) + " tag rows to " + output), true);
             return Command.SINGLE_SUCCESS;
         } catch (Exception e) {
-            LOGGER.error("Could not write runtime block-tag audit", e);
-            source.sendFailure(Component.literal("Block-tag audit failed: " + e.getMessage()));
+            LOGGER.error("Could not write runtime tag audit", e);
+            source.sendFailure(Component.literal("Tag audit failed: " + e.getMessage()));
             return 0;
         }
     }

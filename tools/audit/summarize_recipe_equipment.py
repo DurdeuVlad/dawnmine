@@ -42,6 +42,23 @@ INPUT_KEYS = {
     "ingredient", "ingredients", "key", "base", "addition", "template",
     "input", "catalyst", "gem", "material", "materials", "reagent",
 }
+# Resolved runtime item-tag families that evidence an item is equipment.
+# Mod-specific tags whose path mentions weapons/armor are also accepted.
+EQUIPMENT_TAG_RE = re.compile(
+    r"^(?:"
+    r"c:(?:tools|weapons|shields)(?:/|$)"
+    r"|minecraft:(?:head|chest|leg|foot)_armor$"
+    r"|minecraft:enchantable/(?:weapon|sword|sharp_weapon|bow|crossbow|trident|mace|armor|head_armor|chest_armor|leg_armor|foot_armor|mining|mining_loot)$"
+    r"|[a-z0-9_.-]+:[a-z0-9_/.-]*(?:weapon|armor)[a-z0-9_/.-]*"
+    r")$"
+)
+# Resolved runtime item-tag families that evidence an item is a mined/crafted material.
+MATERIAL_TAG_RE = re.compile(
+    r"^(?:"
+    r"c:(?:ingots|nuggets|gems|raw_materials|dusts|ores|ore|storage_blocks)(?:/|$)"
+    r"|[a-z0-9_.-]+:[a-z0-9_/.-]*materials[a-z0-9_/.-]*"
+    r")$"
+)
 
 
 def item_path_tokens(reference: str) -> set[str]:
@@ -110,28 +127,69 @@ def recipe_id(resource: str) -> str:
     return f"{namespace}:{'/'.join(parts[3:])[:-5]}"
 
 
-def classification(outputs: set[str], ingredients: set[str]) -> set[str]:
-    tags = set()
-    if any(
-        bool(item_path_tokens(ref) & set(MATERIAL_WORDS))
-        and bool(item_path_tokens(ref) & MATERIAL_PRODUCT_WORDS)
-        or ref.lower().split(":", 1)[-1].endswith("_ore")
-        or ref.lower().split(":", 1)[-1].startswith("raw_")
-        or ref.lower().startswith(("#c:ingots/", "#c:nuggets/", "#c:gems/", "#c:ores/", "#c:raw_materials/"))
-        for ref in outputs
-    ):
-        tags.add("material_candidate")
-    if any(
-        token in GEAR_WORDS
-        or any(token.startswith(word) or token.endswith(word) for word in GEAR_WORDS)
-        for ref in outputs
-        for token in item_path_tokens(ref)
-    ):
-        tags.add("equipment_candidate")
+def classification(outputs: set[str], item_tags: dict[str, set[str]]):
+    """Return (labels, detection basis). Tag evidence wins over name heuristics."""
+    labels = set()
+    basis: dict[str, str] = {}
+
+    def detect_material(ref: str) -> str:
+        if ref.startswith("#"):
+            if ref.lower().startswith(("#c:ingots/", "#c:nuggets/", "#c:gems/", "#c:ores/", "#c:raw_materials/")):
+                return "tag-ref"
+            return ""
+        for tag in sorted(item_tags.get(ref, ())):
+            if MATERIAL_TAG_RE.match(tag):
+                return f"tag:{tag}"
+        tokens = item_path_tokens(ref)
+        path = ref.lower().split(":", 1)[-1]
+        if (tokens & set(MATERIAL_WORDS) and tokens & MATERIAL_PRODUCT_WORDS) or path.endswith("_ore") or path.startswith("raw_"):
+            return "lexicon"
+        return ""
+
+    def detect_equipment(ref: str) -> str:
+        if ref.startswith("#"):
+            return ""
+        for tag in sorted(item_tags.get(ref, ())):
+            if EQUIPMENT_TAG_RE.match(tag):
+                return f"tag:{tag}"
+        tokens = item_path_tokens(ref)
+        if tokens & set(GEAR_WORDS) or any(
+            token.startswith(word) or token.endswith(word)
+            for token in tokens
+            for word in GEAR_WORDS
+        ):
+            return "lexicon"
+        return ""
+
+    for ref in sorted(outputs):
+        how = detect_material(ref)
+        if how:
+            labels.add("material_candidate")
+            basis.setdefault("material_candidate", how)
+        how = detect_equipment(ref)
+        if how:
+            labels.add("equipment_candidate")
+            basis.setdefault("equipment_candidate", how)
+    return labels, basis
+
+
+def load_runtime_item_tags(path: Path) -> dict[str, set[str]]:
+    rows = list(csv.reader(path.read_text(encoding="utf-8").splitlines(), delimiter="\t"))
+    if not rows or rows[0] != ["item_id", "tag_id"]:
+        raise ValueError(f"Expected tab-delimited item_id/tag_id header in {path}")
+    tags: dict[str, set[str]] = {}
+    for row in rows[1:]:
+        if len(row) != 2:
+            raise ValueError(f"Malformed runtime item tag row: {row!r}")
+        item_id, tag_id = row
+        if tag_id:
+            tags.setdefault(item_id, set()).add(tag_id)
+        else:
+            tags.setdefault(item_id, set())
     return tags
 
 
-def scan_recipes(mods_dir: Path, expected: dict[str, str]):
+def scan_recipes(mods_dir: Path, expected: dict[str, str], item_tags: dict[str, set[str]]):
     records = []
     malformed = []
     total_recipe_resources = 0
@@ -162,7 +220,7 @@ def scan_recipes(mods_dir: Path, expected: dict[str, str]):
                 for key in INPUT_KEYS:
                     if key in recipe:
                         walk_refs(recipe[key], ingredients)
-                labels = classification(outputs, ingredients)
+                labels, basis = classification(outputs, item_tags)
                 if not labels:
                     continue
                 records.append(
@@ -172,6 +230,9 @@ def scan_recipes(mods_dir: Path, expected: dict[str, str]):
                         "outputs": ";".join(sorted(outputs)),
                         "ingredients": ";".join(sorted(ingredients)),
                         "classification": ";".join(sorted(labels)),
+                        "detection": ";".join(
+                            f"{label}={basis[label]}" for label in sorted(labels)
+                        ),
                         "source_jar": jar_name,
                         "source_jar_sha256": jar_hash,
                         "source_resource": resource,
@@ -184,7 +245,8 @@ def scan_recipes(mods_dir: Path, expected: dict[str, str]):
 def write_csv_gz(path: Path, records: list[dict[str, str]]) -> None:
     fields = [
         "recipe_id", "recipe_type", "outputs", "ingredients", "classification",
-        "source_jar", "source_jar_sha256", "source_resource", "source_resource_sha256",
+        "detection", "source_jar", "source_jar_sha256", "source_resource",
+        "source_resource_sha256",
     ]
     with path.open("wb") as compressed:
         with gzip.GzipFile(fileobj=compressed, mode="wb", filename="", mtime=0, compresslevel=9) as gz:
@@ -196,12 +258,17 @@ def write_csv_gz(path: Path, records: list[dict[str, str]]) -> None:
                 writer.writerows(records)
 
 
-def write_report(path: Path, total: int, records, malformed, candidates_sha256: str) -> None:
+def write_report(path: Path, total: int, records, malformed, candidates_sha256: str, item_tags_sha256: str, item_tag_rows: int) -> None:
     counts = Counter(
         label
         for record in records
         for label in record["classification"].split(";")
     )
+    detection = Counter()
+    for record in records:
+        for part in record["detection"].split(";"):
+            _, how = part.split("=", 1)
+            detection["tag" if how.startswith("tag:") else how] += 1
     steel = [record for record in records if "magistuarmory:steel_ingot" in record["outputs"]]
     steel_gear = [
         record for record in records
@@ -226,6 +293,8 @@ def write_report(path: Path, total: int, records, malformed, candidates_sha256: 
         "",
         "The report generator verifies each expected pack JAR SHA-256 against [M0-server-mods.sha256](M0-server-mods.sha256), rejects missing or modified pack JARs, and rejects unexpected JARs other than the two documented audit additions.",
         "",
+        f"Candidate rows are classified by resolved runtime item tags from the exact-pack `/publicmines-audit item-tags` dump where available, falling back to a name lexicon. Detection basis counts: {dict(sorted(detection.items()))}. Runtime item/tag snapshot SHA-256: `{item_tags_sha256}` (uncompressed source `reports/runtime-item-tags.tsv`, {item_tag_rows:,} rows).",
+        "",
         "## Pack-grounded progression hooks",
         "",
         f"- Steel: {len(steel)} indexed recipe row(s) produce `magistuarmory:steel_ingot`; {len(steel_gear)} equipment candidate rows mention steel. The direct processing recipe ID is `magistuarmory:furnace/steel_ingot_blasting` in `epic-knights-1.21.1-neoforge-10.12.jar` (`data/magistuarmory/recipe/furnace/steel_ingot_blasting.json`): one `minecraft:iron_ingot` input becomes one `magistuarmory:steel_ingot` with 0.5 XP and 40-tick cook time. Steel weapon recipes can therefore support an iron-to-steel combat upgrade gate; this does not establish steel mining-tool availability or player unlock pacing.",
@@ -246,6 +315,7 @@ def write_report(path: Path, total: int, records, malformed, candidates_sha256: 
         "python tools\\audit\\summarize_recipe_equipment.py `",
         "  --mods-dir C:\\m0s-audit\\mods `",
         "  --expected-pack-hashes docs\\reports\\M0-server-mods.sha256 `",
+        "  --runtime-item-tags C:\\m0s-audit\\reports\\runtime-item-tags.tsv `",
         "  --out-dir docs\\reports",
         "```",
         "",
@@ -264,14 +334,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mods-dir", type=Path, required=True)
     parser.add_argument("--expected-pack-hashes", type=Path, required=True)
+    parser.add_argument("--runtime-item-tags", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     expected = validate_pack(args.mods_dir, load_expected(args.expected_pack_hashes))
-    total, records, malformed = scan_recipes(args.mods_dir, expected)
+    item_tags = load_runtime_item_tags(args.runtime_item_tags)
+    item_tag_rows = sum(1 for _ in args.runtime_item_tags.open(encoding="utf-8")) - 1
+    total, records, malformed = scan_recipes(args.mods_dir, expected, item_tags)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     candidates_path = args.out_dir / "M0-recipe-equipment-candidates.csv.gz"
     write_csv_gz(candidates_path, records)
-    write_report(args.out_dir / "M0-recipe-equipment-audit.md", total, records, malformed, sha256(candidates_path))
+    write_report(
+        args.out_dir / "M0-recipe-equipment-audit.md", total, records, malformed,
+        sha256(candidates_path), sha256(args.runtime_item_tags), item_tag_rows,
+    )
     print(
         f"pack_jars={len(expected)} recipe_resources={total} candidates={len(records)} "
         f"malformed={len(malformed)} classifications={dict(Counter(label for r in records for label in r['classification'].split(';')))}"
