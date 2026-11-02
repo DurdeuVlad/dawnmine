@@ -3,6 +3,7 @@ package com.rusticcraft.publicmines.run;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.PublicMines;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.encounter.MineEncounterManager;
 import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.topology.MineTopology;
@@ -173,6 +174,7 @@ public class MineManager {
             String runId = dayId + "-" + sequence;
             long worldSeed = server.getWorldData().worldGenOptions().seed();
             long seed = worldSeed ^ (0x9E3779B97F4A7C15L * sequence);
+            MineEncounterManager.cleanupRun(mine, data, data.runId());
             data.beginNewRun(runId, sequence, seed, dayId);
             steps.add(Step.ok("run record", "created run " + runId + " for day " + dayId + " (seed recorded)"));
 

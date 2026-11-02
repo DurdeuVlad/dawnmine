@@ -3,15 +3,19 @@ package com.rusticcraft.publicmines;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.command.PublicMineCommand;
 import com.rusticcraft.publicmines.command.OreBreakAuditCommand;
+import com.rusticcraft.publicmines.command.MineEncounterAuditCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.generation.MineGenerator;
 import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
 import com.rusticcraft.publicmines.gametest.OreBreakGameTests;
 import com.rusticcraft.publicmines.generation.PublicMineWorldgen;
+import com.rusticcraft.publicmines.encounter.MineEncounterCatalog;
+import com.rusticcraft.publicmines.encounter.MineEncounterManager;
 import com.rusticcraft.publicmines.protection.MineProtectionEvents;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineProtectionGameTests;
+import com.rusticcraft.publicmines.run.MineEncounterGameTests;
 import com.rusticcraft.publicmines.topology.TopologyProfiles;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -41,6 +45,7 @@ public class PublicMines {
         container.registerConfig(ModConfig.Type.SERVER, PublicMineConfig.SPEC);
         PublicMineWorldgen.register(modEventBus);
         MineProtectionEvents.register();
+        MineEncounterManager.register();
         modEventBus.addListener(this::onRegisterGameTests);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
@@ -51,20 +56,24 @@ public class PublicMines {
     private void onRegisterCommands(RegisterCommandsEvent event) {
         PublicMineCommand.register(event.getDispatcher());
         OreBreakAuditCommand.register(event.getDispatcher());
+        MineEncounterAuditCommand.register(event.getDispatcher());
     }
 
     private void onRegisterGameTests(RegisterGameTestsEvent event) {
         event.register(MineLifecycleGameTests.class);
         event.register(MineProtectionGameTests.class);
+        event.register(MineEncounterGameTests.class);
         event.register(OreBreakGameTests.class);
     }
 
     private void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener(new TopologyProfiles());
+        event.addListener(new MineEncounterCatalog());
         event.addListener(OreCatalog.createReloadListener());
     }
 
     private void onServerStarted(ServerStartedEvent event) {
+        MineEncounterManager.validateEntityRegistry();
         MineManager.get(event.getServer()).onServerStarted();
         MineGenerator.get(event.getServer()).onServerStarted();
         LOGGER.info("Rustic Craft Public Mines loaded (server lifecycle, generation, and ore catalog ready)");

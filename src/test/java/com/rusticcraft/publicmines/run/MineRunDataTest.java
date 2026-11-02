@@ -28,7 +28,7 @@ class MineRunDataTest {
         CompoundTag saved = original.save(new CompoundTag(), null);
         MineRunData restored = MineRunData.load(saved, null);
 
-        assertEquals(4, restored.schema());
+        assertEquals(6, restored.schema());
         assertEquals(RunStatus.READY, restored.status());
         assertEquals("standard", restored.topologyProfile());
         assertEquals("a".repeat(64), restored.topologyFingerprint());
@@ -50,7 +50,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(4, migrated.schema());
+        assertEquals(6, migrated.schema());
         assertEquals(RunStatus.FAILED, migrated.status());
         assertTrue(migrated.lastError().contains("/publicmine recover repair"));
     }
@@ -58,14 +58,14 @@ class MineRunDataTest {
     @Test
     void futureSchemaFailsClosedAndIsPreservedVerbatim() {
         CompoundTag future = new CompoundTag();
-        future.putInt("schema", 5);
+        future.putInt("schema", 7);
         future.putString("status", RunStatus.READY.name());
         future.putString("futureField", "owned by newer mod version");
         CompoundTag original = future.copy();
 
         MineRunData loaded = MineRunData.load(future, null);
 
-        assertEquals(5, loaded.schema());
+        assertEquals(7, loaded.schema());
         assertTrue(loaded.hasUnsupportedSchema());
         assertEquals(RunStatus.FAILED, loaded.status());
         assertTrue(loaded.lastError().contains("update Public Mines"));
@@ -116,7 +116,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema2, null);
 
-        assertEquals(4, migrated.schema());
+        assertEquals(6, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertEquals("a".repeat(64), migrated.topologyFingerprint());
         assertEquals("", migrated.generationPlanFingerprint());
@@ -136,7 +136,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema3, null);
 
-        assertEquals(4, migrated.schema());
+        assertEquals(6, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertTrue(migrated.safeZones().isEmpty());
         assertTrue(migrated.mineOreOrigins().isEmpty());
@@ -243,6 +243,140 @@ class MineRunDataTest {
         assertTrue(restored.mineOreOrigins().isEmpty());
         assertFalse(restored.isInSafeZone(MineManager.MINE_DIMENSION, new BlockPos(15, 25, 15)));
         assertFalse(restored.isRecordedMineOre(MineManager.MINE_DIMENSION, orePos, oreBlock));
+    }
+
+    @Test
+    void mineEntitiesAndEncounterSiteClaimsPersistAndClearOnNewRun() {
+        MineRunData data = readyRun();
+        data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
+        var uuid = java.util.UUID.fromString("b4f288d7-9574-4a73-8dbf-e4e008d56a23");
+        var entityType = ResourceLocation.parse("born_in_chaos_v1:diamond_termite");
+        BlockPos pos = new BlockPos(32, -24, 32);
+
+        assertTrue(data.registerMineEntity(uuid, entityType, MineManager.MINE_DIMENSION,
+                pos, "node:m042", "chaos"));
+        assertTrue(data.registerMineEntity(uuid, entityType, MineManager.MINE_DIMENSION,
+                pos, "node:m042", "chaos"), "repeated entity ownership registration is idempotent");
+        assertFalse(data.registerMineEntity(uuid, ResourceLocation.parse("minecraft:zombie"),
+                MineManager.MINE_DIMENSION, pos, "node:m042", "chaos"),
+                "an entity UUID cannot be rebound to different ownership metadata");
+        assertTrue(data.claimEncounterSite("node:m042"));
+        assertFalse(data.claimEncounterSite("node:m042"), "site claim prevents duplicate encounter spawning");
+
+        MineRunData restored = MineRunData.load(data.save(new CompoundTag(), null), null);
+
+        assertTrue(restored.isTrackedMineEntity(uuid));
+        assertEquals(data.mineEntities(), restored.mineEntities());
+        assertTrue(restored.hasClaimedEncounterSite("node:m042"));
+        assertFalse(restored.claimEncounterSite("node:m042"));
+        assertTrue(restored.unregisterMineEntity(uuid));
+        assertFalse(restored.isTrackedMineEntity(uuid));
+
+        restored.beginNewRun("2026-11-03-1", 2, 99L, "2026-11-03");
+
+        assertTrue(restored.mineEntities().isEmpty());
+        assertFalse(restored.hasClaimedEncounterSite("node:m042"));
+        assertTrue(restored.claimEncounterSite("node:m042"));
+    }
+
+    @Test
+    void mineEntityRegistrationRequiresAnOwnedMinePositionAndValidMetadata() {
+        MineRunData data = readyRun();
+        data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
+        var uuid = java.util.UUID.fromString("b4f288d7-9574-4a73-8dbf-e4e008d56a23");
+        var entityType = ResourceLocation.parse("born_in_chaos_v1:diamond_termite");
+        ResourceKey<Level> overworld = ResourceKey.create(Registries.DIMENSION,
+                ResourceLocation.parse("minecraft:overworld"));
+
+        assertFalse(data.registerMineEntity(uuid, entityType, MineManager.MINE_DIMENSION,
+                new BlockPos(300, 1, 1), "node:m042", "chaos"));
+        assertFalse(data.registerMineEntity(uuid, entityType, overworld,
+                new BlockPos(32, -24, 32), "node:m042", "chaos"));
+        assertFalse(data.registerMineEntity(uuid, entityType, MineManager.MINE_DIMENSION,
+                new BlockPos(32, -24, 32), "", "chaos"));
+        assertFalse(data.claimEncounterSite("bad site id"));
+    }
+
+    @Test
+    void schemaFourMigrationDropsUnverifiableMineEntityAndEncounterState() {
+        MineRunData data = readyRun();
+        data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
+        var uuid = java.util.UUID.fromString("b4f288d7-9574-4a73-8dbf-e4e008d56a23");
+        data.registerMineEntity(uuid, ResourceLocation.parse("minecraft:zombie"),
+                MineManager.MINE_DIMENSION, new BlockPos(1, 1, 1), "node:m001", "upper");
+        data.claimEncounterSite("node:m001");
+        CompoundTag legacy = data.save(new CompoundTag(), null);
+        legacy.putInt("schema", 4);
+
+        MineRunData migrated = MineRunData.load(legacy, null);
+
+        assertEquals(6, migrated.schema());
+        assertTrue(migrated.mineEntities().isEmpty());
+        assertFalse(migrated.hasClaimedEncounterSite("node:m001"));
+    }
+
+    @Test
+    void schemaFiveMigrationKeepsSiteClaimsButDropsOriginsWithoutSavedPositions() {
+        MineRunData data = readyRun();
+        data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
+        var uuid = java.util.UUID.fromString("b4f288d7-9574-4a73-8dbf-e4e008d56a23");
+        data.registerMineEntity(uuid, ResourceLocation.parse("minecraft:zombie"),
+                MineManager.MINE_DIMENSION, new BlockPos(32, -24, 32), "node:m001", "upper");
+        data.claimEncounterSite("node:m001");
+        CompoundTag legacy = data.save(new CompoundTag(), null);
+        legacy.putInt("schema", 5);
+        legacy.getList("mineEntities", net.minecraft.nbt.Tag.TAG_COMPOUND).getCompound(0).remove("pos");
+
+        MineRunData migrated = MineRunData.load(legacy, null);
+
+        assertEquals(6, migrated.schema());
+        assertTrue(migrated.mineEntities().isEmpty());
+        assertTrue(migrated.hasClaimedEncounterSite("node:m001"));
+    }
+
+    @Test
+    void malformedMineEntityRecordsAreIgnoredAndTooManyFailClosed() {
+        MineRunData data = readyRun();
+        CompoundTag saved = data.save(new CompoundTag(), null);
+        ListTag records = new ListTag();
+        CompoundTag malformed = new CompoundTag();
+        malformed.putString("uuid", "not-a-uuid");
+        records.add(malformed);
+        saved.put("mineEntities", records);
+        MineRunData loaded = MineRunData.load(saved, null);
+        assertTrue(loaded.mineEntities().isEmpty());
+
+        ListTag oversized = new ListTag();
+        for (int i = 0; i <= MineRunData.MAX_MINE_ENTITIES; i++) {
+            oversized.add(new CompoundTag());
+        }
+        saved.put("mineEntities", oversized);
+        MineRunData capped = MineRunData.load(saved, null);
+        assertEquals(RunStatus.FAILED, capped.status());
+        assertTrue(capped.lastError().contains("mine-entity count exceeds"));
+        assertTrue(capped.mineEntities().isEmpty());
+    }
+
+    @Test
+    void malformedEncounterClaimDataFailsClosedAndIsBounded() {
+        CompoundTag saved = readyRun().save(new CompoundTag(), null);
+        ListTag claims = new ListTag();
+        claims.add(new CompoundTag());
+        saved.put("encounterSiteClaims", claims);
+
+        MineRunData malformed = MineRunData.load(saved, null);
+
+        assertEquals(RunStatus.FAILED, malformed.status());
+        assertTrue(malformed.lastError().contains("non-string"));
+
+        ListTag tooMany = new ListTag();
+        for (int i = 0; i <= MineRunData.MAX_ENCOUNTER_SITE_CLAIMS; i++) {
+            tooMany.add(StringTag.valueOf("node:m001"));
+        }
+        saved.put("encounterSiteClaims", tooMany);
+        MineRunData capped = MineRunData.load(saved, null);
+        assertEquals(RunStatus.FAILED, capped.status());
+        assertTrue(capped.lastError().contains("claim count exceeds"));
     }
 
     @Test

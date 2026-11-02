@@ -1,6 +1,7 @@
 package com.rusticcraft.publicmines.generation;
 
 import com.mojang.logging.LogUtils;
+import com.rusticcraft.publicmines.encounter.MineEncounterManager;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineRunData;
@@ -473,6 +474,11 @@ public final class MineGenerator {
             if (edge != null) {
                 data.enqueueGenerationSegment(nodeSegmentId(edge.a()));
                 data.enqueueGenerationSegment(nodeSegmentId(edge.b()));
+            }
+        } else if (segmentId.startsWith("node:")) {
+            TopoNode node = topology.node(segmentId.substring("node:".length()));
+            if (node != null) {
+                MineEncounterManager.onNodeGenerated(server, node);
             }
         }
         LOGGER.info("[publicmines] Generated segment {} ({} complete, {} queued).",
