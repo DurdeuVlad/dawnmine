@@ -3,6 +3,10 @@ package com.rusticcraft.publicmines.run;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.PublicMines;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.topology.MineTopology;
+import com.rusticcraft.publicmines.topology.TopologyException;
+import com.rusticcraft.publicmines.topology.TopologyPlan;
+import com.rusticcraft.publicmines.topology.TopologyReport;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +106,18 @@ public class MineManager {
     public synchronized List<Step> initialize() {
         List<Step> steps = new ArrayList<>();
 
+        if (data.hasUnsupportedSchema()) {
+            steps.add(Step.fail("run record", data.lastError()));
+            return steps;
+        }
+
         if (data.status() == RunStatus.READY) {
+            Check topology = checkTopology(mineLevel());
+            if (!topology.ok()) {
+                data.markFailed("READY run topology check failed: " + topology.detail());
+                steps.add(Step.fail("topology", topology.detail()));
+                return steps;
+            }
             steps.add(Step.ok("existing run", "already initialized as run " + data.runId() + "; nothing was changed"));
             steps.add(verifyArrivalPad());
             return steps;
@@ -138,8 +153,18 @@ public class MineManager {
             data.setSurfaceExit(exit);
             steps.add(Step.ok("surface exit", "recorded overworld spawn at " + describePos(exit)));
 
-            steps.add(placeArrivalPad(mine));
-            if (!steps.get(steps.size() - 1).ok()) {
+            Step topology = planTopology(mine);
+            steps.add(topology);
+            if (!topology.ok()) {
+                data.markFailed("topology planning failed");
+                return steps;
+            }
+
+            // M2a's complete topology must pass its pre-mutation gate before
+            // even the M1 arrival pad is written into the mine dimension.
+            Step arrivalPad = placeArrivalPad(mine);
+            steps.add(arrivalPad);
+            if (!arrivalPad.ok()) {
                 data.markFailed("arrival pad placement failed");
                 return steps;
             }
@@ -195,6 +220,64 @@ public class MineManager {
 
     private boolean isArrivalSafe(ServerLevel mine) {
         return isArrivalSafe(mine, data.mineArrival() != null ? data.mineArrival() : ARRIVAL);
+    }
+
+    // ------------------------------------------------------------------
+    // Topology (M2a): deterministic plan, validated before any block work
+    // ------------------------------------------------------------------
+
+    /** Plans the run topology from the recorded seed and bounds and validates
+     * it. Nothing is placed: the only state written is the topology receipt
+     * (profile, fingerprint, counts) in the run record. */
+    private Step planTopology(ServerLevel mine) {
+        try {
+            TopologyPlan plan = MineTopology.plan(data, mine);
+            TopologyReport report = MineTopology.validate(plan);
+            if (!report.ok()) {
+                return Step.fail("topology", "planned topology failed validation: "
+                        + report.describe() + "; fix the profile data or bounds, then retry");
+            }
+            data.setTopology(plan.profileId(), plan.fingerprint(),
+                    plan.nodes().size(), plan.edges().size());
+            return Step.ok("topology", "planned " + plan.summary()
+                    + "; no blocks placed (generation is M2b)");
+        } catch (TopologyException e) {
+            return Step.fail("topology", e.getMessage());
+        }
+    }
+
+    /** Replans deterministically and compares against the persisted receipt,
+     * proving the stored fingerprint still matches (seed + profile + bounds). */
+    private Check checkTopology(ServerLevel mine) {
+        if (!data.hasValidTopologyFingerprint()) {
+            if (!data.topologyFingerprint().isEmpty()) {
+                return Check.fail("topology",
+                        "recorded topology fingerprint is malformed; run '/publicmine recover repair'");
+            }
+            return Check.fail("topology",
+                    "no topology is recorded for this run; run '/publicmine recover repair'");
+        }
+        if (mine == null) {
+            return Check.fail("topology",
+                    "mine dimension is not loaded; the recorded topology cannot be verified");
+        }
+        try {
+            TopologyPlan plan = MineTopology.plan(data, mine);
+            TopologyReport report = MineTopology.validate(plan);
+            if (!report.ok()) {
+                return Check.fail("topology",
+                        "replanned topology fails validation: " + report.describe());
+            }
+            if (!plan.fingerprint().equals(data.topologyFingerprint())) {
+                return Check.fail("topology",
+                        "replanned topology fingerprint " + plan.fingerprint().substring(0, 12)
+                                + " differs from the recorded " + data.topologyFingerprint().substring(0, 12)
+                                + "; profile or bounds changed since planning - run '/publicmine recover repair'");
+            }
+            return Check.pass("topology", "plan verified: " + plan.summary());
+        } catch (TopologyException e) {
+            return Check.fail("topology", e.getMessage());
+        }
     }
 
     /** The pad is the 5x5 solid floor directly beneath the arrival point,
@@ -288,7 +371,9 @@ public class MineManager {
         } else {
             checks.add(Check.pass("surface exit", "surface exit recorded at " + describePos(data.surfaceExit())));
         }
-        checks.add(Check.pass("generation frontier", data.frontierRegions() + " generated region(s) recorded (procedural geometry arrives in M2)"));
+        checks.add(checkTopology(mine));
+        checks.add(Check.pass("generation frontier", data.frontierRegions()
+                + " generated region(s) recorded (block geometry arrives in M2b)"));
         checks.add(Check.warn("reset scheduling",
                 "effective reset is " + String.format("%02d:%02d", PublicMineConfig.resetHour(), PublicMineConfig.resetMinute())
                         + " " + PublicMineConfig.resetZoneId() + " once M7 scheduling ships; nothing resets automatically yet"));

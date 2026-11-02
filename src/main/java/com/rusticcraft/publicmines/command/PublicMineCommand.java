@@ -130,6 +130,11 @@ public final class PublicMineCommand {
         }
         lines.add("Day: " + (data.dayId().isEmpty() ? "(none)" : data.dayId())
                 + "  seed: " + data.seed() + "  frontier regions: " + data.frontierRegions());
+        lines.add("Topology: " + (data.topologyFingerprint().isEmpty()
+                ? "(not planned)"
+                : data.topologyNodes() + " nodes / " + data.topologyEdges() + " segments, profile "
+                        + data.topologyProfile() + ", fingerprint "
+                        + data.topologyFingerprintPrefix()));
         lines.add("Active region: chunks [" + data.boundMinChunkX() + ", " + data.boundMinChunkZ()
                 + "] to [" + data.boundMaxChunkX() + ", " + data.boundMaxChunkZ() + "]");
         lines.add("Arrival: " + (data.mineArrival() == null ? "(not set)" : MineManager.describePos(data.mineArrival()))

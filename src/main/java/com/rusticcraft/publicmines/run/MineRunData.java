@@ -26,7 +26,7 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 1;
+    private static final int SCHEMA = 2;
 
     private int schema = SCHEMA;
     private RunStatus status = RunStatus.UNINITIALIZED;
@@ -44,6 +44,15 @@ public class MineRunData extends SavedData {
     private BlockPos surfaceExit = null;
     /** Number of generated frontier regions claimed so far; M2 advances this. */
     private int frontierRegions = 0;
+    /** Deterministic-topology receipt recorded by M2a planning: the SHA-256
+     * fingerprint of the canonical plan plus its size, so a replan after a
+     * restart can be compared byte-for-byte. */
+    private String topologyProfile = "";
+    private String topologyFingerprint = "";
+    private int topologyNodes = 0;
+    private int topologyEdges = 0;
+    /** Opaque future-version save data must survive this older mod untouched. */
+    private CompoundTag unsupportedSchemaTag;
     private final List<OwnedVolume> ownedVolumes = new ArrayList<>();
     /** Per-player surface return position captured on entry. */
     private final Map<UUID, ReturnPoint> returnPoints = new HashMap<>();
@@ -60,6 +69,9 @@ public class MineRunData extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+        if (unsupportedSchemaTag != null) {
+            return unsupportedSchemaTag.copy();
+        }
         tag.putInt("schema", schema);
         tag.putString("status", status.name());
         tag.putString("runId", runId);
@@ -75,6 +87,10 @@ public class MineRunData extends SavedData {
             tag.putIntArray("surfaceExit", new int[] {surfaceExit.getX(), surfaceExit.getY(), surfaceExit.getZ()});
         }
         tag.putInt("frontierRegions", frontierRegions);
+        tag.putString("topologyProfile", topologyProfile);
+        tag.putString("topologyFingerprint", topologyFingerprint);
+        tag.putInt("topologyNodes", topologyNodes);
+        tag.putInt("topologyEdges", topologyEdges);
         ListTag volumes = new ListTag();
         for (OwnedVolume volume : ownedVolumes) {
             volumes.add(volume.save());
@@ -98,7 +114,16 @@ public class MineRunData extends SavedData {
 
     public static MineRunData load(CompoundTag tag, HolderLookup.Provider registries) {
         MineRunData data = new MineRunData();
-        data.schema = tag.getInt("schema");
+        int savedSchema = tag.getInt("schema");
+        if (savedSchema > SCHEMA) {
+            data.schema = savedSchema;
+            data.status = RunStatus.FAILED;
+            data.lastError = "saved run schema " + savedSchema + " is newer than supported schema "
+                    + SCHEMA + "; update Public Mines before managing this run (saved data preserved)";
+            data.unsupportedSchemaTag = tag.copy();
+            return data;
+        }
+        data.schema = SCHEMA;
         data.status = parseStatus(tag.getString("status"));
         data.runId = tag.getString("runId");
         data.runSequence = tag.getLong("runSequence");
@@ -121,6 +146,13 @@ public class MineRunData extends SavedData {
             data.surfaceExit = new BlockPos(exit[0], exit[1], exit[2]);
         }
         data.frontierRegions = tag.getInt("frontierRegions");
+        data.topologyProfile = tag.getString("topologyProfile");
+        data.topologyFingerprint = tag.getString("topologyFingerprint");
+        data.topologyNodes = tag.getInt("topologyNodes");
+        data.topologyEdges = tag.getInt("topologyEdges");
+        if (!data.topologyFingerprint.isEmpty() && !isValidTopologyFingerprint(data.topologyFingerprint)) {
+            data.markFailed("saved topology fingerprint is malformed; run '/publicmine recover repair'");
+        }
         for (Tag t : tag.getList("ownedVolumes", Tag.TAG_COMPOUND)) {
             try {
                 OwnedVolume volume = OwnedVolume.load((CompoundTag) t);
@@ -147,6 +179,17 @@ public class MineRunData extends SavedData {
                 // than failing the whole load
             }
         }
+        if (savedSchema < SCHEMA) {
+            // M2a requires a deterministic topology receipt before a READY
+            // run can be trusted. Do not keep an M1 READY record entry-enabled
+            // when it has no receipt; staff can safely reseed/rebuild it.
+            if (data.status == RunStatus.READY && data.topologyFingerprint.isBlank()) {
+                data.status = RunStatus.FAILED;
+                data.lastError = "saved run schema " + savedSchema
+                        + " has no topology receipt; run '/publicmine recover repair'";
+            }
+            data.setDirty();
+        }
         return data;
     }
 
@@ -159,6 +202,7 @@ public class MineRunData extends SavedData {
     }
 
     public int schema() { return schema; }
+    public boolean hasUnsupportedSchema() { return unsupportedSchemaTag != null; }
     public RunStatus status() { return status; }
     public String runId() { return runId; }
     public long runSequence() { return runSequence; }
@@ -172,7 +216,33 @@ public class MineRunData extends SavedData {
     public BlockPos mineArrival() { return mineArrival; }
     public BlockPos surfaceExit() { return surfaceExit; }
     public int frontierRegions() { return frontierRegions; }
+    public String topologyProfile() { return topologyProfile; }
+    public String topologyFingerprint() { return topologyFingerprint; }
+    public boolean hasValidTopologyFingerprint() {
+        return isValidTopologyFingerprint(topologyFingerprint);
+    }
+    public String topologyFingerprintPrefix() {
+        if (topologyFingerprint.isEmpty()) {
+            return "(not planned)";
+        }
+        return hasValidTopologyFingerprint() ? topologyFingerprint.substring(0, 12) : "(invalid)";
+    }
+    public int topologyNodes() { return topologyNodes; }
+    public int topologyEdges() { return topologyEdges; }
     public List<OwnedVolume> ownedVolumes() { return List.copyOf(ownedVolumes); }
+
+    public static boolean isValidTopologyFingerprint(String fingerprint) {
+        if (fingerprint == null || fingerprint.length() != 64) {
+            return false;
+        }
+        for (int i = 0; i < fingerprint.length(); i++) {
+            char c = fingerprint.charAt(i);
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     void beginNewRun(String runId, long sequence, long seed, String dayId) {
         this.runId = runId;
@@ -181,6 +251,10 @@ public class MineRunData extends SavedData {
         this.dayId = dayId;
         this.lastError = "";
         this.frontierRegions = 0;
+        this.topologyProfile = "";
+        this.topologyFingerprint = "";
+        this.topologyNodes = 0;
+        this.topologyEdges = 0;
         this.ownedVolumes.clear();
         this.returnPoints.clear();
         this.status = RunStatus.INITIALIZING;
@@ -198,6 +272,15 @@ public class MineRunData extends SavedData {
     void setMineArrival(BlockPos pos) { this.mineArrival = pos; setDirty(); }
     void setSurfaceExit(BlockPos pos) { this.surfaceExit = pos; setDirty(); }
     void addOwnedVolume(OwnedVolume volume) { this.ownedVolumes.add(volume); setDirty(); }
+
+    /** Records the validated topology receipt for the active run. */
+    void setTopology(String profile, String fingerprint, int nodes, int edges) {
+        this.topologyProfile = profile;
+        this.topologyFingerprint = fingerprint;
+        this.topologyNodes = nodes;
+        this.topologyEdges = edges;
+        setDirty();
+    }
 
     /** Records a lifecycle transition. Callers should normally go through
      * {@link MineManager} so invariants (entry lock, owned volumes) are kept. */
