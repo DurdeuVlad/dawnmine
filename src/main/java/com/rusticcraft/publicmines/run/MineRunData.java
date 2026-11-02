@@ -31,7 +31,7 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 8;
+    private static final int SCHEMA = 9;
     static final int MAX_GENERATION_SEGMENTS = 16_384;
     static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
     static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;
@@ -95,6 +95,18 @@ public class MineRunData extends SavedData {
     private final LinkedHashSet<String> encounterSiteClaims = new LinkedHashSet<>();
     /** Per-player surface return position captured on entry. */
     private final Map<UUID, ReturnPoint> returnPoints = new HashMap<>();
+    /** Daily-reset transaction bookkeeping (schema 9). The reset phase is
+     * independent of the run registries: it must survive {@link #beginNewRun}
+     * so an interrupted cleanup resumes before the new run is admitted. */
+    private int resetPhase = ResetPhase.NONE.saved();
+    /** Scheduled occurrence being processed, keyed as "yyyy-MM-dd'T'HH:mm". */
+    private String resetDue = "";
+    /** Owned-volume chunk columns already restored to baseline. */
+    private int resetCursor = 0;
+    /** Bounded retry count for a cleanup/finalize step that keeps failing. */
+    private int resetAttempts = 0;
+    /** Last scheduled occurrence whose reset completed (idempotency dedupe). */
+    private String lastResetDue = "";
 
     public record ReturnPoint(ResourceKey<Level> dimension, double x, double y, double z, float yaw, float pitch) {}
     public record SafeZone(ResourceLocation id, String runId, OwnedVolume volume) {
@@ -230,6 +242,11 @@ public class MineRunData extends SavedData {
             returns.put(entry.getKey().toString(), rt);
         }
         tag.put("returnPoints", returns);
+        tag.putInt("resetPhase", resetPhase);
+        tag.putString("resetDue", resetDue);
+        tag.putInt("resetCursor", resetCursor);
+        tag.putInt("resetAttempts", resetAttempts);
+        tag.putString("lastResetDue", lastResetDue);
         return tag;
     }
 
@@ -284,6 +301,11 @@ public class MineRunData extends SavedData {
         encounterSiteClaims.addAll(restored.encounterSiteClaims);
         returnPoints.clear();
         returnPoints.putAll(restored.returnPoints);
+        resetPhase = restored.resetPhase;
+        resetDue = restored.resetDue;
+        resetCursor = restored.resetCursor;
+        resetAttempts = restored.resetAttempts;
+        lastResetDue = restored.lastResetDue;
         setDirty();
     }
 
@@ -359,6 +381,9 @@ public class MineRunData extends SavedData {
                 // drop malformed entries (bad UUIDs, bad dimension ids) rather
                 // than failing the whole load
             }
+        }
+        if (savedSchema >= 9) {
+            data.loadResetState(tag);
         }
         if (savedSchema < SCHEMA) {
             // M2a requires a deterministic topology receipt before a READY
@@ -618,6 +643,41 @@ public class MineRunData extends SavedData {
             if (isValidEncounterSiteId(siteId)) {
                 encounterSiteClaims.add(siteId);
             }
+        }
+    }
+
+    /** Schema 9 daily-reset bookkeeping. Any combination other than a live
+     * reset phase on a run that can plausibly own it fails closed. */
+    private void loadResetState(CompoundTag tag) {
+        if (tag.contains("resetPhase") && !tag.contains("resetPhase", Tag.TAG_INT)) {
+            markFailed("saved reset phase has the wrong NBT type; run '/publicmine recover repair'");
+            return;
+        }
+        if (tag.contains("resetDue") && !tag.contains("resetDue", Tag.TAG_STRING)
+                || tag.contains("lastResetDue") && !tag.contains("lastResetDue", Tag.TAG_STRING)) {
+            markFailed("saved reset schedule keys have the wrong NBT type; run '/publicmine recover repair'");
+            return;
+        }
+        ResetPhase phase = ResetPhase.fromSaved(tag.getInt("resetPhase"));
+        if (phase == null) {
+            markFailed("saved reset phase is out of range; run '/publicmine recover repair'");
+            return;
+        }
+        resetPhase = phase.saved();
+        resetDue = tag.getString("resetDue");
+        resetCursor = Math.max(0, tag.getInt("resetCursor"));
+        resetAttempts = Math.max(0, tag.getInt("resetAttempts"));
+        lastResetDue = tag.getString("lastResetDue");
+        if (phase == ResetPhase.NONE) {
+            resetDue = "";
+            resetCursor = 0;
+            resetAttempts = 0;
+            return;
+        }
+        if (status == RunStatus.UNINITIALIZED) {
+            // A reset phase cannot exist before any run; the record is
+            // inconsistent, so it fails closed for staff to inspect.
+            markFailed("saved reset phase " + phase + " has no run to resume; run '/publicmine recover repair'");
         }
     }
 
@@ -1240,5 +1300,103 @@ public class MineRunData extends SavedData {
         if (this.returnPoints.remove(player) != null) {
             setDirty();
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Daily reset transaction (M7)
+    // ------------------------------------------------------------------
+
+    public ResetPhase resetPhase() {
+        ResetPhase phase = ResetPhase.fromSaved(resetPhase);
+        return phase == null ? ResetPhase.NONE : phase;
+    }
+
+    /** The scheduled occurrence currently being reset, or empty when idle. */
+    public String resetDue() { return resetDue; }
+
+    /** Chunk columns already restored inside the recorded owned volumes. */
+    public int resetCursor() { return resetCursor; }
+
+    public int resetAttempts() { return resetAttempts; }
+
+    /** The scheduled occurrence whose reset last completed, or empty. */
+    public String lastResetDue() { return lastResetDue; }
+
+    public boolean resetInProgress() {
+        return resetPhase() != ResetPhase.NONE;
+    }
+
+    /** Opens the cleanup phase for one scheduled occurrence. The caller is
+     * responsible for locking entry with {@link RunStatus#RESETTING} first;
+     * both mutations land in the same dirty SavedData so a restart cannot see
+     * an unlocked cleanup. */
+    void beginDailyReset(String dueKey) {
+        this.resetPhase = ResetPhase.CLEANING.saved();
+        this.resetDue = dueKey == null ? "" : dueKey;
+        this.resetCursor = 0;
+        this.resetAttempts = 0;
+        setDirty();
+    }
+
+    void setResetCursor(int cursor) {
+        this.resetCursor = Math.max(0, cursor);
+        setDirty();
+    }
+
+    void markResetFinalizing() {
+        this.resetPhase = ResetPhase.FINALIZING.saved();
+        setDirty();
+    }
+
+    /** Records one failed cleanup/finalize attempt for bounded retries. */
+    int noteResetAttempt() {
+        this.resetAttempts++;
+        setDirty();
+        return this.resetAttempts;
+    }
+
+    /** Re-arms a halted reset after staff reviewed it (recover/retry). */
+    void clearResetAttempts() {
+        this.resetAttempts = 0;
+        setDirty();
+    }
+
+    /** Consumes a scheduled occurrence without a run reset (e.g. while the
+     * mine is still uninitialized), so downtime catch-up never fires early. */
+    void noteResetDueConsumed(String dueKey) {
+        this.lastResetDue = dueKey == null ? "" : dueKey;
+        setDirty();
+    }
+
+    /** Completes the reset transaction for {@code dueKey}: clears the in-flight
+     * bookkeeping and records the occurrence as consumed. Only called after the
+     * replacement run is READY, so crash-ordering always resumes safely.
+     *
+     * <p>Only real scheduled-occurrence keys update {@code lastResetDue}.
+     * Synthetic keys (manual operator resets, staff-patched transactions) leave
+     * it untouched: overwriting it would make an already-consumed scheduled
+     * occurrence look pending and the scheduler would immediately reset again. */
+    void completeDailyReset(String dueKey) {
+        this.resetPhase = ResetPhase.NONE.saved();
+        this.resetDue = "";
+        this.resetCursor = 0;
+        this.resetAttempts = 0;
+        if (ResetSchedule.isOccurrenceKey(dueKey)) {
+            this.lastResetDue = dueKey;
+        }
+        setDirty();
+    }
+
+    /** Puts back a captured transaction snapshot in one dirty save. Recovery
+     * tooling and tests use this to restore the exact state they found; the
+     * fields are validated on load like any other persisted value. */
+    void restoreResetTransaction(ResetPhase phase, String due, int cursor,
+                                 int attempts, String lastDue) {
+        this.resetPhase = (phase == null ? ResetPhase.NONE : phase).saved();
+        this.resetDue = due == null ? "" : due;
+        this.resetCursor = Math.max(0, cursor);
+        this.resetAttempts = Math.max(0, attempts);
+        this.lastResetDue = lastDue == null ? "" : lastDue;
+        setDirty();
     }
 }

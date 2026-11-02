@@ -18,6 +18,7 @@ import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
 import com.rusticcraft.publicmines.encounter.MineEncounterManager;
 import com.rusticcraft.publicmines.progression.ProgressionGraph;
 import com.rusticcraft.publicmines.protection.MineProtectionEvents;
+import com.rusticcraft.publicmines.run.MineDailyReset;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineProtectionGameTests;
 import com.rusticcraft.publicmines.run.MineProgressionGameTests;
@@ -59,6 +60,7 @@ public class PublicMines {
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
     }
 
@@ -89,13 +91,21 @@ public class PublicMines {
     private void onServerStarted(ServerStartedEvent event) {
         MineEncounterManager.validateEntityRegistry();
         MineManager.get(event.getServer()).onServerStarted();
+        MineDailyReset.get(event.getServer()).onServerStarted();
         MineGenerator.get(event.getServer()).onServerStarted();
-        LOGGER.info("Rustic Craft Public Mines loaded (server lifecycle, generation, and ore catalog ready)");
+        LOGGER.info("Rustic Craft Public Mines loaded (server lifecycle, generation, daily reset, and ore catalog ready)");
     }
 
     private void onServerTick(ServerTickEvent.Post event) {
         DispatchManager.get(event.getServer()).tick();
+        MineDailyReset.get(event.getServer()).onServerTick(event);
         MineGenerator.get(event.getServer()).onServerTick(event);
+    }
+
+    private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            MineManager.get(player.getServer()).evacuateUnsafeMineLogin(player);
+        }
     }
 
     private void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {

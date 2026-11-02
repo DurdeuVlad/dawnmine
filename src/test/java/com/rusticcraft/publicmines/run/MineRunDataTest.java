@@ -28,7 +28,7 @@ class MineRunDataTest {
         CompoundTag saved = original.save(new CompoundTag(), null);
         MineRunData restored = MineRunData.load(saved, null);
 
-        assertEquals(8, restored.schema());
+        assertEquals(9, restored.schema());
         assertEquals(RunStatus.READY, restored.status());
         assertEquals("standard", restored.topologyProfile());
         assertEquals("a".repeat(64), restored.topologyFingerprint());
@@ -70,7 +70,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(8, migrated.schema());
+        assertEquals(9, migrated.schema());
         assertEquals(RunStatus.FAILED, migrated.status());
         assertTrue(migrated.lastError().contains("/publicmine recover repair"));
     }
@@ -78,14 +78,14 @@ class MineRunDataTest {
     @Test
     void futureSchemaFailsClosedAndIsPreservedVerbatim() {
         CompoundTag future = new CompoundTag();
-        future.putInt("schema", 9);
+        future.putInt("schema", 10);
         future.putString("status", RunStatus.READY.name());
         future.putString("futureField", "owned by newer mod version");
         CompoundTag original = future.copy();
 
         MineRunData loaded = MineRunData.load(future, null);
 
-        assertEquals(9, loaded.schema());
+        assertEquals(10, loaded.schema());
         assertTrue(loaded.hasUnsupportedSchema());
         assertEquals(RunStatus.FAILED, loaded.status());
         assertTrue(loaded.lastError().contains("update Public Mines"));
@@ -136,7 +136,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema2, null);
 
-        assertEquals(8, migrated.schema());
+        assertEquals(9, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertEquals("a".repeat(64), migrated.topologyFingerprint());
         assertEquals("", migrated.generationPlanFingerprint());
@@ -156,7 +156,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema3, null);
 
-        assertEquals(8, migrated.schema());
+        assertEquals(9, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertTrue(migrated.safeZones().isEmpty());
         assertTrue(migrated.mineOreOrigins().isEmpty());
@@ -415,7 +415,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(8, migrated.schema());
+        assertEquals(9, migrated.schema());
         assertTrue(migrated.mineEntities().isEmpty());
         assertFalse(migrated.hasClaimedEncounterSite("node:m001"));
     }
@@ -434,7 +434,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(8, migrated.schema());
+        assertEquals(9, migrated.schema());
         assertTrue(migrated.mineEntities().isEmpty());
         assertTrue(migrated.hasClaimedEncounterSite("node:m001"));
     }
@@ -576,6 +576,150 @@ class MineRunDataTest {
         assertTrue(loaded.lastError().contains("saved generation progress is invalid"));
         assertTrue(loaded.pendingGenerationSegments().size() <= MineRunData.MAX_GENERATION_SEGMENTS);
         assertEquals(0, loaded.activeGenerationCursor());
+    }
+
+    // ------------------------------------------------------------------
+    // Daily reset transaction (schema 9)
+    // ------------------------------------------------------------------
+
+    @Test
+    void dailyResetTransactionSurvivesSaveLoadAndCompletesOnce() {
+        MineRunData data = readyRun();
+        data.beginDailyReset("2026-11-03T06:00");
+        data.setResetCursor(37);
+        data.noteResetAttempt();
+        data.noteResetAttempt();
+        data.markStatus(RunStatus.RESETTING);
+
+        MineRunData resumed = MineRunData.load(data.save(new CompoundTag(), null), null);
+
+        // A restart mid-cleanup resumes the same persisted transaction.
+        assertEquals(ResetPhase.CLEANING, resumed.resetPhase());
+        assertEquals("2026-11-03T06:00", resumed.resetDue());
+        assertEquals(37, resumed.resetCursor());
+        assertEquals(2, resumed.resetAttempts());
+        assertEquals(RunStatus.RESETTING, resumed.status());
+        assertTrue(resumed.resetInProgress());
+
+        resumed.markResetFinalizing();
+        resumed.completeDailyReset("2026-11-03T06:00");
+        MineRunData done = MineRunData.load(resumed.save(new CompoundTag(), null), null);
+
+        assertEquals(ResetPhase.NONE, done.resetPhase());
+        assertFalse(done.resetInProgress());
+        assertEquals("", done.resetDue());
+        assertEquals(0, done.resetCursor());
+        assertEquals(0, done.resetAttempts());
+        // The completed occurrence is the idempotency dedupe for scheduling.
+        assertEquals("2026-11-03T06:00", done.lastResetDue());
+    }
+
+    @Test
+    void resetPhaseSurvivesNewRunCreationInsideTheTransaction() {
+        MineRunData data = readyRun();
+        data.beginDailyReset("2026-11-03T06:00");
+        data.markResetFinalizing();
+
+        // FINALIZING rebuilds the run through the normal initialization path;
+        // the in-flight phase must survive beginNewRun so an interruption is
+        // resumed instead of duplicated.
+        data.beginNewRun("2026-11-03-2", 2, 84L, "2026-11-03");
+
+        assertEquals(ResetPhase.FINALIZING, data.resetPhase());
+        assertEquals("2026-11-03T06:00", data.resetDue());
+        MineRunData restored = MineRunData.load(data.save(new CompoundTag(), null), null);
+        assertEquals(ResetPhase.FINALIZING, restored.resetPhase());
+        assertTrue(restored.resetInProgress());
+    }
+
+    @Test
+    void syntheticResetKeyDoesNotConsumeTheScheduledOccurrence() {
+        MineRunData data = readyRun();
+        data.noteResetDueConsumed("2026-11-03T06:00");
+        data.beginDailyReset("manual:2026-11-03T10:12:34");
+
+        data.completeDailyReset("manual:2026-11-03T10:12:34");
+
+        // A manual (or staff-injected) transaction never rewrites the record
+        // that today's scheduled occurrence already ran; without this the
+        // scheduler would immediately reset that occurrence a second time.
+        assertEquals("2026-11-03T06:00", data.lastResetDue());
+        assertEquals(ResetPhase.NONE, data.resetPhase());
+
+        // A real scheduled key still updates the dedupe record.
+        data.beginDailyReset("2026-11-04T06:00");
+        data.completeDailyReset("2026-11-04T06:00");
+        assertEquals("2026-11-04T06:00", data.lastResetDue());
+    }
+
+    @Test
+    void consumedOccurrenceWithoutRunResetIsPersisted() {
+        MineRunData data = new MineRunData();
+        data.noteResetDueConsumed("2026-11-03T06:00");
+
+        MineRunData restored = MineRunData.load(data.save(new CompoundTag(), null), null);
+
+        assertEquals("2026-11-03T06:00", restored.lastResetDue());
+        assertFalse(restored.resetInProgress());
+        assertEquals(ResetPhase.NONE, restored.resetPhase());
+    }
+
+    @Test
+    void malformedResetStateFailsClosed() {
+        CompoundTag wrongPhaseType = readyRun().save(new CompoundTag(), null);
+        wrongPhaseType.putString("resetPhase", "CLEANING");
+        MineRunData loaded = MineRunData.load(wrongPhaseType, null);
+        assertEquals(RunStatus.FAILED, loaded.status());
+        assertTrue(loaded.lastError().contains("reset phase has the wrong NBT type"));
+
+        CompoundTag outOfRange = readyRun().save(new CompoundTag(), null);
+        outOfRange.putInt("resetPhase", 99);
+        loaded = MineRunData.load(outOfRange, null);
+        assertEquals(RunStatus.FAILED, loaded.status());
+        assertTrue(loaded.lastError().contains("reset phase is out of range"));
+
+        CompoundTag wrongDueType = readyRun().save(new CompoundTag(), null);
+        wrongDueType.putInt("resetDue", 7);
+        loaded = MineRunData.load(wrongDueType, null);
+        assertEquals(RunStatus.FAILED, loaded.status());
+        assertTrue(loaded.lastError().contains("reset schedule keys have the wrong NBT type"));
+    }
+
+    @Test
+    void resetPhaseWithoutARunFailsClosedAndStrayFieldsAreReset() {
+        // A live phase with no run to own it is inconsistent: fail closed so
+        // staff inspect instead of silently resuming cleanup over nothing.
+        CompoundTag saved = new MineRunData().save(new CompoundTag(), null);
+        saved.putInt("resetPhase", 1); // CLEANING on an UNINITIALIZED record
+        MineRunData loaded = MineRunData.load(saved, null);
+        assertEquals(RunStatus.FAILED, loaded.status());
+        assertTrue(loaded.lastError().contains("no run to resume"));
+
+        // A NONE phase with stray transaction fields is normalized away.
+        CompoundTag stray = readyRun().save(new CompoundTag(), null);
+        stray.putInt("resetPhase", 0);
+        stray.putString("resetDue", "2026-11-03T06:00");
+        stray.putInt("resetCursor", 12);
+        stray.putInt("resetAttempts", 3);
+        loaded = MineRunData.load(stray, null);
+        assertEquals(RunStatus.READY, loaded.status());
+        assertFalse(loaded.resetInProgress());
+        assertEquals("", loaded.resetDue());
+        assertEquals(0, loaded.resetCursor());
+        assertEquals(0, loaded.resetAttempts());
+    }
+
+    @Test
+    void schemaEightRecordLoadsWithNoResetTransaction() {
+        CompoundTag legacy = readyRun().save(new CompoundTag(), null);
+        legacy.putInt("schema", 8);
+        MineRunData migrated = MineRunData.load(legacy, null);
+
+        assertEquals(9, migrated.schema());
+        assertEquals(RunStatus.READY, migrated.status());
+        assertEquals(ResetPhase.NONE, migrated.resetPhase());
+        assertFalse(migrated.resetInProgress());
+        assertEquals("", migrated.lastResetDue());
     }
 
     private static MineRunData readyRun() {

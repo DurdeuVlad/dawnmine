@@ -2,6 +2,8 @@ package com.rusticcraft.publicmines.config;
 
 import com.rusticcraft.publicmines.PublicMines;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
@@ -23,9 +25,15 @@ public final class PublicMineConfig {
     public static final int REGION_RADIUS_MIN = 16;
     public static final int REGION_RADIUS_MAX = 512;
 
+    /** Bounds for advance reset warnings, in minutes before the reset. */
+    public static final int RESET_WARNING_MIN_MINUTES = 1;
+    public static final int RESET_WARNING_MAX_MINUTES = 720;
+    public static final int RESET_WARNING_MAX_COUNT = 8;
+
     private static final ModConfigSpec.ConfigValue<Integer> RESET_HOUR;
     private static final ModConfigSpec.ConfigValue<Integer> RESET_MINUTE;
     private static final ModConfigSpec.ConfigValue<String> RESET_TIME_ZONE;
+    private static final ModConfigSpec.ConfigValue<List<? extends Integer>> RESET_WARNING_MINUTES;
     private static final ModConfigSpec.ConfigValue<Boolean> NETHERRACK_ENABLED;
     private static final ModConfigSpec.ConfigValue<Integer> NETHERRACK_COLUMN_INTERVAL;
     private static final ModConfigSpec.ConfigValue<Integer> MINE_REGION_RADIUS_CHUNKS;
@@ -52,6 +60,17 @@ public final class PublicMineConfig {
                         "IANA time zone used for the daily reset clock, for example 'Europe/Bucharest'.",
                         "The special value 'server' uses the host machine's default zone.")
                 .define("resetTimeZone", "server", o -> o instanceof String s && isValidTimeZone(s));
+
+        RESET_WARNING_MINUTES = builder.comment(
+                        "Minutes before the daily reset when players inside the mine are warned.",
+                        "Each entry must be between " + RESET_WARNING_MIN_MINUTES + " and "
+                                + RESET_WARNING_MAX_MINUTES + "; at most " + RESET_WARNING_MAX_COUNT
+                                + " entries are used. An empty list disables warnings.",
+                        "Warnings only reach players inside the mine; staff see reset diagnostics",
+                        "in '/publicmine status' and the server log.")
+                .defineList("resetWarningMinutes", List.of(15, 5, 1), () -> 5,
+                        o -> o instanceof Integer i
+                                && i >= RESET_WARNING_MIN_MINUTES && i <= RESET_WARNING_MAX_MINUTES);
 
         NETHERRACK_ENABLED = builder.comment(
                         "Optional Netherrack placement inside the mine. Default OFF.",
@@ -127,6 +146,27 @@ public final class PublicMineConfig {
         }
     }
 
+    /** Validated warning offsets in configured order: in-range entries only,
+     * deduplicated, capped at {@link #RESET_WARNING_MAX_COUNT}. An empty list
+     * means the operator deliberately disabled warnings. */
+    public static List<Integer> resetWarningMinutes() {
+        List<Integer> warnings = new ArrayList<>();
+        List<? extends Integer> stored = RESET_WARNING_MINUTES.get();
+        if (stored == null) {
+            return warnings;
+        }
+        for (Integer value : stored) {
+            if (value != null && value >= RESET_WARNING_MIN_MINUTES
+                    && value <= RESET_WARNING_MAX_MINUTES && !warnings.contains(value)) {
+                warnings.add(value);
+                if (warnings.size() >= RESET_WARNING_MAX_COUNT) {
+                    break;
+                }
+            }
+        }
+        return warnings;
+    }
+
     public static boolean netherrackEnabled() {
         return NETHERRACK_ENABLED.get();
     }
@@ -149,6 +189,10 @@ public final class PublicMineConfig {
 
     public static ModConfigSpec.ConfigValue<String> resetTimeZoneValue() {
         return RESET_TIME_ZONE;
+    }
+
+    public static ModConfigSpec.ConfigValue<List<? extends Integer>> resetWarningMinutesValue() {
+        return RESET_WARNING_MINUTES;
     }
 
     public static ModConfigSpec.ConfigValue<Boolean> netherrackEnabledValue() {

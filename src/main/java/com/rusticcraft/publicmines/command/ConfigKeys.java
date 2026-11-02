@@ -84,6 +84,60 @@ public final class ConfigKeys {
         };
     }
 
+    private static Key intListKey(String name, String doc, int min, int max, int maxCount,
+            Timing timing, ModConfigSpec.ConfigValue<List<? extends Integer>> backing, String example) {
+        return new Key(name, doc, "a comma-separated list of up to " + maxCount
+                + " integers, each between " + min + " and " + max
+                + " (an empty list disables)", example, timing) {
+            @Override public String get() {
+                List<? extends Integer> values = backing.get();
+                if (values == null || values.isEmpty()) {
+                    return "(empty)";
+                }
+                StringBuilder out = new StringBuilder();
+                for (Integer value : values) {
+                    if (out.length() > 0) {
+                        out.append(',');
+                    }
+                    out.append(value);
+                }
+                return out.toString();
+            }
+            @Override public Optional<String> set(String raw) {
+                String trimmed = raw.trim();
+                List<Integer> values = new ArrayList<>();
+                if (!trimmed.isEmpty() && !trimmed.equalsIgnoreCase("none")
+                        && !trimmed.equalsIgnoreCase("empty")) {
+                    for (String part : trimmed.split(",")) {
+                        String piece = part.trim();
+                        if (piece.isEmpty()) {
+                            continue;
+                        }
+                        final int value;
+                        try {
+                            value = Integer.parseInt(piece);
+                        } catch (NumberFormatException e) {
+                            return Optional.of("'" + piece + "' is not a number");
+                        }
+                        if (value < min || value > max) {
+                            return Optional.of(value + " is outside the allowed range "
+                                    + min + "-" + max);
+                        }
+                        if (!values.contains(value)) {
+                            values.add(value);
+                        }
+                        if (values.size() > maxCount) {
+                            return Optional.of("at most " + maxCount + " entries are allowed");
+                        }
+                    }
+                }
+                backing.set(List.copyOf(values));
+                backing.save();
+                return Optional.empty();
+            }
+        };
+    }
+
     private static Key timeZoneKey(String name, String doc, Timing timing,
             ModConfigSpec.ConfigValue<String> backing, String example) {
         return new Key(name, doc, "an IANA time zone like Europe/Bucharest, or 'server'", example, timing) {
@@ -107,6 +161,11 @@ public final class ConfigKeys {
                     Timing.NEXT_RESET, PublicMineConfig.resetMinuteValue(), "0"),
             timeZoneKey("resetTimeZone", "time zone used for the reset clock",
                     Timing.NEXT_RESET, PublicMineConfig.resetTimeZoneValue(), "Europe/Bucharest"),
+            intListKey("resetWarningMinutes",
+                    "minutes before the reset when mine occupants are warned",
+                    PublicMineConfig.RESET_WARNING_MIN_MINUTES, PublicMineConfig.RESET_WARNING_MAX_MINUTES,
+                    PublicMineConfig.RESET_WARNING_MAX_COUNT,
+                    Timing.NEXT_RESET, PublicMineConfig.resetWarningMinutesValue(), "15,5,1"),
             boolKey("netherrackEnabled", "optional ultra-rare Netherrack placement (off by default)",
                     Timing.NEXT_RUN, PublicMineConfig.netherrackEnabledValue(), "false"),
             intKey("netherrackColumnInterval",
