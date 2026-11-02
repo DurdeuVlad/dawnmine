@@ -94,16 +94,20 @@ public class MineManager {
         return data;
     }
 
-    /** Called on server start: detect a run left mid-initialization. */
+    /** Called on server start: detect a run left mid-initialization. A run
+     * left mid-RESET is deliberately not failed: {@link MineDailyReset}
+     * resumes the persisted reset transaction on the next ticks. */
     public void onServerStarted() {
         if (data.status() == RunStatus.INITIALIZING) {
             data.markFailed("initialization interrupted by server restart; run '/publicmine recover repair' to retry");
             LOGGER.warn("[publicmines] Mine run {} was left mid-initialization and was marked FAILED for safe retry.",
                     data.runId().isEmpty() ? "(unassigned)" : data.runId());
         }
-        LOGGER.info("[publicmines] Loaded run state: status={} runId={} seed={} day={} ownedVolumes={}",
+        LOGGER.info("[publicmines] Loaded run state: status={} runId={} seed={} day={} ownedVolumes={}"
+                        + " resetPhase={} lastReset={}",
                 data.status(), data.runId().isEmpty() ? "(none)" : data.runId(),
-                data.seed(), data.dayId().isEmpty() ? "(none)" : data.dayId(), data.ownedVolumes().size());
+                data.seed(), data.dayId().isEmpty() ? "(none)" : data.dayId(), data.ownedVolumes().size(),
+                data.resetPhase(), data.lastResetDue().isEmpty() ? "(none)" : data.lastResetDue());
     }
 
     // ------------------------------------------------------------------
@@ -125,6 +129,16 @@ public class MineManager {
 
         if (data.hasUnsupportedSchema()) {
             steps.add(Step.fail("run record", data.lastError()));
+            return steps;
+        }
+
+        if (data.resetPhase() == ResetPhase.CLEANING) {
+            // Creating a run while the daily cleanup still owns the terrain
+            // would admit a run over unrestored blocks. The scheduler finishes
+            // cleanup first and runs this same path itself during FINALIZING.
+            steps.add(Step.fail("daily reset", "the scheduled reset cleanup is still running ("
+                    + data.resetCursor() + " columns done); it finishes on its own - "
+                    + "see '/publicmine reset status'"));
             return steps;
         }
 
@@ -399,6 +413,10 @@ public class MineManager {
                     "no run exists yet; run '/publicmine setup initialize' to create the shared mine"));
             case INITIALIZING -> checks.add(Check.fail("run state",
                     "initialization is in progress; if the server was restarted, run '/publicmine recover repair'"));
+            case RESETTING -> checks.add(Check.warn("run state",
+                    "daily reset in progress (phase " + data.resetPhase() + ", " + data.resetCursor()
+                            + " columns done); entry is locked until the new run is ready - "
+                            + "see '/publicmine reset status'"));
             case FAILED -> checks.add(Check.fail("run state",
                     "last initialization failed: " + data.lastError()));
             case READY -> validateReadyRun(mine, checks);
@@ -408,7 +426,7 @@ public class MineManager {
         if (data.status() == RunStatus.READY && !data.dayId().equals(today)) {
             checks.add(Check.warn("run day",
                     "active run is for " + data.dayId() + " but today is " + today
-                            + "; scheduled daily reset arrives in M7 and is not automatic yet"));
+                            + "; the scheduled daily reset has not run yet today"));
         }
         return checks;
     }
@@ -458,9 +476,11 @@ public class MineManager {
                 + " segment(s) complete, " + data.pendingGenerationSegments().size() + " queued"
                 + (data.activeGenerationSegment().isEmpty() ? "" : ", active "
                         + data.activeGenerationSegment() + " at operation " + data.activeGenerationCursor())));
-        checks.add(Check.warn("reset scheduling",
-                "effective reset is " + String.format("%02d:%02d", PublicMineConfig.resetHour(), PublicMineConfig.resetMinute())
-                        + " " + PublicMineConfig.resetZoneId() + " once M7 scheduling ships; nothing resets automatically yet"));
+        checks.add(Check.pass("reset scheduling",
+                "daily reset is scheduled for " + effectiveResetDescription()
+                        + (data.lastResetDue().isEmpty()
+                                ? "; no completed reset recorded yet"
+                                : "; last completed " + data.lastResetDue())));
     }
 
     /**
@@ -471,6 +491,16 @@ public class MineManager {
         List<Step> steps = new ArrayList<>();
         steps.add(Step.ok("inspect", "current status is " + data.status()
                 + (data.runId().isEmpty() ? "" : " for run " + data.runId())));
+        if (data.resetInProgress()) {
+            // A live reset transaction must finish (or be re-armed), never be
+            // bypassed: initialization here would admit a run over unrestored
+            // mine-owned terrain.
+            data.clearResetAttempts();
+            steps.add(Step.ok("daily reset", "a daily reset is in progress (phase "
+                    + data.resetPhase() + ", " + data.resetCursor() + " columns done); its retries were "
+                    + "re-armed and it continues automatically - see '/publicmine reset status'"));
+            return steps;
+        }
         if (data.status() == RunStatus.READY) {
             // A READY run whose record failed validation is corrupt; drop it
             // to FAILED so the initialization path rebuilds every field.
@@ -506,11 +536,20 @@ public class MineManager {
             return new EnterOutcome(EnterResult.ALREADY_INSIDE,
                     "you are already inside the Public Mine");
         }
+        if (data.resetInProgress()) {
+            // A persisted reset phase owns the mine even when a crash left the
+            // run marked READY mid-finalize; entry stays locked until the
+            // transaction records its occurrence.
+            return new EnterOutcome(EnterResult.NOT_READY,
+                    "the mine is resetting for a new day; it reopens in a few minutes");
+        }
         if (!data.status().entryAllowed()) {
             return new EnterOutcome(EnterResult.NOT_READY,
-                    data.status() == RunStatus.FAILED
-                            ? "the mine is being repaired by staff; please try again later"
-                            : "the mine is not open yet; staff can open it with '/publicmine setup initialize'");
+                    switch (data.status()) {
+                        case FAILED -> "the mine is being repaired by staff; please try again later";
+                        case RESETTING -> "the mine is resetting for a new day; it reopens in a few minutes";
+                        default -> "the mine is not open yet; staff can open it with '/publicmine setup initialize'";
+                    });
         }
         ServerLevel mine = mineLevel();
         BlockPos target = data.mineArrival() != null ? data.mineArrival() : ARRIVAL;
@@ -538,7 +577,8 @@ public class MineManager {
 
     /** Travels to a generated, shared checkpoint without force-loading its chunk. */
     public synchronized CheckpointOutcome travelToCheckpoint(ServerPlayer player, String stationId) {
-        if (data.status() != RunStatus.READY || !data.status().entryAllowed()) {
+        if (data.resetInProgress()
+                || data.status() != RunStatus.READY || !data.status().entryAllowed()) {
             return new CheckpointOutcome(CheckpointResult.INVALID_STATE,
                     "the mine is initializing, resetting, or closed; checkpoint travel is unavailable",
                     null, false);

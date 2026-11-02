@@ -14,6 +14,7 @@ import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.progression.ProgressionGraph;
 import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
+import com.rusticcraft.publicmines.run.MineDailyReset;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineRunData;
 import com.rusticcraft.publicmines.run.OwnedVolume;
@@ -92,6 +93,12 @@ public final class PublicMineCommand {
                 .then(literal("check").executes(ctx -> recoverCheck(ctx.getSource())))
                 .then(literal("repair").executes(ctx -> recoverRepair(ctx.getSource()))));
 
+        root.then(literal("reset").requires(src -> src.hasPermission(ADMIN_LEVEL))
+                .executes(ctx -> resetStatus(ctx.getSource()))
+                .then(literal("status").executes(ctx -> resetStatus(ctx.getSource())))
+                .then(literal("now").executes(ctx -> resetNow(ctx.getSource())))
+                .then(literal("retry").executes(ctx -> resetRetry(ctx.getSource()))));
+
         dispatcher.register(root);
     }
 
@@ -126,6 +133,9 @@ public final class PublicMineCommand {
             lines.add("  /publicmine config set <key> <value> - change a setting");
             lines.add("  /publicmine recover check     - inspect saved state");
             lines.add("  /publicmine recover repair    - fix a failed/partial setup");
+            lines.add("  /publicmine reset status      - daily reset schedule and progress");
+            lines.add("  /publicmine reset now         - run the reset cycle immediately");
+            lines.add("  /publicmine reset retry       - re-arm a halted reset");
             lines.add("");
             lines.add("First-time setup: run '/publicmine setup validate', fix any blockers,");
             lines.add("then '/publicmine setup initialize' and '/publicmine status' to confirm.");
@@ -186,7 +196,14 @@ public final class PublicMineCommand {
         lines.add("Players inside: " + inside.size()
                 + (inside.isEmpty() ? "" : " (" + names(inside) + ")"));
         lines.add("Entry: " + (data.status().entryAllowed() ? "open" : "closed"));
-        lines.add("Reset (effective once M7 ships): " + manager.effectiveResetDescription());
+        MineDailyReset reset = MineDailyReset.get(src.getServer());
+        lines.add("Daily reset: " + manager.effectiveResetDescription()
+                + "  |  next: " + reset.nextResetDescription());
+        lines.add("Reset progress: " + (data.resetInProgress()
+                ? data.resetPhase() + " '" + data.resetDue() + "' at column " + data.resetCursor()
+                        + " (" + data.resetAttempts() + " attempts)"
+                : "none running; last completed "
+                        + (data.lastResetDue().isEmpty() ? "(none yet)" : data.lastResetDue())));
         lines.add("Netherrack: " + (PublicMineConfig.netherrackEnabled()
                 ? "enabled, 1 attempt per " + PublicMineConfig.netherrackColumnInterval() + " eligible columns (deepest region only)"
                 : "off (default)"));
@@ -319,6 +336,9 @@ public final class PublicMineCommand {
         RunStatus status = manager.data().status();
         if (status.entryAllowed()) {
             MineMessages.tell(src, "The Public Mine is open! Travel in with '/publicmine enter'.");
+        } else if (status == RunStatus.RESETTING) {
+            MineMessages.tell(src, "The Public Mine is resetting for a new day - "
+                    + "it reopens in a few minutes with a fresh run.");
         } else {
             MineMessages.tell(src, "The Public Mine isn't open right now. "
                     + "A server operator can open it with '/publicmine setup initialize'.");
@@ -541,6 +561,8 @@ public final class PublicMineCommand {
             case UNINITIALIZED -> lines.add("No run exists. '/publicmine setup initialize' creates one.");
             case FAILED -> lines.add("Setup failed earlier. '/publicmine recover repair' retries it safely "
                     + "(only mine-owned state is touched).");
+            case RESETTING -> lines.add("A daily reset is in progress; it finishes on its own. "
+                    + "'/publicmine reset status' shows progress and '/publicmine reset retry' re-arms a halt.");
             case INITIALIZING -> lines.add("A setup was left unfinished - usually after a restart. "
                     + "'/publicmine recover repair' completes it.");
         }
@@ -559,6 +581,43 @@ public final class PublicMineCommand {
                 ? "Recovery finished - confirm with '/publicmine setup validate' and '/publicmine status'."
                 : "Recovery could not finish - fix the failed step's blocker, then retry.");
         return ok ? 1 : 0;
+    }
+
+    // ------------------------------------------------------------------
+    // daily reset (M7)
+    // ------------------------------------------------------------------
+
+    private static int resetStatus(CommandSourceStack src) {
+        MineMessages.tellLines(src, MineDailyReset.get(src.getServer()).statusLines());
+        return 1;
+    }
+
+    private static int resetNow(CommandSourceStack src) {
+        return switch (MineDailyReset.get(src.getServer()).requestManualReset()) {
+            case STARTED -> {
+                MineMessages.tell(src, "Daily reset started: entry is locked, occupants are evacuated, "
+                        + "and mine-owned state is being restored. Track with '/publicmine reset status'.");
+                yield 1;
+            }
+            case ALREADY_RUNNING -> {
+                MineMessages.tell(src, "A daily reset is already running - see '/publicmine reset status'.");
+                yield 0;
+            }
+            case REJECTED -> {
+                MineMessages.tell(src, "No run exists to reset yet; '/publicmine setup initialize' creates one.");
+                yield 0;
+            }
+        };
+    }
+
+    private static int resetRetry(CommandSourceStack src) {
+        if (MineDailyReset.get(src.getServer()).retryReset()) {
+            MineMessages.tell(src, "Daily reset retries re-armed; the scheduler continues automatically. "
+                    + "Watch '/publicmine reset status'.");
+            return 1;
+        }
+        MineMessages.tell(src, "No daily reset is in progress right now.");
+        return 0;
     }
 
     private static void reportSteps(CommandSourceStack src, String header, List<MineManager.Step> steps) {

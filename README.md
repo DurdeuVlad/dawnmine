@@ -24,9 +24,15 @@ Players use `/publicmine enter` and `/publicmine leave` (also `exit`).
 
 If a boot ever interrupts setup, the next start marks the run `FAILED` with a plain-language reason; `/publicmine recover check` inspects it and `/publicmine recover repair` repairs only mine-owned state — nothing else is ever cleared, including the factions mine.
 
-`/publicmine help` covers the same flow in game. Staff commands (`setup`, `config`, `recover`, detailed `status`) require operator level 2+; players get read-only help, a friendly status, and travel commands.
+`/publicmine help` covers the same flow in game. Staff commands (`setup`, `config`, `recover`, `reset`, detailed `status`) require operator level 2+; players get read-only help, a friendly status, and travel commands.
 
 Config lives in `world/serverconfig/publicmines-server.toml` and is also changeable in game with `/publicmine config get` / `config set <key> <value>` (persisted immediately, with bounds and examples on rejection). Netherrack stays off by default; its interval cannot go below 256 eligible columns or above 65536.
+
+## Daily reset (M7)
+
+Every morning at `resetHour:resetMinute` in `resetTimeZone` (default `06:00`, zone `server` = host default) the mod warns only the players currently inside the mine at the `resetWarningMinutes` offsets (default `15,5,1`; `none` disables), locks new entry, evacuates every occupant to the overworld surface exit, restores recorded mine-owned terrain to the generated baseline (never touching anything outside owned bounds — including the factions mine), and creates exactly one new shared run with a fresh seed. Carried inventories and personal storage are never touched. Downtime crossing the scheduled time produces exactly one catch-up reset.
+
+Staff commands: `/publicmine reset status` (schedule, next reset, live phase/cursor/attempts, last completed occurrence), `/publicmine reset now` (immediate manual reset — never consumes a scheduled occurrence), and `/publicmine reset retry` (re-arms a reset halted after three failed attempts). `/publicmine status` and `/publicmine help` show the same state to operators. See [docs/architecture/M7-daily-reset.md](docs/architecture/M7-daily-reset.md) and [docs/reports/M7-daily-reset-evidence.md](docs/reports/M7-daily-reset-evidence.md).
 
 ## Target environment
 

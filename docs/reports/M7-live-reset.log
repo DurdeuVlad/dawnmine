@@ -1,0 +1,69 @@
+=== m7-boot3.log: scheduled reset + warnings + catch-up ===
+[23:44:38] [Server thread/INFO] [co.ru.pu.ru.MineManager/]: [publicmines] Loaded run state: status=READY runId=2026-11-02-1 seed=-4834794598777366843 day=2026-11-02 ownedVolumes=2 resetPhase=NONE lastReset=2026-11-02T06:00
+[23:47:26] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset 2026-11-01T23:51 started; entry is locked until the new run is ready.
+[23:47:26] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-01T23:51 started (occupants evacuated: 0).
+[23:47:30] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-01T23:51 finished cleanup: 16384 columns checked (16380 skipped, 25 blocks restored, 0 block entities removed, 0 entities discarded).
+[23:47:31] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset 2026-11-01T23:51 complete: new run 2026-11-02-2 (day 2026-11-02), 16384 columns checked, 25 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 4685 ms
+[23:47:31] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-02-2 is open.
+[23:47:59] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Warned 0 mine occupant(s) about the 2026-11-02T23:51 reset (3 minute(s) remaining).
+[23:49:59] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Warned 0 mine occupant(s) about the 2026-11-02T23:51 reset (1 minute(s) remaining).
+[23:51:00] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset 2026-11-02T23:51 started; entry is locked until the new run is ready.
+[23:51:00] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 started (occupants evacuated: 0).
+[23:51:05] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 finished cleanup: 16384 columns checked (16335 skipped, 566 blocks restored, 1 block entities removed, 2 entities discarded).
+[23:51:05] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset 2026-11-02T23:51 complete: new run 2026-11-02-3 (day 2026-11-02), 16384 columns checked, 566 blocks restored, 1 block entities removed, 2 entities discarded, 0 player(s) evacuated, 4353 ms
+[23:51:05] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-02-3 is open.
+
+=== m7-boot4.log: interrupted CLEANING resume ===
+[23:55:45] [Server thread/INFO] [co.ru.pu.ru.MineManager/]: [publicmines] Loaded run state: status=RESETTING runId=2026-11-02-3 seed=-543159325494812945 day=2026-11-02 ownedVolumes=2 resetPhase=CLEANING lastReset=2026-11-02T23:51
+[23:55:45] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Resuming daily reset phase CLEANING for occurrence m7-midclean-2351 at column 5000.
+[23:55:48] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset m7-midclean-2351 finished cleanup: 16384 columns checked (11335 skipped, 564 blocks restored, 0 block entities removed, 0 entities discarded).
+[23:55:48] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset m7-midclean-2351 complete: new run 2026-11-02-4 (day 2026-11-02), 16384 columns checked, 564 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 209973647 ms
+[23:55:48] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-02-4 is open.
+[23:55:49] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset 2026-11-02T23:51 started; entry is locked until the new run is ready.
+[23:55:49] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 started (occupants evacuated: 0).
+[23:55:53] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 finished cleanup: 16384 columns checked (16335 skipped, 25 blocks restored, 0 block entities removed, 0 entities discarded).
+[23:55:53] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset 2026-11-02T23:51 complete: new run 2026-11-02-5 (day 2026-11-02), 16384 columns checked, 25 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 4200 ms
+[23:55:53] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-02-5 is open.
+
+=== m7-boot6.log: interrupted FINALIZING resume (elapsed fix) ===
+[00:04:29] [Server thread/INFO] [co.ru.pu.ru.MineManager/]: [publicmines] Loaded run state: status=RESETTING runId=2026-11-02-7 seed=8166282070128512579 day=2026-11-02 ownedVolumes=2 resetPhase=FINALIZING lastReset=2026-11-02T23:51
+[00:04:29] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Resuming daily reset phase FINALIZING for occurrence m7-fin-elapsed at column 0.
+[00:04:33] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset m7-fin-elapsed complete: new run 2026-11-03-8 (day 2026-11-03), 0 columns checked, 0 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 3561 ms
+[00:04:33] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-8 is open.
+[00:04:37] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset 2026-11-02T23:51 started; entry is locked until the new run is ready.
+[00:04:37] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 started (occupants evacuated: 0).
+[00:04:41] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 finished cleanup: 16384 columns checked (16335 skipped, 556 blocks restored, 0 block entities removed, 0 entities discarded).
+[00:04:41] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset 2026-11-02T23:51 complete: new run 2026-11-03-9 (day 2026-11-03), 16384 columns checked, 556 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 3605 ms
+[00:04:41] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-9 is open.
+
+=== m7-boot7.log: halted reset + operator retry ===
+[00:09:00] [Server thread/INFO] [co.ru.pu.ru.MineManager/]: [publicmines] Loaded run state: status=FAILED runId=2026-11-03-9 seed=-5970816729835506067 day=2026-11-03 ownedVolumes=2 resetPhase=CLEANING lastReset=2026-11-02T23:51
+[00:09:00] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Resuming daily reset phase CLEANING for occurrence m7-halted at column 8000.
+[00:11:37] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset m7-halted re-armed by staff at column 8000/0.
+[00:11:40] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset m7-halted finished cleanup: 16384 columns checked (8337 skipped, 564 blocks restored, 0 block entities removed, 0 entities discarded).
+[00:11:40] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset m7-halted complete: new run 2026-11-03-10 (day 2026-11-03), 16384 columns checked, 564 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 159750 ms
+[00:11:40] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-10 is open.
+[00:11:40] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset 2026-11-02T23:51 started; entry is locked until the new run is ready.
+[00:11:40] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 started (occupants evacuated: 0).
+[00:11:44] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T23:51 finished cleanup: 16384 columns checked (16335 skipped, 25 blocks restored, 0 block entities removed, 0 entities discarded).
+[00:11:44] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset 2026-11-02T23:51 complete: new run 2026-11-03-11 (day 2026-11-03), 16384 columns checked, 25 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 4252 ms
+[00:11:44] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-11 is open.
+
+=== m7-boot8.log: manual reset no-refire + 06:00 catch-up ===
+[00:16:51] [Server thread/INFO] [co.ru.pu.ru.MineManager/]: [publicmines] Loaded run state: status=READY runId=2026-11-03-11 seed=-1246907017019457993 day=2026-11-03 ownedVolumes=2 resetPhase=NONE lastReset=2026-11-02T23:51
+[00:17:02] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset manual:2026-11-03T00:17:02.172435700 started; entry is locked until the new run is ready.
+[00:17:02] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset manual:2026-11-03T00:17:02.172435700 started (occupants evacuated: 0).
+[00:17:06] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset manual:2026-11-03T00:17:02.172435700 finished cleanup: 16384 columns checked (16335 skipped, 564 blocks restored, 0 block entities removed, 0 entities discarded).
+[00:17:06] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset manual:2026-11-03T00:17:02.172435700 complete: new run 2026-11-03-12 (day 2026-11-03), 16384 columns checked, 564 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 4214 ms
+[00:17:06] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-12 is open.
+[00:18:10] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset 2026-11-02T06:00 started; entry is locked until the new run is ready.
+[00:18:10] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T06:00 started (occupants evacuated: 0).
+[00:18:14] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Daily reset 2026-11-02T06:00 finished cleanup: 16384 columns checked (16335 skipped, 564 blocks restored, 0 block entities removed, 0 entities discarded).
+[00:18:14] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset 2026-11-02T06:00 complete: new run 2026-11-03-13 (day 2026-11-03), 16384 columns checked, 564 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 4251 ms
+[00:18:14] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-13 is open.
+
+=== m7-boot9.log: FINALIZING resume with session-state rebuild + dedupe fix ===
+[00:25:07] [Server thread/INFO] [co.ru.pu.ru.MineManager/]: [publicmines] Loaded run state: status=RESETTING runId=2026-11-03-13 seed=3026713892117538753 day=2026-11-03 ownedVolumes=2 resetPhase=FINALIZING lastReset=2026-11-02T06:00
+[00:25:07] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] Resuming daily reset phase FINALIZING for occurrence m7-fin-v2 at column 16384.
+[00:25:08] [Server thread/INFO] [co.ru.pu.ru.MineDailyReset/]: [publicmines] daily reset m7-fin-v2 complete: new run 2026-11-03-14 (day 2026-11-03), 16384 columns checked, 0 blocks restored, 0 block entities removed, 0 entities discarded, 0 player(s) evacuated, 606 ms
+[00:25:08] [Server thread/INFO] [co.ru.pu.co.MineMessages/]: [publicmines] Daily mine reset complete: new run 2026-11-03-14 is open.
