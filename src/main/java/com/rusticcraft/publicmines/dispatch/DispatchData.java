@@ -37,6 +37,7 @@ public final class DispatchData extends SavedData {
         tag.putInt("schema", SCHEMA);
         ListTag players = new ListTag();
         for (Map.Entry<UUID, List<ItemStack>> entry : lockers.entrySet()) {
+            if (entry.getValue().stream().allMatch(ItemStack::isEmpty)) continue;
             CompoundTag player = new CompoundTag();
             player.putUUID("owner", entry.getKey());
             ListTag slots = new ListTag();
@@ -94,12 +95,11 @@ public final class DispatchData extends SavedData {
                 for (Tag rawItem : items) {
                     CompoundTag item = (CompoundTag) rawItem;
                     int slot = item.getInt("slot");
-                    if (slot < 0 || slot >= SLOT_COUNT || occupied[slot]
+                    if (!item.contains("slot") || slot < 0 || slot >= SLOT_COUNT || occupied[slot]
                             || !item.contains("item", Tag.TAG_COMPOUND)) {
                         throw new IllegalArgumentException("invalid slot entry");
                     }
                     ItemStack.parse(registries, item.getCompound("item")).ifPresentOrElse(stack -> {
-                        if (stack.getCount() > stack.getMaxStackSize()) throw new IllegalArgumentException("oversized stack");
                         contents.set(slot, stack);
                         occupied[slot] = true;
                     }, () -> { throw new IllegalArgumentException("unreadable item"); });

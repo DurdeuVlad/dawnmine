@@ -62,6 +62,42 @@ public final class DispatchGameTests {
         helper.succeed();
     }
 
+    /** Overstacked stacks (command/mod-granted) must round-trip like vanilla chests instead of bricking the loader. */
+    @GameTest(template = "empty", timeoutTicks = 1200)
+    public static void overstackedItemRoundTripsWithoutBrickingSavedData(GameTestHelper helper) {
+        DispatchData dispatch = new DispatchData();
+        UUID owner = UUID.randomUUID();
+        new DispatchContainer(dispatch, owner).setItem(9, new ItemStack(Items.NETHERITE_SWORD, 5));
+        CompoundTag saved = dispatch.save(new CompoundTag(), helper.getLevel().registryAccess());
+        DispatchData reloaded = DispatchData.load(saved, helper.getLevel().registryAccess());
+
+        helper.assertTrue(reloaded.isAvailable(), "overstacked stack bricked the locker loader");
+        ItemStack restored = reloaded.contents(owner).get(9);
+        helper.assertTrue(restored.is(Items.NETHERITE_SWORD) && restored.getCount() == 5,
+                "overstacked stack did not persist exactly");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 1200)
+    public static void slotEntryWithoutSlotKeyFailsClosed(GameTestHelper helper) {
+        CompoundTag malformed = new CompoundTag();
+        malformed.putInt("schema", 1);
+        ListTag players = new ListTag();
+        CompoundTag player = new CompoundTag();
+        player.putUUID("owner", UUID.randomUUID());
+        ListTag items = new ListTag();
+        CompoundTag item = new CompoundTag();
+        item.put("item", new CompoundTag()); // no "slot" key: must not silently become slot 0
+        items.add(item);
+        player.put("items", items);
+        players.add(player);
+        malformed.put("players", players);
+
+        DispatchData loaded = DispatchData.load(malformed, helper.getLevel().registryAccess());
+        helper.assertFalse(loaded.isAvailable(), "slot-less item entry was silently relocated to slot 0");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 1200)
     public static void outOfBoundsSlotFailsClosedAndPreservesSavedData(GameTestHelper helper) {
         CompoundTag malformed = new CompoundTag();
