@@ -158,3 +158,16 @@ reported:
   pre-existing dimension-dependent failures above remain environment
   failures; the full cleanup cycle is proven on the pack server logs cited
   here.
+- **Post-review fix (b8781ac)**: independent review identified that
+  offline-at-reset players could log back in inside rebuilt terrain with no
+  evacuation pass remaining (entombment/suffocation risk). Fixed with a
+  `PlayerLoggedInEvent` hook: `MineManager.evacuateUnsafeMineLogin` moves
+  any player in the mine dimension out via the normal leave path whenever a
+  reset transaction is in flight, the run is not enterable, or their saved
+  feet/eye position is inside solid blocks. Covered by
+  `loginInsideMineDuringOrAfterResetIsEvacuated` (live legs run on the pack
+  server; the batch stays green in the flat GameTest world via the same
+  skip-guard as the other live tests). Remaining residue: a player already
+  online inside the mine during a retry-backoff window stays until the next
+  evacuation pass (~5s max) — entry stays locked so no new entrant can
+  appear mid-backoff, and new logins are caught by the login hook.
