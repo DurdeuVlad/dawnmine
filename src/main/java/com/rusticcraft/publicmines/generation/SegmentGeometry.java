@@ -35,14 +35,26 @@ public final class SegmentGeometry {
     public enum BlockKind {
         ROCK,
         OPEN,
+        ORE,
         HAZARD_BOUNDARY,
         HAZARD_SOURCE
     }
 
-    public record BlockOperation(TopoPos position, BlockKind kind) {
+    public record BlockOperation(TopoPos position, BlockKind kind, String blockId) {
+        public BlockOperation(TopoPos position, BlockKind kind) {
+            this(position, kind, "");
+        }
+
         public BlockOperation {
             Objects.requireNonNull(position, "position");
             Objects.requireNonNull(kind, "kind");
+            blockId = blockId == null ? "" : blockId;
+            if (kind == BlockKind.ORE && blockId.isBlank()) {
+                throw new IllegalArgumentException("ORE operations require a registered block id");
+            }
+            if (kind != BlockKind.ORE && !blockId.isBlank()) {
+                throw new IllegalArgumentException("only ORE operations may carry a block id");
+            }
         }
     }
 

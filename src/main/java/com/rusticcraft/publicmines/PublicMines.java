@@ -2,9 +2,12 @@ package com.rusticcraft.publicmines;
 
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.command.PublicMineCommand;
+import com.rusticcraft.publicmines.command.OreBreakAuditCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.generation.MineGenerator;
+import com.rusticcraft.publicmines.generation.OreCatalog;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
+import com.rusticcraft.publicmines.gametest.OreBreakGameTests;
 import com.rusticcraft.publicmines.generation.PublicMineWorldgen;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.topology.TopologyProfiles;
@@ -44,20 +47,23 @@ public class PublicMines {
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
         PublicMineCommand.register(event.getDispatcher());
+        OreBreakAuditCommand.register(event.getDispatcher());
     }
 
     private void onRegisterGameTests(RegisterGameTestsEvent event) {
         event.register(MineLifecycleGameTests.class);
+        event.register(OreBreakGameTests.class);
     }
 
     private void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener(new TopologyProfiles());
+        event.addListener(OreCatalog.createReloadListener());
     }
 
     private void onServerStarted(ServerStartedEvent event) {
         MineManager.get(event.getServer()).onServerStarted();
         MineGenerator.get(event.getServer()).onServerStarted();
-        LOGGER.info("Rustic Craft Public Mines loaded (M2b procedural generation)");
+        LOGGER.info("Rustic Craft Public Mines loaded (server lifecycle, generation, and ore catalog ready)");
     }
 
     private void onServerTick(ServerTickEvent.Post event) {

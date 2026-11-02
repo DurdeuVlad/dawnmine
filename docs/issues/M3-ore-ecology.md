@@ -41,14 +41,14 @@ No new ore blocks, replacing loot tables, global worldgen modifications, artific
 
 - Depends on M0 pack ore audit and M2 region/resource-pocket placement.
 - Product owner sets distribution weights from recorded playtest/economy evidence and documents the rationale; do not block routine tuning on extra approval.
-- Product owner: Codex. Implementer: Devin. Reviewer: independent.
+- Product owner and implementer: Codex. Reviewer: independent.
 
 ## Acceptance criteria
 
 1. A reproducible completeness audit reconciles every registered block in the exact target pack against M0's candidate inventory, runtime common/mod tags, static loot outputs, and mod-defined/player-break drop behavior. Every ore-bearing block is included; every candidate is classified with evidence. No unresolved candidate or unexamined drop source is counted as complete.
 2. Every ore-bearing block/variant is represented in the runtime catalog with its concrete registry ID, native mining requirements, drop behavior, assigned depth tier, and distribution policy. Any unavailable or unresolved entry is listed explicitly and blocks M3 completion.
 3. Runtime mining tests exercise each distinct ore-bearing block behavior with appropriate and inappropriate tools, including special/code-defined drops; observed results match the catalog and native pack behavior.
-4. Each assigned ore appears in its intended depth tier; no ore is silently omitted due to tag reload, registry namespace, or dynamic drop behavior.
+4. Each `RESOURCE` entry is eligible for native generation in its intended depth-tier selection pool, and every actual placement belongs to its node's tier; no resource is omitted from the pool due to tag reload, registry namespace, or dynamic drop behavior. Since selection is weighted and randomized, this does not guarantee every ore appears in every individual mine run. `ENCOUNTER` entries are catalogued and validated here but are excluded from native ore veins; M4a owns their encounter-site placement and mine-origin tracking.
 5. Quartz appears in Chaos Depths and contained lava cannot leak outside mine-owned regions.
 6. Default config yields zero Netherrack. If enabled, only the deepest configured tier is eligible; a seeded test proves no more than one attempt/cluster of at most three blocks per eligible chunk column and the configured interval is within 256–65,536. Operators cannot lower the interval or make it shallower; unsafe values are rejected with an admin-readable explanation.
 7. Generated rates are documented and configurable; no unsupported claim of economic balance is made.
