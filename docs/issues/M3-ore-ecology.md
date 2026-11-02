@@ -20,13 +20,14 @@ The server has a reviewed ore catalog derived from runtime common tags and M0's 
 - Target pack: Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248.
 - User requirement: all ores in the pack, including modded ores; quartz is the Nether material explicitly in scope for Chaos Depths. Netherrack is a separate optional block setting and off by default.
 - User direction: no Netherrack placements by default; a proper operator setting may enable it later at an extremely rare rate.
-- Common tags may omit modded ores; M0's artifact audit is part of the completeness proof.
+- Common tags may omit modded ores. M0's 99-row candidate audit is a discovery baseline, not a completeness proof: its report explicitly leaves code-defined or player-break-only drops unresolved.
 - Ore rates affect server economy and require review; do not invent high rates.
 
 ## Scope
 
 - Implement registry/tag-backed ore discovery and refresh behavior.
 - Add explicit ID entries for audited ores missing from common tags.
+- Reconcile the full target-pack block registry against tags, loot-table outputs, and mod-defined or player-break drop behavior; classify every ore candidate and any additional ore-bearing block found by that reconciliation.
 - Map every ore to depth tiers and variants in a data-driven catalog.
 - Populate M2 resource pockets using native ore blocks; include quartz in Chaos. Netherrack is separately governed by its disabled-by-default bounded option.
 - Add server config `netherrack.enabled=false` and `netherrack.chunk_column_interval=256` with a hard valid range 256–65,536. At most one placement attempt is made per eligible 16×16 chunk column in the deepest tier, with one cluster of at most three blocks. Operators can only increase the interval (make it rarer); default runs place none.
@@ -44,17 +45,18 @@ No new ore blocks, replacing loot tables, global worldgen modifications, artific
 
 ## Acceptance criteria
 
-1. The runtime ore catalog reconciles against M0's exact pack audit; every known pack ore is assigned or the issue remains blocked with explicit missing IDs.
-2. Each assigned ore appears in its intended depth tier; no ore is silently omitted due to tag reload or namespace differences.
-3. Quartz appears in Chaos Depths and contained lava cannot leak outside mine-owned regions.
-4. Default config yields zero Netherrack. If enabled, only the deepest configured tier is eligible; a seeded test proves no more than one attempt/cluster of at most three blocks per eligible chunk column and the configured interval is within 256–65,536. Operators cannot lower the interval or make it shallower; unsafe values are rejected with an admin-readable explanation.
-5. Mining an ore uses that block's native hardness, harvest/tool rules, loot, and mod behavior.
-6. Generated rates are documented and configurable; no unsupported claim of economic balance is made.
-7. Tests cover tag reload, missing IDs, duplicate variants, tier assignment, Netherrack default/upper bounds, and generation restrictions.
+1. A reproducible completeness audit reconciles every registered block in the exact target pack against M0's candidate inventory, runtime common/mod tags, static loot outputs, and mod-defined/player-break drop behavior. Every ore-bearing block is included; every candidate is classified with evidence. No unresolved candidate or unexamined drop source is counted as complete.
+2. Every ore-bearing block/variant is represented in the runtime catalog with its concrete registry ID, native mining requirements, drop behavior, assigned depth tier, and distribution policy. Any unavailable or unresolved entry is listed explicitly and blocks M3 completion.
+3. Runtime mining tests exercise each distinct ore-bearing block behavior with appropriate and inappropriate tools, including special/code-defined drops; observed results match the catalog and native pack behavior.
+4. Each assigned ore appears in its intended depth tier; no ore is silently omitted due to tag reload, registry namespace, or dynamic drop behavior.
+5. Quartz appears in Chaos Depths and contained lava cannot leak outside mine-owned regions.
+6. Default config yields zero Netherrack. If enabled, only the deepest configured tier is eligible; a seeded test proves no more than one attempt/cluster of at most three blocks per eligible chunk column and the configured interval is within 256–65,536. Operators cannot lower the interval or make it shallower; unsafe values are rejected with an admin-readable explanation.
+7. Generated rates are documented and configurable; no unsupported claim of economic balance is made.
+8. Tests cover completeness reconciliation, tag reload, missing IDs, duplicate variants, tier assignment, native mining behavior, Netherrack default/upper bounds, and generation restrictions.
 
 ## Verification
 
-Run catalog comparison against the target dedicated server's live registry. Generate sample seeds for each tier, mine representative vanilla/modded/Nether ores with appropriate and inappropriate tools, and capture drops and rates.
+Run the completeness audit against the exact target-pack registry and artifact set; retain the registry inventory, candidate-to-result reconciliation, source/hash references, and the classification for every registered-block candidate. Trace data-defined and code-defined player-break/drop paths so an ore omitted from common tags or static loot tables cannot disappear from the accounting. On a target dedicated server, mine every catalogued ore-bearing block variant and every distinct special-drop behavior with appropriate and inappropriate tools; retain observed drops, required tools, and rates. Generate sample seeds for each depth tier and verify placement, Chaos quartz/lava containment, and Netherrack bounds. Any unresolved candidate, missing source path, or mismatch blocks completion.
 
 ## PR contract
 
