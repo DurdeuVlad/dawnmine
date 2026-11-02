@@ -13,6 +13,11 @@ volumes shown here.
 | `entrance-hub-concept.svg` | Vertical section of `publicmines:public_mine_v2` — bedrock shell, flat stone plain at Y 62, arrival pad + generated connector descent, the three depth regions, plus the overworld surface-depot exit pad |
 | `safe-zone-concept.svg` | Plan + section of a checkpoint alcove — the 5×5×4 registered safe-zone volume, enforced server-side rules, and themed dressing guidance |
 
+The product-owner concept boards (numbered AI-generated renders + builder
+notes) live alongside at `docs/concept-art/public-mines/` —
+`surface-entrance-hub.png` and `deep-checkpoint-safe-zone.png` are the visual
+intent; these SVGs are the dimensional/rule annotations that ground them.
+
 ## Grounded in (verify before changing)
 
 - `src/main/resources/data/publicmines/topology_profiles/standard.json` — regions,
