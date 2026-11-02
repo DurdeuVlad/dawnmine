@@ -56,8 +56,9 @@ No production-server deployment, stable release, license decision, modpack unrel
 10. Generation/tick/entity/economy metrics are recorded against documented concurrency/performance targets.
 11. A new operator completes setup/help/status/config/validation/recovery using the documented permission matrix; messages reach only intended audiences.
 12. A faction-mine regression check confirms its existing claim/access/progression/reset flow remains unchanged.
-13. Independent Flux review and Flux evaluation support the final release-readiness verdict.
-14. A tester-focused GitHub prerelease is available only after acceptance gates pass and contains the verified JAR, matching SHA-256 checksum, changelog, clear install/run steps for the target pack, and known limitations.
+13. Multiplayer tests confirm player damage, knockback, and harmful effects are disabled throughout Public Mines; registered safe zones are hostile-mob-free with no effects crossing boundaries; players inside cannot harm mobs, and ordinary PvE resumes outside.
+14. Independent Flux review and Flux evaluation support the final release-readiness verdict.
+15. A tester-focused GitHub prerelease is available only after acceptance gates pass and contains the verified JAR, matching SHA-256 checksum, changelog, clear install/run steps for the target pack, and known limitations.
 
 ## Verification
 
