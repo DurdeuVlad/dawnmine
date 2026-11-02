@@ -4,12 +4,14 @@ import com.rusticcraft.publicmines.config.PublicMineConfig;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -29,10 +31,12 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 3;
+    private static final int SCHEMA = 4;
     static final int MAX_GENERATION_SEGMENTS = 16_384;
     static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
     static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;
+    static final int MAX_SAFE_ZONES = 1_024;
+    static final int MAX_MINE_ORE_ORIGINS = 65_536;
 
     private int schema = SCHEMA;
     private RunStatus status = RunStatus.UNINITIALIZED;
@@ -71,10 +75,20 @@ public class MineRunData extends SavedData {
     /** Opaque future-version save data must survive this older mod untouched. */
     private CompoundTag unsupportedSchemaTag;
     private final List<OwnedVolume> ownedVolumes = new ArrayList<>();
+    private final LinkedHashMap<ResourceLocation, SafeZone> safeZones = new LinkedHashMap<>();
+    private final LinkedHashMap<OrePosition, MineOreOrigin> mineOreOrigins = new LinkedHashMap<>();
     /** Per-player surface return position captured on entry. */
     private final Map<UUID, ReturnPoint> returnPoints = new HashMap<>();
 
     public record ReturnPoint(ResourceKey<Level> dimension, double x, double y, double z, float yaw, float pitch) {}
+    public record SafeZone(ResourceLocation id, String runId, OwnedVolume volume) {
+        public boolean contains(Level level, BlockPos pos) {
+            return level.dimension().equals(volume.dimension()) && volume.contains(level, pos);
+        }
+    }
+    public record MineOreOrigin(String runId, ResourceKey<Level> dimension,
+                                BlockPos pos, ResourceLocation blockId) {}
+    private record OrePosition(ResourceKey<Level> dimension, BlockPos pos) {}
 
     public static SavedData.Factory<MineRunData> factory() {
         // Saved data files always carry the current data version, so the
@@ -120,6 +134,26 @@ public class MineRunData extends SavedData {
             volumes.add(volume.save());
         }
         tag.put("ownedVolumes", volumes);
+        ListTag zones = new ListTag();
+        for (SafeZone zone : safeZones.values()) {
+            CompoundTag savedZone = new CompoundTag();
+            savedZone.putString("id", zone.id().toString());
+            savedZone.putString("runId", zone.runId());
+            savedZone.put("volume", zone.volume().save());
+            zones.add(savedZone);
+        }
+        tag.put("safeZones", zones);
+        ListTag oreOrigins = new ListTag();
+        for (MineOreOrigin origin : mineOreOrigins.values()) {
+            CompoundTag savedOrigin = new CompoundTag();
+            savedOrigin.putString("runId", origin.runId());
+            savedOrigin.putString("dim", origin.dimension().location().toString());
+            savedOrigin.putIntArray("pos", new int[] {
+                    origin.pos().getX(), origin.pos().getY(), origin.pos().getZ()});
+            savedOrigin.putString("block", origin.blockId().toString());
+            oreOrigins.add(savedOrigin);
+        }
+        tag.put("mineOreOrigins", oreOrigins);
         CompoundTag returns = new CompoundTag();
         for (Map.Entry<UUID, ReturnPoint> entry : returnPoints.entrySet()) {
             ReturnPoint r = entry.getValue();
@@ -134,6 +168,52 @@ public class MineRunData extends SavedData {
         }
         tag.put("returnPoints", returns);
         return tag;
+    }
+
+    /** Exact save/load snapshot helpers for server-side GameTests that must restore shared state. */
+    CompoundTag snapshot(HolderLookup.Provider registries) {
+        return save(new CompoundTag(), registries);
+    }
+
+    void restoreSnapshot(CompoundTag snapshot, HolderLookup.Provider registries) {
+        MineRunData restored = load(snapshot.copy(), registries);
+        schema = restored.schema;
+        status = restored.status;
+        runId = restored.runId;
+        runSequence = restored.runSequence;
+        seed = restored.seed;
+        dayId = restored.dayId;
+        lastError = restored.lastError;
+        boundMinChunkX = restored.boundMinChunkX;
+        boundMinChunkZ = restored.boundMinChunkZ;
+        boundMaxChunkX = restored.boundMaxChunkX;
+        boundMaxChunkZ = restored.boundMaxChunkZ;
+        mineArrival = restored.mineArrival;
+        surfaceExit = restored.surfaceExit;
+        frontierRegions = restored.frontierRegions;
+        topologyProfile = restored.topologyProfile;
+        topologyFingerprint = restored.topologyFingerprint;
+        topologyNodes = restored.topologyNodes;
+        topologyEdges = restored.topologyEdges;
+        generationPlanFingerprint = restored.generationPlanFingerprint;
+        generationNetherrackEnabled = restored.generationNetherrackEnabled;
+        generationNetherrackInterval = restored.generationNetherrackInterval;
+        pendingGenerationSegments.clear();
+        pendingGenerationSegments.addAll(restored.pendingGenerationSegments);
+        completedGenerationSegments.clear();
+        completedGenerationSegments.addAll(restored.completedGenerationSegments);
+        activeGenerationSegment = restored.activeGenerationSegment;
+        activeGenerationCursor = restored.activeGenerationCursor;
+        unsupportedSchemaTag = restored.unsupportedSchemaTag == null ? null : restored.unsupportedSchemaTag.copy();
+        ownedVolumes.clear();
+        ownedVolumes.addAll(restored.ownedVolumes);
+        safeZones.clear();
+        safeZones.putAll(restored.safeZones);
+        mineOreOrigins.clear();
+        mineOreOrigins.putAll(restored.mineOreOrigins);
+        returnPoints.clear();
+        returnPoints.putAll(restored.returnPoints);
+        setDirty();
     }
 
     public static MineRunData load(CompoundTag tag, HolderLookup.Provider registries) {
@@ -188,6 +268,7 @@ public class MineRunData extends SavedData {
                 // drop malformed entries rather than failing the whole load
             }
         }
+        data.loadMineProtectionState(tag, savedSchema);
         CompoundTag returns = tag.getCompound("returnPoints");
         for (String key : returns.getAllKeys()) {
             CompoundTag rt = returns.getCompound(key);
@@ -304,6 +385,63 @@ public class MineRunData extends SavedData {
         }
     }
 
+    private void loadMineProtectionState(CompoundTag tag, int savedSchema) {
+        // Schema 4 introduced provenance and safe zones. Older saves have no
+        // records to load; never infer permission from legacy world blocks.
+        if (savedSchema < 4) {
+            return;
+        }
+        ListTag zones = tag.getList("safeZones", Tag.TAG_COMPOUND);
+        if (zones.size() > MAX_SAFE_ZONES) {
+            markFailed("saved safe-zone count exceeds the supported limit; run '/publicmine recover repair'");
+            return;
+        }
+        for (Tag element : zones) {
+            try {
+                CompoundTag saved = (CompoundTag) element;
+                String savedRunId = saved.getString("runId");
+                ResourceLocation id = ResourceLocation.parse(saved.getString("id"));
+                OwnedVolume volume = OwnedVolume.load(saved.getCompound("volume"));
+                if (!savedRunId.equals(runId) || id == null || !isWellFormed(volume)
+                        || !volume.dimension().equals(MineManager.MINE_DIMENSION) || !isOwned(volume)) {
+                    continue;
+                }
+                safeZones.putIfAbsent(id, new SafeZone(id, savedRunId, volume));
+            } catch (RuntimeException ignored) {
+                // A malformed zone is omitted; absence of the zone fails closed.
+            }
+        }
+
+        ListTag origins = tag.getList("mineOreOrigins", Tag.TAG_COMPOUND);
+        if (origins.size() > MAX_MINE_ORE_ORIGINS) {
+            mineOreOrigins.clear();
+            markFailed("saved mine-ore provenance count exceeds the supported limit; run '/publicmine recover repair'");
+            return;
+        }
+        for (Tag element : origins) {
+            try {
+                CompoundTag saved = (CompoundTag) element;
+                String savedRunId = saved.getString("runId");
+                ResourceLocation dimensionId = ResourceLocation.parse(saved.getString("dim"));
+                ResourceLocation blockId = ResourceLocation.parse(saved.getString("block"));
+                int[] coordinates = saved.getIntArray("pos");
+                if (coordinates.length != 3 || !savedRunId.equals(runId)) {
+                    continue;
+                }
+                ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
+                BlockPos pos = new BlockPos(coordinates[0], coordinates[1], coordinates[2]);
+                if (!isOwned(dimension, pos)) {
+                    continue;
+                }
+                OrePosition key = new OrePosition(dimension, pos);
+                mineOreOrigins.putIfAbsent(key,
+                        new MineOreOrigin(savedRunId, dimension, pos, blockId));
+            } catch (RuntimeException ignored) {
+                // Invalid provenance grants no break permission.
+            }
+        }
+    }
+
     private void readSegmentIds(CompoundTag tag, String key, LinkedHashSet<String> destination) {
         if (!tag.contains(key)) {
             return;
@@ -391,6 +529,8 @@ public class MineRunData extends SavedData {
     public int topologyNodes() { return topologyNodes; }
     public int topologyEdges() { return topologyEdges; }
     public List<OwnedVolume> ownedVolumes() { return List.copyOf(ownedVolumes); }
+    public List<SafeZone> safeZones() { return List.copyOf(safeZones.values()); }
+    public List<MineOreOrigin> mineOreOrigins() { return List.copyOf(mineOreOrigins.values()); }
     public String generationPlanFingerprint() { return generationPlanFingerprint; }
     public boolean generationNetherrackEnabled() { return generationNetherrackEnabled; }
     public int generationNetherrackInterval() { return generationNetherrackInterval; }
@@ -425,6 +565,8 @@ public class MineRunData extends SavedData {
         this.topologyEdges = 0;
         clearGenerationProgress();
         this.ownedVolumes.clear();
+        this.safeZones.clear();
+        this.mineOreOrigins.clear();
         this.returnPoints.clear();
         this.status = RunStatus.INITIALIZING;
         setDirty();
@@ -441,6 +583,147 @@ public class MineRunData extends SavedData {
     void setMineArrival(BlockPos pos) { this.mineArrival = pos; setDirty(); }
     void setSurfaceExit(BlockPos pos) { this.surfaceExit = pos; setDirty(); }
     void addOwnedVolume(OwnedVolume volume) { this.ownedVolumes.add(volume); setDirty(); }
+
+    /** Registers an explicit run-owned safe-zone box. Repeating the same ID and volume is idempotent. */
+    public boolean registerSafeZone(ResourceLocation id, OwnedVolume volume) {
+        if (runId.isBlank() || id == null || !isWellFormed(volume)
+                || !volume.dimension().equals(MineManager.MINE_DIMENSION) || !isOwned(volume)) {
+            return false;
+        }
+        SafeZone candidate = new SafeZone(id, runId, volume);
+        SafeZone previous = safeZones.get(id);
+        if (previous != null) {
+            return previous.runId().equals(candidate.runId()) && sameBounds(previous.volume(), volume);
+        }
+        if (safeZones.size() >= MAX_SAFE_ZONES) {
+            return false;
+        }
+        safeZones.put(id, candidate);
+        setDirty();
+        return true;
+    }
+
+    public boolean registerSafeZone(String id, OwnedVolume volume) {
+        try {
+            return registerSafeZone(ResourceLocation.parse(id), volume);
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    /** Removes one safe zone from this run, for station maintenance or temporary fixtures. */
+    public boolean removeSafeZone(ResourceLocation id) {
+        if (id == null || safeZones.remove(id) == null) {
+            return false;
+        }
+        setDirty();
+        return true;
+    }
+
+    public boolean removeSafeZone(String id) {
+        try {
+            return removeSafeZone(ResourceLocation.parse(id));
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    public boolean isInSafeZone(Level level, BlockPos pos) {
+        return level != null && isInSafeZone(level.dimension(), pos);
+    }
+
+    public boolean isInSafeZone(net.minecraft.server.level.ServerLevel level, BlockPos pos) {
+        return isInSafeZone((Level) level, pos);
+    }
+
+    public boolean isInSafeZone(ResourceKey<Level> dimension, BlockPos pos) {
+        return dimension != null && pos != null && safeZones.values().stream()
+                .anyMatch(zone -> zone.runId().equals(runId) && zone.volume().dimension().equals(dimension)
+                        && zone.volume().contains(pos));
+    }
+
+    /** Records a generated ore position once; retries with the same block are idempotent. */
+    public boolean recordMineOre(Level level, BlockPos pos, ResourceLocation blockId) {
+        return level != null && recordMineOre(level.dimension(), pos, blockId);
+    }
+
+    public boolean recordMineOre(ResourceKey<Level> dimension, BlockPos pos, ResourceLocation blockId) {
+        if (runId.isBlank() || dimension == null || pos == null || blockId == null || !isOwned(dimension, pos)) {
+            return false;
+        }
+        OrePosition key = new OrePosition(dimension, pos.immutable());
+        MineOreOrigin candidate = new MineOreOrigin(runId, dimension, pos.immutable(), blockId);
+        MineOreOrigin previous = mineOreOrigins.get(key);
+        if (previous != null) {
+            return previous.equals(candidate);
+        }
+        if (mineOreOrigins.size() >= MAX_MINE_ORE_ORIGINS) {
+            return false;
+        }
+        mineOreOrigins.put(key, candidate);
+        setDirty();
+        return true;
+    }
+
+    public boolean isRecordedMineOre(Level level, BlockPos pos, ResourceLocation blockId) {
+        return level != null && isRecordedMineOre(level.dimension(), pos, blockId);
+    }
+
+    public boolean isRecordedMineOre(ResourceKey<Level> dimension, BlockPos pos, ResourceLocation blockId) {
+        if (dimension == null || pos == null || blockId == null) {
+            return false;
+        }
+        MineOreOrigin origin = mineOreOrigins.get(new OrePosition(dimension, pos.immutable()));
+        return origin != null && origin.runId().equals(runId) && origin.blockId().equals(blockId)
+                && isOwned(dimension, pos);
+    }
+
+    public boolean isGeneratedMineOre(net.minecraft.server.level.ServerLevel level,
+                                      BlockPos pos, ResourceLocation blockId) {
+        return level != null && level.dimension().equals(MineManager.MINE_DIMENSION)
+                && isRecordedMineOre(level, pos, blockId);
+    }
+
+    /** Removes stale provenance after a player successfully breaks the generated ore. */
+    public boolean removeMineOre(Level level, BlockPos pos) {
+        return level != null && removeMineOre(level.dimension(), pos);
+    }
+
+    public boolean removeMineOre(ResourceKey<Level> dimension, BlockPos pos) {
+        if (dimension == null || pos == null) {
+            return false;
+        }
+        if (mineOreOrigins.remove(new OrePosition(dimension, pos.immutable())) != null) {
+            setDirty();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isOwned(Level level, BlockPos pos) {
+        return isOwned(level.dimension(), pos);
+    }
+
+    private boolean isOwned(ResourceKey<Level> dimension, BlockPos pos) {
+        return ownedVolumes.stream().anyMatch(volume -> volume.dimension().equals(dimension)
+                && volume.contains(pos));
+    }
+
+    private boolean isOwned(OwnedVolume inner) {
+        return ownedVolumes.stream().anyMatch(outer -> outer.dimension().equals(inner.dimension())
+                && outer.contains(inner.min()) && outer.contains(inner.max()));
+    }
+
+    private static boolean isWellFormed(OwnedVolume volume) {
+        return volume != null && volume.min().getX() <= volume.max().getX()
+                && volume.min().getY() <= volume.max().getY()
+                && volume.min().getZ() <= volume.max().getZ();
+    }
+
+    private static boolean sameBounds(OwnedVolume left, OwnedVolume right) {
+        return left.dimension().equals(right.dimension()) && left.min().equals(right.min())
+                && left.max().equals(right.max());
+    }
 
     /** Records the validated topology receipt for the active run. */
     void setTopology(String profile, String fingerprint, int nodes, int edges) {
