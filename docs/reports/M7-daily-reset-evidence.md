@@ -122,6 +122,20 @@ After verification the disposable server config was returned to
 `resetWarningMinutes=[15,5,1]` and `publicmine reset status` confirmed the
 effective schedule `06:00` and next occurrence.
 
+## Shipped-artifact sanity (m7-boot10.log)
+
+The exact jar committed to the PR branch (`16da03b`) was redeployed and
+rebooted after all verification above. Boot loaded
+`status=READY runId=2026-11-03-14 resetPhase=NONE lastReset=2026-11-02T06:00`
+with no spurious reset (00:40 local is before today's 06:00 occurrence and the
+yesterday-06:00 occurrence is already consumed). `publicmine reset status`
+reported:
+
+    Schedule: 06:00 Europe/Bucharest (next: 2026-11-03 06:00 ... (in 5h 19m))
+    Warnings: [15, 5, 1] minute(s) before, mine occupants only
+    Last completed reset: 2026-11-02T06:00
+    Transaction: none
+
 ## Limitations / residual risk
 
 - **No connected client**: multi-occupant evacuation and carried-inventory
