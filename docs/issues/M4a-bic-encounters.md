@@ -41,7 +41,7 @@ No global spawn-rule changes, BiC class coupling, rebalancing BiC AI/attributes/
 
 ## Dependencies and open decisions
 
-- Depends on M0 exact artifact report, M1 lifecycle, and M2 encounter points.
+- Depends on M0 exact artifact report, M1 lifecycle, M2 encounter points, and accepted M2c issues #22 (mine boundary shell) and #23 (ore-only mining and floor-only torch placement).
 - M4b consumes mine-origin tracking.
 - Mobs with unsafe tunneling/explosion/large-area behavior remain excluded unless a test proves the configured encounter is safe.
 - Product owner: Codex. Implementer: Devin. Reviewer: independent.
