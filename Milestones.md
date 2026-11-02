@@ -132,7 +132,7 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 ## Current execution status
 
-- M0 is the active implementation handoff. GitHub issue [#1](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1) is open; the shared worktree contains uncommitted scaffold and compatibility evidence, but `PublicMines.java` is still scaffold-only and no implementation PR is open.
+- M0 is the active implementation handoff. GitHub issue [#1](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1) is open; the scaffold and exact-pack compatibility evidence are committed on the `m0-foundation` issue branch for independent review. `PublicMines.java` is intentionally scaffold-only in this milestone.
 - Preserve the shared worktree. Devin must inspect it before editing; do not reset, clean, or overwrite existing audit/scaffold work.
 - M1–M8 are planned and remain required. No gameplay milestone is complete. No production deployment is authorized.
 

@@ -26,7 +26,7 @@
 ## Current evidence
 
 - Repo: private `DurdeuVlad/rusticcraft-public-mines`, default branch `main`.
-- Devin CLI lists a resumable repo session `actually-crabapple` for M0 (last activity about one hour ago); no Devin process is currently visible. There is no open M0 PR. The session listing does not prove implementation behavior or completion.
+- The M0 implementation and compatibility evidence are committed on the `m0-foundation` issue branch and being delivered as a PR for independent review; the branch passed clean-build, exact-pack dedicated-server, reproducible-report, and independent adversarial-review checks in-session. Merge remains gated on the authorized criteria.
 - Product roadmap includes a distinct M6 progression economy and M1 admin onboarding issue. Static pack recipes provide iron-to-steel and steel/silver weapon hooks. Runtime loot testing shows Born in Chaos infected ores yield no direct items; pinned bytecode calls a Diamond Termite encounter and the termite shard has a nine-to-one diamond recipe. Actual player mining/combat/crafting, item stats, and exact upgrade pacing remain unverified.
 - Default morning reset is 06:00 in configured server timezone. Netherrack defaults off.
 
