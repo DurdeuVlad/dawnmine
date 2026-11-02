@@ -84,4 +84,3 @@ Every implementation PR must repeat intent, expectation, acceptance criteria and
 - NeoForge setup and Java 21 reference: https://docs.neoforged.net/docs/1.21.1/gettingstarted/
 - NeoForge tag reference: https://docs.neoforged.net/docs/1.21.1/resources/server/tags/
 - Born in Chaos versions and loader support: https://modrinth.com/mod/borninchaos/versions
-
