@@ -273,7 +273,7 @@ public final class PublicMineCommand {
         int end = text.indexOf(". ");
         if (end < 0) end = text.indexOf(';');
         if (end < 0) end = Math.min(text.length(), 140);
-        String sentence = text.substring(0, Math.min(end + 1, 160)).trim();
+        String sentence = text.substring(0, Math.min(Math.min(end + 1, 160), text.length())).trim();
         return sentence.endsWith(".") ? sentence : sentence + "…";
     }
 
