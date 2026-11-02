@@ -19,7 +19,9 @@ volumes shown here.
   corridor half-width, node/cavern/checkpoint counts
 - `docs/architecture/M2c-boundary.md` — bedrock shell: floor/roof on every chunk,
   walls on boundary chunks at X/Z ±1024
-- `docs/architecture/M2b-world-generation.md` — arrival pad, arrival connector,
+- `docs/architecture/M1-lifecycle-admin.md` — the generated 5×5 arrival pad and
+  its owned volume (`MineManager.ARRIVAL`, arrival point [0,63,0])
+- `docs/architecture/M2b-world-generation.md` — arrival connector,
   checkpoint pads (5×5, supported, 3-block clearance), Chaos palette, lava cups
 - `docs/reports/M5a-checkpoint-travel-validation.md` — registered safe-zone
   volumes: arrival pad, checkpoint pads, single surface-exit pad
@@ -31,7 +33,7 @@ volumes shown here.
 - **Generated + reserved:** bedrock shell, the 5×5×4 safe-zone volumes (arrival
   pad, checkpoint pads, surface exit), carved routes/alcoves, ore pockets.
 - **Dressable (non-binding):** thematic props around — never inside — the safe
-  zones: Foreman's camp at the arrival plain, crates/boards/lantern posts on
-  pad-edge cells, signage, support beams.
+  zones: Foreman's camp on the arrival plain, crates/boards/lantern posts on
+  the cells surrounding a pad, signage, support beams.
 - **Players may place** only allowed floor torches; only catalogued mine ores
   are breakable. Any authored dressing must not rely on players editing blocks.

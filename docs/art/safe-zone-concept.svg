@@ -32,52 +32,52 @@
   <rect x="60" y="130" width="680" height="420" fill="url(#stone2)"/>
   <rect x="60" y="430" width="680" height="120" fill="url(#ds2)"/>
 
-  <!-- corridor carved through (7 wide) -->
-  <rect x="60" y="270" width="680" height="140" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
-  <text x="120" y="262" font-size="12" fill="#b0bec5">main-route corridor · ~7 blocks wide · connects to next route node</text>
+  <!-- corridor: 5-block carved envelope + 3-block open bore -->
+  <rect x="60" y="290" width="680" height="100" fill="#1a1a20" stroke="#37474f" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <rect x="60" y="310" width="680" height="60" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
+  <text x="120" y="284" font-size="12" fill="#b0bec5">main-route corridor · 3-block open bore inside a 5-block carved envelope</text>
   <line x1="60" y1="340" x2="740" y2="340" stroke="#455a64" stroke-width="1" stroke-dasharray="10 8"/>
   <text x="110" y="344" font-size="10" fill="#546e7a" text-anchor="middle">route axis</text>
 
   <!-- alcove carved downward (south) off corridor -->
-  <rect x="330" y="410" width="160" height="120" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
+  <rect x="330" y="390" width="160" height="140" fill="#0d0d0f" stroke="#37474f" stroke-width="1.5"/>
 
   <!-- checkpoint pad: 5x5 = 5 grid squares of 20px = 100px -->
-  <rect x="350" y="420" width="100" height="100" fill="url(#planks)" stroke="#d4a017" stroke-width="2"/>
+  <rect x="350" y="400" width="100" height="100" fill="url(#planks)" stroke="#d4a017" stroke-width="2"/>
   <!-- grid on pad -->
   <g stroke="#000" stroke-opacity="0.25">
-    <line x1="370" y1="420" x2="370" y2="520"/><line x1="390" y1="420" x2="390" y2="520"/>
-    <line x1="410" y1="420" x2="410" y2="520"/><line x1="430" y1="420" x2="430" y2="520"/>
-    <line x1="350" y1="440" x2="450" y2="440"/><line x1="350" y1="460" x2="450" y2="460"/>
-    <line x1="350" y1="480" x2="450" y2="480"/><line x1="350" y1="500" x2="450" y2="500"/>
+    <line x1="370" y1="400" x2="370" y2="500"/><line x1="390" y1="400" x2="390" y2="500"/>
+    <line x1="410" y1="400" x2="410" y2="500"/><line x1="430" y1="400" x2="430" y2="500"/>
+    <line x1="350" y1="420" x2="450" y2="420"/><line x1="350" y1="440" x2="450" y2="440"/>
+    <line x1="350" y1="460" x2="450" y2="460"/><line x1="350" y1="480" x2="450" y2="480"/>
   </g>
   <!-- safe zone outline: pad 5x5, dashed green -->
-  <rect x="350" y="420" width="100" height="100" fill="none" stroke="#69f0ae" stroke-width="3" stroke-dasharray="8 5"/>
-  <text x="400" y="412" font-size="11" fill="#69f0ae" text-anchor="middle" font-weight="600">5×5 pad = safe-zone floor</text>
+  <rect x="350" y="400" width="100" height="100" fill="none" stroke="#69f0ae" stroke-width="3" stroke-dasharray="8 5"/>
+  <text x="400" y="392" font-size="11" fill="#69f0ae" text-anchor="middle" font-weight="600">5×5 pad = safe-zone floor</text>
 
-  <!-- pad props: dispatch crate + lantern posts on pad EDGE cells (concept) -->
-  <rect x="352" y="422" width="18" height="18" fill="#6d4c41" stroke="#d4a017" stroke-width="1.5"/>
-  <text x="361" y="434" font-size="8" fill="#ffd54f" text-anchor="middle">D</text>
-  <rect x="430" y="422" width="18" height="18" fill="#6d4c41" stroke="#a1887f"/>
-  <text x="439" y="434" font-size="8" fill="#d7ccc8" text-anchor="middle">B</text>
-  <!-- floor torches on two pad cells -->
-  <rect x="352" y="500" width="16" height="16" fill="#ffca28" stroke="#ff8f00"/>
-  <rect x="432" y="500" width="16" height="16" fill="#ffca28" stroke="#ff8f00"/>
+  <!-- concept props OUTSIDE the registered volume, on surrounding alcove cells -->
+  <rect x="324" y="404" width="18" height="18" fill="#6d4c41" stroke="#d4a017" stroke-width="1.5"/>
+  <text x="333" y="416" font-size="8" fill="#ffd54f" text-anchor="middle">D</text>
+  <rect x="458" y="404" width="18" height="18" fill="#6d4c41" stroke="#a1887f"/>
+  <text x="467" y="416" font-size="8" fill="#d7ccc8" text-anchor="middle">B</text>
+  <!-- floor torches on two pad cells (the only allowed placement) -->
+  <rect x="352" y="482" width="16" height="16" fill="#ffca28" stroke="#ff8f00"/>
+  <rect x="432" y="482" width="16" height="16" fill="#ffca28" stroke="#ff8f00"/>
 
   <!-- mob held at boundary -->
   <g>
-    <rect x="236" y="300" width="28" height="28" rx="4" fill="#7f1d1d" stroke="#ef9a9a" stroke-width="1.5"/>
-    <circle cx="246" cy="312" r="3" fill="#fca5a5"/><circle cx="254" cy="312" r="3" fill="#fca5a5"/>
-    <line x1="276" y1="314" x2="318" y2="440" stroke="#ef9a9a" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr2)"/>
-    <text x="196" y="290" font-size="11" fill="#ef9a9a">hostile mob — cannot enter or</text>
-    <text x="196" y="304" font-size="11" fill="#ef9a9a">push effects across the pad</text>
+    <rect x="236" y="336" width="28" height="28" rx="4" fill="#7f1d1d" stroke="#ef9a9a" stroke-width="1.5"/>
+    <circle cx="246" cy="348" r="3" fill="#fca5a5"/><circle cx="254" cy="348" r="3" fill="#fca5a5"/>
+    <line x1="276" y1="350" x2="316" y2="404" stroke="#ef9a9a" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr2)"/>
+    <text x="196" y="296" font-size="11" fill="#ef9a9a">hostile mob — cannot enter or</text>
+    <text x="196" y="310" font-size="11" fill="#ef9a9a">push effects across the pad</text>
   </g>
 
   <!-- dimension callouts -->
-  <line x1="350" y1="540" x2="450" y2="540" stroke="#eceff1" stroke-width="1" marker-end="url(#arr2)"/>
-  <line x1="450" y1="540" x2="350" y2="540" stroke="#eceff1" stroke-width="1"/>
-  <text x="400" y="556" font-size="11" fill="#eceff1" text-anchor="middle">5 blocks</text>
-  <line x1="500" y1="420" x2="500" y2="520" stroke="#eceff1" stroke-width="1"/>
-  <text x="508" y="474" font-size="11" fill="#eceff1">5 blocks</text>
+  <line x1="350" y1="544" x2="450" y2="544" stroke="#eceff1" stroke-width="1"/>
+  <text x="400" y="560" font-size="11" fill="#eceff1" text-anchor="middle">5 blocks</text>
+  <line x1="500" y1="400" x2="500" y2="500" stroke="#eceff1" stroke-width="1"/>
+  <text x="508" y="454" font-size="11" fill="#eceff1">5 blocks</text>
 
   <!-- ============ RIGHT column: section + rules ============ -->
   <!-- section view -->
@@ -110,7 +110,7 @@
     <text x="820" y="509">· Place only allowed floor torches</text>
     <text x="806" y="537" fill="#80cbc4" font-weight="600">Why it exists</text>
     <text x="820" y="557">· Banking-and-breather space between pushes</text>
-    <text x="820" y="574">· Foreman's Dispatch access (private 54-slot)</text>
+    <text x="820" y="574">· Foreman's Dispatch access (planned, M5b)</text>
     <text x="820" y="591">· /publicmine checkpoint travel origin</text>
   </g>
 
@@ -120,8 +120,8 @@
   <g font-size="12" fill="#c5cbd1">
     <text x="820" y="678">· Generator carves the alcove + pad; dressing is</text>
     <text x="820" y="694">  thematic: support beams, crate stacks, signage</text>
-    <text x="820" y="710">· Keep the pad cells walkable — props on edge</text>
-    <text x="820" y="726">  cells only, never reduce the 5×5 usable floor</text>
+    <text x="820" y="710">· Keep the pad cells walkable — props live on</text>
+    <text x="820" y="726">  cells around the pad, never inside the volume</text>
     <text x="820" y="742">· D = Dispatch crate concept · B = notice board</text>
     <text x="820" y="758">· Light = floor torches (the only placeable)</text>
     <text x="820" y="774">· One checkpoint per region: Upper, Middle, Chaos</text>
@@ -141,5 +141,5 @@
   <text x="360" y="691" font-size="12" fill="#c5cbd1">do not resize it; they dress around it.</text>
   <text x="360" y="718" font-size="12" fill="#c5cbd1">Travel UX: /publicmine checkpoints lists stations;</text>
   <text x="360" y="735" font-size="12" fill="#c5cbd1">/publicmine checkpoint &lt;id&gt; · /publicmine leave</text>
-  <text x="360" y="752" font-size="12" fill="#c5cbd1">· /publicmine dispatch (bank-or-push)</text>
+  <text x="360" y="752" font-size="12" fill="#c5cbd1">· Dispatch terminal at stations (planned, M5b)</text>
 </svg>
