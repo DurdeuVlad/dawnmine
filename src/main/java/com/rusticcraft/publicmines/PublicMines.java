@@ -11,6 +11,7 @@ import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
 import com.rusticcraft.publicmines.gametest.OreBreakGameTests;
 import com.rusticcraft.publicmines.generation.PublicMineWorldgen;
 import com.rusticcraft.publicmines.encounter.MineEncounterCatalog;
+import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
 import com.rusticcraft.publicmines.encounter.MineEncounterManager;
 import com.rusticcraft.publicmines.protection.MineProtectionEvents;
 import com.rusticcraft.publicmines.run.MineManager;
@@ -69,6 +70,7 @@ public class PublicMines {
     private void onAddReloadListeners(AddReloadListenerEvent event) {
         event.addListener(new TopologyProfiles());
         event.addListener(new MineEncounterCatalog());
+        event.addListener(new MineRewardCatalog());
         event.addListener(OreCatalog.createReloadListener());
     }
 
