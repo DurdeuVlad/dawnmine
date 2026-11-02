@@ -11,8 +11,8 @@
 
 | Item | State | Evidence required |
 |---|---|---|
-| Keep the canonical M0–M8 roadmap aligned with all 13 issue contracts | in progress | PR #14 merged as `4c40ad4`; the roadmap has now been reconciled locally to include M1 onboarding (#12), M6 gear progression (#13), M7 reset (#10), and M8 playtests (#11); this reconciliation is not yet merged remotely |
-| M0 foundation and compatibility audit | active | Java 21 clean build; target-pack dedicated-server load; exact pack/BiC/ore/recipe report; independent review/evaluation. Runtime/tag and static recipe/equipment candidate reports are independently reviewed; 29 loot tables were evaluated in-pack, but player-break hooks, full ore reconciliation, item stats, and custom/malformed recipes remain open. |
+| Keep the canonical M0–M8 roadmap aligned with all 13 issue contracts | in progress | PR #14 merged as `4c40ad4`; M3 all-ore completeness is explicit in issue #5/PR #16, and M0's bounded candidate audit handoff is explicit in issue #1/PR #18. The roadmap includes M1 onboarding (#12), M6 gear progression (#13), M7 reset (#10), and M8 playtests (#11). |
+| M0 foundation and compatibility audit | active | Fresh isolated `\.\gradlew.bat clean build --console=plain` passed in 5m41s (`BUILD SUCCESSFUL`; Gradle reports `test NO-SOURCE`); exact-pack dedicated-server load and artifact/hash evidence are independently verified. The 99 ore/resource candidates have exact-pack `/loot ... mine` evaluation. This is a bounded baseline, not final ore completeness; exact-pack registry/data/code drop-path and player-break reconciliation belongs to M3 issue #5. Item stats and custom/malformed recipes remain open. Final M0 review/evaluation remains a gate. |
 | M1 shared lifecycle and operator onboarding | pending | Shared run/restart/ownership tests; fresh-admin command walkthrough; permission matrix; targeted-message proof |
 | M2 deterministic procedural exploration | pending | Seed corpus connectivity/traversability/safety proof; multiplayer shared layout; bounded frontier evidence; no prefab dependency |
 | M3 all-ore depth ecology and optional Netherrack setting | pending | Complete pack audit reconciliation; tier generation; native drops; default-zero Netherrack and strict enabled bounds |
@@ -26,7 +26,7 @@
 ## Current evidence
 
 - Repo: private `DurdeuVlad/rusticcraft-public-mines`, default branch `main`.
-- The M0 implementation and compatibility evidence are delivered in open PR [#15](https://github.com/DurdeuVlad/rusticcraft-public-mines/pull/15) (`m0-foundation` branch) for independent review; the branch passed clean-build, exact-pack dedicated-server, reproducible-report, and independent adversarial-review checks in-session. Merge remains gated on the authorized criteria.
+- The M0 implementation and compatibility evidence are delivered in open PR [#15](https://github.com/DurdeuVlad/rusticcraft-public-mines/pull/15) (`m0-foundation` branch). Exact-pack registry/tag/artifact hashes and dedicated-server snapshots are independently verified; the 99-candidate `/loot ... mine` set matches the candidate inventory. A fresh clean build passed in the isolated M0 handoff worktree; the full independent review requested three stale handoff wording fixes, which are being corrected before final review/evaluation.
 - Product roadmap includes a distinct M6 progression economy and M1 admin onboarding issue. Static pack recipes provide iron-to-steel and steel/silver weapon hooks. Runtime loot testing shows Born in Chaos infected ores yield no direct items; pinned bytecode calls a Diamond Termite encounter and the termite shard has a nine-to-one diamond recipe. Actual player mining/combat/crafting, item stats, and exact upgrade pacing remain unverified.
 - Default morning reset is 06:00 in configured server timezone. Netherrack defaults off.
 
