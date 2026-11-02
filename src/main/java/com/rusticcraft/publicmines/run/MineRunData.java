@@ -31,11 +31,16 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 7;
+    private static final int SCHEMA = 8;
     static final int MAX_GENERATION_SEGMENTS = 16_384;
     static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
     static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;
     static final int MAX_SAFE_ZONES = 1_024;
+    static final int MAX_CHECKPOINT_STATIONS = 256;
+    static final int MAX_CHECKPOINT_LABEL_LENGTH = 128;
+    private static final ResourceLocation SURFACE_EXIT_SAFE_ZONE_ID =
+            ResourceLocation.fromNamespaceAndPath("publicmines", "surface_exit");
+    private static final int SURFACE_EXIT_SAFE_ZONE_HALF_WIDTH = 2;
     static final int MAX_MINE_ORE_ORIGINS = 65_536;
     static final int MAX_MINE_ENTITIES = 16_384;
     static final int MAX_ENCOUNTER_SITE_CLAIMS = 16_384;
@@ -82,6 +87,7 @@ public class MineRunData extends SavedData {
     private CompoundTag unsupportedSchemaTag;
     private final List<OwnedVolume> ownedVolumes = new ArrayList<>();
     private final LinkedHashMap<ResourceLocation, SafeZone> safeZones = new LinkedHashMap<>();
+    private final LinkedHashMap<String, CheckpointStation> checkpointStations = new LinkedHashMap<>();
     private final LinkedHashMap<OrePosition, MineOreOrigin> mineOreOrigins = new LinkedHashMap<>();
     private final LinkedHashMap<UUID, MineEntityOrigin> mineEntities = new LinkedHashMap<>();
     /** Entity IDs claimed for bonus delivery; retained after death unregisters provenance. */
@@ -94,6 +100,13 @@ public class MineRunData extends SavedData {
     public record SafeZone(ResourceLocation id, String runId, OwnedVolume volume) {
         public boolean contains(Level level, BlockPos pos) {
             return level.dimension().equals(volume.dimension()) && volume.contains(level, pos);
+        }
+    }
+    public record CheckpointStation(String id, String label, String region, int depth,
+                                    BlockPos arrival, OwnedVolume safeVolume) {
+        public CheckpointStation {
+            arrival = arrival.immutable();
+            label = label == null ? "" : label;
         }
     }
     public record MineOreOrigin(String runId, ResourceKey<Level> dimension,
@@ -160,6 +173,19 @@ public class MineRunData extends SavedData {
             zones.add(savedZone);
         }
         tag.put("safeZones", zones);
+        ListTag stations = new ListTag();
+        for (CheckpointStation station : checkpointStations.values()) {
+            CompoundTag saved = new CompoundTag();
+            saved.putString("id", station.id());
+            saved.putString("label", station.label());
+            saved.putString("region", station.region());
+            saved.putInt("depth", station.depth());
+            saved.putIntArray("arrival", new int[] {station.arrival().getX(),
+                    station.arrival().getY(), station.arrival().getZ()});
+            saved.put("safeVolume", station.safeVolume().save());
+            stations.add(saved);
+        }
+        tag.put("checkpointStations", stations);
         ListTag oreOrigins = new ListTag();
         for (MineOreOrigin origin : mineOreOrigins.values()) {
             CompoundTag savedOrigin = new CompoundTag();
@@ -246,6 +272,8 @@ public class MineRunData extends SavedData {
         ownedVolumes.addAll(restored.ownedVolumes);
         safeZones.clear();
         safeZones.putAll(restored.safeZones);
+        checkpointStations.clear();
+        checkpointStations.putAll(restored.checkpointStations);
         mineOreOrigins.clear();
         mineOreOrigins.putAll(restored.mineOreOrigins);
         mineEntities.clear();
@@ -312,6 +340,7 @@ public class MineRunData extends SavedData {
             }
         }
         data.loadMineProtectionState(tag, savedSchema);
+        data.loadCheckpointStations(tag, savedSchema);
         data.loadMineEntityOrigins(tag, savedSchema);
         data.loadMineRewardClaims(tag, savedSchema);
         data.loadEncounterSiteClaims(tag, savedSchema);
@@ -448,8 +477,7 @@ public class MineRunData extends SavedData {
                 String savedRunId = saved.getString("runId");
                 ResourceLocation id = ResourceLocation.parse(saved.getString("id"));
                 OwnedVolume volume = OwnedVolume.load(saved.getCompound("volume"));
-                if (!savedRunId.equals(runId) || id == null || !isWellFormed(volume)
-                        || !volume.dimension().equals(MineManager.MINE_DIMENSION) || !isOwned(volume)) {
+                if (!savedRunId.equals(runId) || id == null || !isValidSafeZone(id, volume)) {
                     continue;
                 }
                 safeZones.putIfAbsent(id, new SafeZone(id, savedRunId, volume));
@@ -484,6 +512,32 @@ public class MineRunData extends SavedData {
                         new MineOreOrigin(savedRunId, dimension, pos, blockId));
             } catch (RuntimeException ignored) {
                 // Invalid provenance grants no break permission.
+            }
+        }
+    }
+
+    private void loadCheckpointStations(CompoundTag tag, int savedSchema) {
+        if (savedSchema < 8) return;
+        if (tag.contains("checkpointStations") && !tag.contains("checkpointStations", Tag.TAG_LIST)) {
+            markFailed("saved checkpoint registry has the wrong NBT type; run '/publicmine recover repair'");
+            return;
+        }
+        ListTag stations = tag.getList("checkpointStations", Tag.TAG_COMPOUND);
+        if (stations.size() > MAX_CHECKPOINT_STATIONS) {
+            markFailed("saved checkpoint count exceeds the supported limit; run '/publicmine recover repair'");
+            return;
+        }
+        for (Tag element : stations) {
+            try {
+                CompoundTag saved = (CompoundTag) element;
+                int[] arrival = saved.getIntArray("arrival");
+                OwnedVolume volume = OwnedVolume.load(saved.getCompound("safeVolume"));
+                if (arrival.length != 3) continue;
+                registerCheckpointStation(saved.getString("id"), saved.getString("label"),
+                        saved.getString("region"), saved.getInt("depth"),
+                        new BlockPos(arrival[0], arrival[1], arrival[2]), volume);
+            } catch (RuntimeException ignored) {
+                // Invalid station data is omitted; it cannot grant travel or protection.
             }
         }
     }
@@ -655,6 +709,15 @@ public class MineRunData extends SavedData {
     public int topologyEdges() { return topologyEdges; }
     public List<OwnedVolume> ownedVolumes() { return List.copyOf(ownedVolumes); }
     public List<SafeZone> safeZones() { return List.copyOf(safeZones.values()); }
+
+    public SafeZone safeZone(ResourceLocation id) {
+        SafeZone zone = id == null ? null : safeZones.get(id);
+        return zone != null && zone.runId().equals(runId) ? zone : null;
+    }
+
+    public static ResourceLocation surfaceExitSafeZoneId() {
+        return SURFACE_EXIT_SAFE_ZONE_ID;
+    }
     public List<MineOreOrigin> mineOreOrigins() { return List.copyOf(mineOreOrigins.values()); }
     public List<MineEntityOrigin> mineEntities() { return List.copyOf(mineEntities.values()); }
     public MineEntityOrigin mineEntity(UUID uuid) { return uuid == null ? null : mineEntities.get(uuid); }
@@ -700,6 +763,7 @@ public class MineRunData extends SavedData {
         clearGenerationProgress();
         this.ownedVolumes.clear();
         this.safeZones.clear();
+        this.checkpointStations.clear();
         this.mineOreOrigins.clear();
         this.mineEntities.clear();
         this.mineRewardClaims.clear();
@@ -723,7 +787,7 @@ public class MineRunData extends SavedData {
 
     /** Registers an explicit run-owned safe-zone box. Repeating the same ID and volume is idempotent. */
     public boolean registerSafeZone(ResourceLocation id, OwnedVolume volume) {
-        if (runId.isBlank() || id == null || !isWellFormed(volume)
+        if (runId.isBlank() || id == null || id.equals(SURFACE_EXIT_SAFE_ZONE_ID) || !isWellFormed(volume)
                 || !volume.dimension().equals(MineManager.MINE_DIMENSION) || !isOwned(volume)) {
             return false;
         }
@@ -740,12 +804,99 @@ public class MineRunData extends SavedData {
         return true;
     }
 
+    /** Registers only the fixed 5x5x4 safe area around the recorded shared overworld exit. */
+    public boolean registerSurfaceExitSafeZone() {
+        if (runId.isBlank() || surfaceExit == null) return false;
+        OwnedVolume volume = surfaceExitSafeZoneVolume();
+        if (volume == null) return false;
+        SafeZone previous = safeZones.get(SURFACE_EXIT_SAFE_ZONE_ID);
+        if (previous != null) {
+            return previous.runId().equals(runId) && sameBounds(previous.volume(), volume);
+        }
+        if (safeZones.size() >= MAX_SAFE_ZONES) return false;
+        safeZones.put(SURFACE_EXIT_SAFE_ZONE_ID, new SafeZone(SURFACE_EXIT_SAFE_ZONE_ID, runId, volume));
+        setDirty();
+        return true;
+    }
+
+    private OwnedVolume surfaceExitSafeZoneVolume() {
+        if (surfaceExit == null) return null;
+        return new OwnedVolume("surface_exit_safe_zone", Level.OVERWORLD,
+                surfaceExit.offset(-SURFACE_EXIT_SAFE_ZONE_HALF_WIDTH, -1, -SURFACE_EXIT_SAFE_ZONE_HALF_WIDTH),
+                surfaceExit.offset(SURFACE_EXIT_SAFE_ZONE_HALF_WIDTH, 2, SURFACE_EXIT_SAFE_ZONE_HALF_WIDTH));
+    }
+
+    private boolean isValidSafeZone(ResourceLocation id, OwnedVolume volume) {
+        if (!isWellFormed(volume)) return false;
+        if (id.equals(SURFACE_EXIT_SAFE_ZONE_ID)) {
+            OwnedVolume expected = surfaceExitSafeZoneVolume();
+            return expected != null && sameBounds(expected, volume);
+        }
+        return volume.dimension().equals(MineManager.MINE_DIMENSION) && isOwned(volume);
+    }
+
     public boolean registerSafeZone(String id, OwnedVolume volume) {
         try {
             return registerSafeZone(ResourceLocation.parse(id), volume);
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    /** Registers a shared station after its generated pad has been committed. */
+    public boolean registerCheckpointStation(String id, String label, String region, int depth,
+                                             BlockPos arrival, OwnedVolume safeVolume) {
+        if (runId.isBlank() || !isValidCheckpointId(id) || arrival == null
+                || label == null || label.length() > MAX_CHECKPOINT_LABEL_LENGTH
+                || !("upper".equals(region) || "middle".equals(region) || "chaos".equals(region))
+                || depth < 0 || depth > 4096 || !isWellFormed(safeVolume)
+                || !safeVolume.dimension().equals(MineManager.MINE_DIMENSION)
+                || !safeVolume.contains(arrival) || !isOwned(safeVolume)
+                || arrival.getX() - safeVolume.min().getX() != 2
+                || safeVolume.max().getX() - arrival.getX() != 2
+                || arrival.getZ() - safeVolume.min().getZ() != 2
+                || safeVolume.max().getZ() - arrival.getZ() != 2
+                || arrival.getY() - safeVolume.min().getY() != 1
+                || safeVolume.max().getY() - arrival.getY() != 2) {
+            return false;
+        }
+        OwnedVolume immutableVolume = new OwnedVolume(safeVolume.label(), safeVolume.dimension(),
+                safeVolume.min().immutable(), safeVolume.max().immutable());
+        CheckpointStation candidate = new CheckpointStation(id, label, region, depth, arrival, immutableVolume);
+        CheckpointStation previous = checkpointStations.get(id);
+        if (previous != null) {
+            return previous.equals(candidate)
+                    && registerSafeZone(checkpointZoneId(id), immutableVolume);
+        }
+        if (checkpointStations.size() >= MAX_CHECKPOINT_STATIONS) return false;
+        if (!registerSafeZone(checkpointZoneId(id), immutableVolume)) return false;
+        checkpointStations.put(id, candidate);
+        setDirty();
+        return true;
+    }
+
+    public boolean removeCheckpointStation(String id) {
+        if (!isValidCheckpointId(id) || checkpointStations.remove(id) == null) return false;
+        removeSafeZone(checkpointZoneId(id));
+        setDirty();
+        return true;
+    }
+
+    public List<CheckpointStation> checkpointStations() {
+        return List.copyOf(checkpointStations.values());
+    }
+
+    public CheckpointStation checkpointStation(String id) {
+        return isValidCheckpointId(id) ? checkpointStations.get(id) : null;
+    }
+
+    public static ResourceLocation checkpointZoneId(String stationId) {
+        if (!isValidCheckpointId(stationId)) return null;
+        return ResourceLocation.fromNamespaceAndPath("publicmines", "checkpoint/" + stationId);
+    }
+
+    private static boolean isValidCheckpointId(String id) {
+        return id != null && id.length() <= 96 && id.matches("[a-z0-9_-]+");
     }
 
     /** Removes one safe zone from this run, for station maintenance or temporary fixtures. */
@@ -774,9 +925,24 @@ public class MineRunData extends SavedData {
     }
 
     public boolean isInSafeZone(ResourceKey<Level> dimension, BlockPos pos) {
-        return dimension != null && pos != null && safeZones.values().stream()
+        if (dimension == null || pos == null) return false;
+        if (dimension.equals(Level.OVERWORLD)) {
+            SafeZone exitZone = safeZone(SURFACE_EXIT_SAFE_ZONE_ID);
+            return exitZone != null && exitZone.volume().contains(pos);
+        }
+        return safeZones.values().stream()
                 .anyMatch(zone -> zone.runId().equals(runId) && zone.volume().dimension().equals(dimension)
                         && zone.volume().contains(pos));
+    }
+
+    public boolean hasSafeZonesInDimension(ResourceKey<Level> dimension) {
+        if (dimension == null) return false;
+        if (dimension.equals(Level.OVERWORLD)) {
+            return safeZone(SURFACE_EXIT_SAFE_ZONE_ID) != null;
+        }
+        return safeZones.values().stream()
+                .anyMatch(zone -> zone.runId().equals(runId)
+                        && zone.volume().dimension().equals(dimension));
     }
 
     /** Records a generated ore position once; retries with the same block are idempotent. */

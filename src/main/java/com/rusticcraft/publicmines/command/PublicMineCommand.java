@@ -40,6 +40,10 @@ public final class PublicMineCommand {
 
     private static final SuggestionProvider<CommandSourceStack> CONFIG_KEYS =
             (context, builder) -> SharedSuggestionProvider.suggest(ConfigKeys.names(), builder);
+    private static final SuggestionProvider<CommandSourceStack> CHECKPOINT_IDS =
+            (context, builder) -> SharedSuggestionProvider.suggest(MineManager
+                    .get(context.getSource().getServer()).data().checkpointStations().stream()
+                    .map(MineRunData.CheckpointStation::id).toList(), builder);
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         LiteralArgumentBuilder<CommandSourceStack> root = literal("publicmine")
@@ -52,6 +56,11 @@ public final class PublicMineCommand {
         root.then(literal("enter").executes(ctx -> enter(ctx)));
         root.then(literal("leave").executes(ctx -> leave(ctx)));
         root.then(literal("exit").executes(ctx -> leave(ctx)));
+        root.then(literal("checkpoints").executes(ctx -> checkpoints(ctx.getSource())));
+        root.then(literal("checkpoint")
+                .then(argument("id", StringArgumentType.word()).suggests(CHECKPOINT_IDS)
+                        .executes(ctx -> checkpoint(ctx.getSource(),
+                                StringArgumentType.getString(ctx, "id")))));
 
         root.then(literal("setup").requires(src -> src.hasPermission(ADMIN_LEVEL))
                 .executes(ctx -> setupUsage(ctx.getSource()))
@@ -97,6 +106,8 @@ public final class PublicMineCommand {
         lines.add("  /publicmine status  - is the mine open?");
         lines.add("  /publicmine enter   - travel into the shared mine");
         lines.add("  /publicmine leave   - return to the surface (also: exit)");
+        lines.add("  /publicmine checkpoints - list shared generated checkpoints");
+        lines.add("  /publicmine checkpoint <id> - travel to a generated checkpoint");
         if (admin) {
             lines.add("");
             lines.add("Staff commands (operator level " + ADMIN_LEVEL + "+):");
@@ -145,6 +156,7 @@ public final class PublicMineCommand {
                 + data.pendingGenerationSegments().size() + " queued, active "
                 + (data.activeGenerationSegment().isEmpty() ? "(none)"
                         : data.activeGenerationSegment() + " at operation " + data.activeGenerationCursor()));
+        lines.add("Shared checkpoints: " + data.checkpointStations().size());
         lines.add("Boundary shell: " + PublicMineConfig.mineRegionRadiusChunks()
                 + " chunks, generated before each chunk becomes available");
         OreCatalog.Completeness oreCatalog = manager.mineLevel() == null ? null
@@ -177,6 +189,44 @@ public final class PublicMineCommand {
         MineMessages.tell(src, "Configured mine combat bonuses: " + MineRewardCatalog.adminSummary());
         MineMessages.tell(src, "These per-encounter rates are configurable by data pack; final balance is subject to M8 playtests.");
         return 1;
+    }
+
+    private static int checkpoints(CommandSourceStack src) {
+        MineRunData data = MineManager.get(src.getServer()).data();
+        if (!data.status().entryAllowed()) {
+            MineMessages.tell(src, "Public Mines checkpoints are unavailable while the shared run is "
+                    + data.status().name().toLowerCase() + ".");
+            return 0;
+        }
+        List<MineRunData.CheckpointStation> stations = data.checkpointStations();
+        if (stations.isEmpty()) {
+            MineMessages.tell(src, "No checkpoints have been generated yet. Explore the current route; "
+                    + "stations unlock for everyone when their rooms are built.");
+            return 1;
+        }
+        MineMessages.tell(src, "Shared checkpoints (available to everyone this run):");
+        for (MineRunData.CheckpointStation station : stations) {
+            MineMessages.tell(src, "  " + station.id() + " — " + station.label() + ", "
+                    + station.region() + ", about " + station.depth() + " blocks below the entrance; "
+                    + "travel: /publicmine checkpoint " + station.id());
+        }
+        MineMessages.tell(src, "Bank/extract with '/publicmine leave', or pick a deeper station to push onward.");
+        return 1;
+    }
+
+    private static int checkpoint(CommandSourceStack src, String id) {
+        ServerPlayer player = src.getPlayer();
+        if (player == null) {
+            MineMessages.tell(src, "Only in-game players can travel to a checkpoint.");
+            return 0;
+        }
+        MineManager.CheckpointOutcome outcome = MineManager.get(src.getServer()).travelToCheckpoint(player, id);
+        if (outcome.result() == MineManager.CheckpointResult.TRAVELED) {
+            MineMessages.tell(src, outcome.detail());
+            return 1;
+        }
+        MineMessages.tell(src, outcome.detail());
+        return 0;
     }
 
     private static void statusForPlayer(CommandSourceStack src, MineManager manager) {

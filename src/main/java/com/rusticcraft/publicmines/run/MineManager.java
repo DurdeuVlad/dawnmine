@@ -81,6 +81,14 @@ public class MineManager {
         return server.getLevel(MINE_DIMENSION);
     }
 
+    /** Registers the fixed generated arrival platform as an explicit PvE safe zone. */
+    private boolean registerArrivalSafeZone() {
+        BlockPos arrival = data.mineArrival() == null ? ARRIVAL : data.mineArrival();
+        OwnedVolume zone = new OwnedVolume("surface_arrival_safe_zone", MINE_DIMENSION,
+                arrival.offset(-2, -1, -2), arrival.offset(2, 2, 2));
+        return data.registerSafeZone("publicmines:surface_arrival", zone);
+    }
+
     /** The single shared run every player resolves to. */
     public MineRunData resolveRunFor(ServerPlayer player) {
         return data;
@@ -140,6 +148,14 @@ public class MineManager {
             }
             steps.add(Step.ok("existing run", "already initialized as run " + data.runId() + "; nothing was changed"));
             steps.add(verifyArrivalPad());
+            if (!registerArrivalSafeZone()) {
+                data.markFailed("could not register the mine arrival safe zone");
+                steps.add(Step.fail("arrival safe zone", "could not register the bounded arrival safe zone"));
+            }
+            if (!data.registerSurfaceExitSafeZone()) {
+                data.markFailed("could not register the fixed overworld exit safe zone");
+                steps.add(Step.fail("surface exit safe zone", "could not register the bounded recorded-exit safe zone"));
+            }
             return steps;
         }
 
@@ -189,6 +205,9 @@ public class MineManager {
             BlockPos exit = server.overworld().getSharedSpawnPos();
             data.setSurfaceExit(exit);
             steps.add(Step.ok("surface exit", "recorded overworld spawn at " + describePos(exit)));
+            if (!data.registerSurfaceExitSafeZone()) {
+                throw new IllegalStateException("could not register the fixed overworld exit safe zone");
+            }
 
             Step topology = planTopology(mine);
             steps.add(topology);
@@ -209,6 +228,9 @@ public class MineManager {
             data.addOwnedVolume(new OwnedVolume("arrival_pad", MINE_DIMENSION,
                     new BlockPos(ARRIVAL.getX() - PAD_HALF, PAD_Y, ARRIVAL.getZ() - PAD_HALF),
                     new BlockPos(ARRIVAL.getX() + PAD_HALF, CLEAR_Y_TO, ARRIVAL.getZ() + PAD_HALF)));
+            if (!registerArrivalSafeZone()) {
+                throw new IllegalStateException("could not register the bounded arrival safe zone");
+            }
             data.markStatus(RunStatus.READY);
             steps.add(Step.ok("ready", "run " + data.runId()
                     + " is ready; players can enter with /publicmine enter"));
@@ -492,7 +514,7 @@ public class MineManager {
         }
         ServerLevel mine = mineLevel();
         BlockPos target = data.mineArrival() != null ? data.mineArrival() : ARRIVAL;
-        if (mine == null || !isArrivalSafe(mine, target)) {
+        if (mine == null || !mine.hasChunkAt(target) || !isArrivalSafe(mine, target)) {
             return new EnterOutcome(EnterResult.ARRIVAL_UNSAFE,
                     "the mine entrance is not safe right now; staff have been asked to check it");
         }
@@ -507,6 +529,90 @@ public class MineManager {
                     "could not move you into the mine (" + e.getMessage() + "); staff can check '/publicmine status'");
         }
         return new EnterOutcome(EnterResult.ENTERED, "arrived in run " + data.runId());
+    }
+
+    public enum CheckpointResult { TRAVELED, INVALID_STATE, NOT_FOUND, FAILED }
+
+    public record CheckpointOutcome(CheckpointResult result, String detail,
+                                    MineRunData.CheckpointStation station, boolean usedFallback) {}
+
+    /** Travels to a generated, shared checkpoint without force-loading its chunk. */
+    public synchronized CheckpointOutcome travelToCheckpoint(ServerPlayer player, String stationId) {
+        if (data.status() != RunStatus.READY || !data.status().entryAllowed()) {
+            return new CheckpointOutcome(CheckpointResult.INVALID_STATE,
+                    "the mine is initializing, resetting, or closed; checkpoint travel is unavailable",
+                    null, false);
+        }
+        MineRunData.CheckpointStation station = data.checkpointStation(stationId);
+        if (station == null) {
+            return new CheckpointOutcome(CheckpointResult.NOT_FOUND,
+                    "that checkpoint has not been generated in this shared run", null, false);
+        }
+        ServerLevel mine = mineLevel();
+        if (mine == null) {
+            return new CheckpointOutcome(CheckpointResult.FAILED,
+                    "the mine dimension is unavailable", station, false);
+        }
+        boolean inside = player.level().dimension().equals(MINE_DIMENSION);
+        if (!inside && !data.status().entryAllowed()) {
+            return new CheckpointOutcome(CheckpointResult.INVALID_STATE,
+                    "the mine is not open for entry", station, false);
+        }
+
+        BlockPos target = station.arrival();
+        boolean fallback = false;
+        if (!mine.hasChunkAt(target)) {
+            target = data.mineArrival();
+            fallback = true;
+        } else if (!data.isInSafeZone(mine, target) || !isSafeLanding(mine, target)) {
+            data.removeCheckpointStation(station.id());
+            target = data.mineArrival();
+            fallback = true;
+        }
+        if (target == null || !mine.hasChunkAt(target) || !isArrivalSafe(mine, target)) {
+            return new CheckpointOutcome(CheckpointResult.FAILED,
+                    "the checkpoint and entrance are unavailable; you were not moved", station, fallback);
+        }
+        if (!inside) {
+            data.setReturnPoint(player.getUUID(), new MineRunData.ReturnPoint(
+                    player.level().dimension(), player.getX(), player.getY(), player.getZ(),
+                    player.getYRot(), player.getXRot()));
+        }
+        try {
+            player.teleportTo(mine, target.getX() + 0.5, target.getY(), target.getZ() + 0.5, 0.0F, 0.0F);
+        } catch (Exception exception) {
+            if (!inside) data.clearReturnPoint(player.getUUID());
+            return new CheckpointOutcome(CheckpointResult.FAILED,
+                    "the teleport failed; ask staff to check the mine", station, fallback);
+        }
+        String depth = "about " + station.depth() + " blocks below the entrance in " + station.region();
+        String routeHint = checkpointRouteHint(station.id());
+        String detail = fallback
+                ? "That station chunk is unavailable or unsafe, so you arrived at the mine entrance. "
+                        + "Use '/publicmine leave' to bank/extract, or '/publicmine checkpoints' to choose another station."
+                : "Arrived at " + station.label() + " (" + depth + "). " + routeHint
+                        + " The route gets riskier with depth; "
+                        + "use '/publicmine leave' to bank/extract, or pick a deeper checkpoint to push farther.";
+        return new CheckpointOutcome(CheckpointResult.TRAVELED, detail, station, fallback);
+    }
+
+    private String checkpointRouteHint(String stationId) {
+        try {
+            ServerLevel mine = mineLevel();
+            if (mine == null) return "Next route risk is unknown.";
+            TopologyPlan plan = MineTopology.plan(data, mine);
+            int index = plan.mainPath().indexOf(stationId);
+            if (index < 0) return "Next route risk is unknown; follow the connected tunnel.";
+            if (index + 1 >= plan.mainPath().size()) {
+                return "This is the deepest planned main-route station; connected side routes remain explorable.";
+            }
+            var next = plan.node(plan.mainPath().get(index + 1));
+            if (next == null) return "Next route risk is unknown.";
+            int nextDepth = Math.max(0, ARRIVAL.getY() - next.pos().y());
+            return "Next main-route step: " + next.region() + " at about " + nextDepth + " blocks deep.";
+        } catch (RuntimeException exception) {
+            return "Next route risk is unknown; the mine remains traversable from here.";
+        }
     }
 
     public enum LeaveResult { LEFT, NOT_INSIDE, FAILED }
@@ -559,6 +665,9 @@ public class MineManager {
     /** The nearest position where a player can stand without falling or
      * suffocating, searching down first (respawn-style) then a few blocks up. */
     private BlockPos findSafeLanding(ServerLevel level, BlockPos base) {
+        if (!level.hasChunkAt(base)) {
+            return null;
+        }
         if (isSafeLanding(level, base)) {
             return base;
         }
