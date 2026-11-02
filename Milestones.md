@@ -62,15 +62,15 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 ## M2c — Mine isolation and fair-play rules
 
-**Outcome:** Players explore the intended generated routes rather than entering through natural caves, mining through the mine boundary, or reshaping terrain to bypass mobs. Ore mining and floor-placed torches remain supported.
+**Outcome:** Players explore the intended generated routes rather than entering through natural caves, mining through the mine boundary, reshaping terrain to bypass mobs, or attacking each other. Ore mining and floor-placed torches remain supported; safe zones are free from hostile PvE combat.
 
-**Scope:** Fully replace any natural cave volume overlapping the playable mine footprint and seal adjacent natural cave space outside it; generate a continuous external bedrock shell with only intentional entrances; include shell and replaced terrain in persisted bounds, cleanup, restart recovery, and reset; server-side permissions allow breaking only catalogued mine ores and placing only ordinary or soul torches on floor surfaces; prevent common terrain-altering mechanics from bypassing these protections; preserve sanctioned permission-gated admin recovery.
+**Scope:** Fully replace any natural cave volume overlapping the playable mine footprint and seal adjacent natural cave space outside it; generate a continuous external bedrock shell with only intentional entrances; include shell and replaced terrain in persisted bounds, cleanup, restart recovery, and reset; server-side permissions allow breaking only catalogued mine ores and placing only ordinary or soul torches on floor surfaces; disable all player-versus-player harm in the mine, including knockback and harmful effects; keep hostile mobs out of explicitly registered safe-zone volumes and block hostile/player combat effects across their boundaries; prevent common terrain-altering mechanics from bypassing these protections; preserve sanctioned permission-gated admin recovery.
 
 **Non-goals:** No changes to natural caves or terrain outside mine-owned bounds, faction mine, global mining/placement rules, mob AI, prefab buildings, or new ore types.
 
 **Depends on:** M2b world generation (#4) for bounded generated geometry; M3 ore catalog (#5) for the complete allowlist; both issues in M2c must pass before M4 encounters (#6) are accepted.
 
-**Proof:** Dedicated-server fixtures show no unintended cave connection; every shell face and corner blocks survival mining from outside and escape from inside; approved entrances and internal routes remain explorable; every catalogued ore retains native harvest/drop behavior; all non-ore breaks and non-torch placement are denied; representative terrain bypass mechanics fail; faction-mine and other-dimension behavior is unchanged; recovery/reset remains idempotent and confined to owned bounds.
+**Proof:** Dedicated-server fixtures show no unintended cave connection; every shell face and corner blocks survival mining from outside and escape from inside; approved entrances and internal routes remain explorable; every catalogued ore retains native harvest/drop behavior; all non-ore breaks and non-torch placement are denied; PvP damage, knockback, and harmful effects fail throughout the mine; safe zones remain hostile-mob-free, combat effects cannot cross their boundaries, and players inside cannot attack mobs outside; representative terrain bypass mechanics fail; faction-mine and other-dimension behavior is unchanged; recovery/reset remains idempotent and confined to owned bounds.
 
 **Risk:** Protection hooks may interact with modded ore harvest events, explosions, pistons, or fluids. Use the verified M3 catalog, fail closed for unknown blocks, and validate the actual target pack.
 
@@ -78,13 +78,13 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Outcome:** The mine becomes more dangerous with depth through readable, varied encounters, and fighting is a viable way to contribute useful mine resources.
 
-**Scope:** Reviewed Born in Chaos candidates by region/depth; bounded encounter placement and population; mine-origin tracking, cleanup/recovery, and additional depth-tiered ore/salvage rewards for player kills; verified counterplay, attack cues, and route/hazard interactions. Integrate through public registry IDs and mine-scoped events.
+**Scope:** Reviewed Born in Chaos candidates by region/depth; bounded encounter placement and population outside safe zones; mine-origin tracking, cleanup/recovery, and additional depth-tiered ore/salvage rewards for player kills; verified counterplay, attack cues, and route/hazard interactions. Hostile mobs do not spawn, enter, or remain in safe zones, and combat effects cannot cross their boundaries. Integrate through public registry IDs and mine-scoped events.
 
 **Non-goals:** Global Born in Chaos config, AI, natural spawn rates or loot changes; unreviewed bosses; unbounded mob scaling; difficulty based only on health/damage inflation.
 
 **Depends on:** M0 artifact/registry report, M2 encounter locations, and accepted M2c issues #22 (mine boundary shell) and #23 (interaction protections). M3 informs reward tiers and hazards.
 
-**Proof:** Only verified entities spawn; depth adds different threat combinations; a real player breaking infected ore and fighting any resulting mob is tested if that hook is used; mine-only kills grant only bounded configured bonuses; outside behavior/drops remain unchanged; populations and cleanup stay bounded after restart/reset.
+**Proof:** Only verified entities spawn; depth adds different threat combinations; a real player breaking infected ore and fighting any resulting mob is tested if that hook is used; mine-only kills grant only bounded configured bonuses; safe zones remain hostile-mob-free and combat effects cannot cross their boundaries; outside behavior/drops remain unchanged; populations and cleanup stay bounded after restart/reset.
 
 **Risk:** Confined-space special abilities can be unfair or destabilizing. Candidate entities remain excluded until safe player counterplay is demonstrated.
 
@@ -92,13 +92,13 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Outcome:** Players can navigate the active shared mine, choose when to return, and securely bank a useful haul in persistent themed storage larger than an Ender Chest.
 
-**Scope:** Safe generated checkpoint pads available to everyone after discovery; travel between surface and generated checkpoints; clear enter/exit/resume feedback; a private persistent Foreman's Dispatch (at least 54 slots as the product baseline) accessible at checkpoints and matching surface depot; transactional deposit/retrieve and offline/restart recovery.
+**Scope:** Safe generated checkpoint pads available to everyone after discovery; explicit run-registered safe-zone volumes around the Public Mines surface entry/return area, each checkpoint, and Dispatch interaction pads; hostile mobs are excluded entirely from safe-zone volumes; travel between surface and generated checkpoints; clear enter/exit/resume feedback; a private persistent Foreman's Dispatch (at least 54 slots as the product baseline) accessible at checkpoints and matching surface depot; transactional deposit/retrieve and offline/restart recovery.
 
 **Non-goals:** Player-specific mine instances, shared/guild locker contents, item trading, paid capacity, arbitrary teleport commands, or custom death penalties.
 
-**Depends on:** M1 ownership/player state and M2 generated stations. M7 must preserve Dispatch data.
+**Depends on:** M1 ownership/player state, M2 generated stations, M2c issue #23 safe-zone harm/effect protection, and M4a issue #6 hostile-mob exclusion. M7 must preserve Dispatch data.
 
-**Proof:** Multiple players can only access their own Dispatch; inventory-full, disconnect, failed teleport, restart, and reset paths do not delete or duplicate items; teleports land on clear safe pads; only checkpoints in the current generated run are usable.
+**Proof:** Multiple players can only access their own Dispatch; inventory-full, disconnect, failed teleport, restart, and reset paths do not delete or duplicate items; teleports land on clear safe pads; safe-zone volumes remain hostile-mob-free, block combat effects across boundaries, and block player attacks from within; only checkpoints and zone registrations in the current generated run are usable.
 
 **Risk:** Inventory mutation and teleport must be atomic or recoverable. A checkpoint is run-local; the personal Dispatch is durable.
 
@@ -140,7 +140,7 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Depends on:** M0–M7 and M2c evidence.
 
-**Proof:** Same deep encounter compared at solo and coordinated group size; evidence shows teamwork materially changes success/effort through simultaneous tactical demands rather than only inflated stats; at least two daily runs demonstrate a useful upgrade and a new counter; mining, PvE, and exploration are viable contributors; players can understand cues and risk; record player choices/short feedback about whether they want another run; all persistence/reset/admin/faction/performance gates pass. Release readiness is withheld if the evidence is insufficient; the tester prerelease contains only the verified target-compatible JAR and includes its checksum, changelog, install/run instructions, and known limitations.
+**Proof:** Same deep encounter compared at solo and coordinated group size; evidence shows teamwork materially changes success/effort through simultaneous tactical demands rather than only inflated stats; at least two daily runs demonstrate a useful upgrade and a new counter; mining, PvE, and exploration are viable contributors; players can understand cues and risk; record player choices/short feedback about whether they want another run; multiplayer tests prove mine-wide player-damage, knockback, and harmful-effect protection plus hostile-mob-free safe zones without affecting the factions mine; all persistence/reset/admin/faction/performance gates pass. Release readiness is withheld if the evidence is insufficient; the tester prerelease contains only the verified target-compatible JAR and includes its checksum, changelog, install/run instructions, and known limitations.
 
 **Risk:** Fun and team dependence are empirical claims. Do not infer them from code, a solo developer run, or one successful server boot.
 

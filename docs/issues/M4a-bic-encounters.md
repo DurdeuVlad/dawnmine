@@ -13,7 +13,7 @@ Give deeper mine regions stronger and more varied combat through readable threat
 
 ## Expectation
 
-The mine chooses only entities verified from the exact pack artifact, places encounters at M2's validated encounter sites, and changes encounter composition/tactics with region depth. Encounters test movement, target choice, timing, route awareness, and team coordination using verified entity behavior and bounded environmental pressure. Creation and cleanup are mine-specific and bounded.
+The mine chooses only entities verified from the exact pack artifact, places encounters at M2's validated sites outside registered safe zones, and changes encounter composition/tactics with region depth. Hostile mobs cannot spawn, enter, or remain inside safe zones; hostile effects cannot cross their boundary, and players cannot attack mobs from within a safe zone. Encounters test movement, target choice, timing, route awareness, and team coordination using verified entity behavior and bounded environmental pressure. Creation and cleanup are mine-specific and bounded.
 
 ## Context that code cannot infer
 
@@ -30,7 +30,7 @@ The mine chooses only entities verified from the exact pack artifact, places enc
 - Later encounters should pressure static ranged kiting/tunnel camping through verified abilities, route choices, varied threats, or bounded hazards while preserving counterplay.
 - Design the deepest intended encounter around simultaneous demands that materially benefit a coordinated group. Do not claim team-required difficulty until M8 playtests compare solo and group outcomes.
 - Check mod/artifact availability and fail closed with a clear diagnostic if a configured entity is missing.
-- Spawn only at validated M2 sites with safe floor/headroom and a per-region/population budget.
+- Spawn only at validated M2 sites outside registered safe zones, with safe floor/headroom and a per-region/population budget.
 - Persist mine-origin identity for runtime cleanup and M4b reward handling.
 - If generated BiC blocks can summon mobs through their native break hooks, capture those resulting entities in the same mine-origin lifecycle so reset cleanup remains bounded; do not change behavior outside the mine.
 - Prevent duplicates after restart and clean up on run reset.
@@ -41,7 +41,7 @@ No global spawn-rule changes, BiC class coupling, rebalancing BiC AI/attributes/
 
 ## Dependencies and open decisions
 
-- Depends on M0 exact artifact report, M1 lifecycle, M2 encounter points, and accepted M2c issues #22 (mine boundary shell) and #23 (ore-only mining and floor-only torch placement).
+- Depends on M0 exact artifact report, M1 lifecycle, M2 encounter points, and accepted M2c issues #22 (mine boundary shell) and #23 (terrain and mine-wide player-combat protections).
 - M4b consumes mine-origin tracking.
 - Mobs with unsafe tunneling/explosion/large-area behavior remain excluded unless a test proves the configured encounter is safe.
 - Product owner: Codex. Implementer: Devin. Reviewer: independent.
@@ -55,6 +55,7 @@ No global spawn-rule changes, BiC class coupling, rebalancing BiC AI/attributes/
 5. Natural BiC spawns outside the mine retain unchanged spawn/AI/drop behavior.
 6. If infected diamond ores are included, player-break tests prove their summoned Diamond Termites are tracked, contained, reset-cleaned, and reward shards as expected; otherwise those blocks are excluded from mine generation until the hook is safely integrated.
 7. Tests cover missing entity IDs, bad spawn positions, cap enforcement, restart, cleanup, counterplay/reaction windows, and deepest-tier solo/group behavior.
+8. Registered safe zones contain no hostile mobs: encounters cannot spawn or enter, hostile effects cannot cross the boundary, players inside cannot harm mobs outside, and normal combat resumes after players leave.
 
 ## Verification
 
