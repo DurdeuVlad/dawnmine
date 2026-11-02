@@ -10,7 +10,7 @@ Private GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mine
 
 ## Project status
 
-M0 scaffold is in review on `m0-foundation` (PR #15). The `m1-lifecycle-admin` branch adds the shared-run lifecycle and admin commands on top of the M0 scaffold as dependent work; see [docs/reports/M1-dedicated-server-lifecycle-evidence.md](docs/reports/M1-dedicated-server-lifecycle-evidence.md).
+M0 foundation is merged to `main` (PR #15). The `m1-lifecycle-admin` branch adds the shared-run lifecycle and admin commands as dependent work on top of merged M0; see [docs/reports/M1-dedicated-server-lifecycle-evidence.md](docs/reports/M1-dedicated-server-lifecycle-evidence.md).
 
 ## Operator quick-start (M1)
 

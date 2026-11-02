@@ -2,6 +2,12 @@
 
 Status: **complete; M1 lifecycle/admin verified on a real dedicated server**
 
+Status history: the first verification attempt (bottom of this file) failed and
+was retained for the record. The final run below supersedes it after fixture
+and implementation fixes; an independent review round then produced a second
+remediation set (see "Independent review remediation"). Both sections together
+are the honest record — the claims in this header refer only to the final run.
+
 Related acceptance: [M1 shared run and lifecycle](../issues/M1-shared-run-lifecycle.md), [M1 admin onboarding](../issues/M1-admin-onboarding.md)
 
 ---
@@ -52,6 +58,110 @@ in that environment (setup fails closed, entry stays closed, no owned volumes
 created) and the full path on the real dedicated server via `test runall`.
 Both environments were exercised and pass.
 
+### Placement decision evidence (dimension vs isolated region)
+
+Both options were evaluated against the real server APIs and the M1
+operational constraints before choosing:
+
+| Criterion | Dedicated dimension (`publicmines:public_mine`) | Reserved overworld region |
+|---|---|---|
+| Cleanup boundary | Own world directory `world/dimensions/publicmines/public_mine`; all mine blocks live under recorded `OwnedVolume`s in that dimension only | Region carved from shared overworld; "mine-owned" vs player/faction blocks becomes a heuristic over mixed block state |
+| Faction-mine isolation | Structurally impossible to overlap: the factions mine lives in the overworld | Requires exclusion zones and coordinate bookkeeping to stay clear |
+| Reset/cleanup safety | Clearing is bound to a dimension + recorded volumes, both enumerated and queryable | Deletion in a live overworld region risks player builds, claims, and spawn infrastructure |
+| Server API reality | `ResourceKey<Level>` + datapack `dimension`/`dimension_type` loads natively on the dedicated server; verified in both dev and full-pack boots | Region guard would need custom boundary enforcement for every block-edit path |
+| Operational cost | +1 dimension on disk; observed boots add ~0.3s and ~3MB of region data for M1 | None, but pays for itself in correctness risk |
+| Testability | `test runall` works on a real dedicated server; GameTestServer cannot host custom dims (documented) | Same, minus the custom-dim limitation |
+
+Observed in the disposable prototype (`runs/server`): the dimension loads from
+the mod's own datapack resources with no pack intervention, chunks save under
+`world/dimensions/publicmines/public_mine/region`, the recorded volumes in
+`publicmines_run.dat` exactly match `/publicmine status`, and the pack's Sable
+physics and Journeymap created per-dimension pipelines/configs for it without
+conflict. The flat generator fills to `Y=62` so the verified pad sits on real
+walkable terrain (`execute if block 10 62 10 stone` → Test passed on a live
+server).
+
+Decision: dedicated dimension. The region alternative was not prototyped
+because its defining risk (cleanup of non-mine blocks in a shared world) is a
+correctness property, not a performance one — evidence could not make it safer
+than a dimension that structurally cannot contain non-mine content.
+
+### Retained transcript (final run, dedicated server via RCON)
+
+```text
+$ publicmine setup initialize
+ [ok]   dimension: dimension publicmines:public_mine is loaded
+ [ok]   run record: created run 2026-11-02-1 for day 2026-11-02 (seed recorded)
+ [ok]   ownership: recorded active region of 128x128 chunk columns centred on the arrival point
+ [ok]   surface exit: recorded overworld spawn at [128, 73, 256]
+ [ok]   arrival pad: 5x5 stone pad verified at [0, 63, 0] in publicmines:public_mine
+ [ok]   ready: run 2026-11-02-1 is ready; players can enter with /publicmine enter
+
+$ publicmine setup initialize   (re-run)
+ [ok]   existing run: already initialized as run 2026-11-02-1; nothing was changed
+ [ok]   arrival pad: pad is intact at [0, 63, 0]
+
+boot log after clean stop/start:
+ [publicmines] Loaded run state: status=READY runId=2026-11-02-1
+   seed=-2621450030189699663 day=2026-11-02 ownedVolumes=2
+
+boot log after data patch to status=INITIALIZING (simulated mid-init crash):
+ [publicmines] Mine run 2026-11-02-3 was left mid-initialization and was
+   marked FAILED for safe retry.
+
+$ publicmine recover repair
+ [ok]   inspect: current status is FAILED for run 2026-11-02-3
+ [ok]   dimension: dimension publicmines:public_mine is loaded
+ [ok]   run record: created run 2026-11-02-4 for day 2026-11-02 (seed recorded)
+ [ok]   ownership: recorded active region of 128x128 chunk columns centred on the arrival point
+ [ok]   surface exit: recorded overworld spawn at [-688, 69, 128]
+ [ok]   arrival pad: 5x5 stone pad verified at [0, 63, 0] in publicmines:public_mine
+ [ok]   ready: run 2026-11-02-4 is ready; players can enter with /publicmine enter
+
+$ test runall           (in-server GameTest batch on the live dedicated server)
+Running 10 tests...
+Starting batch: defaultBatch:0
+$ test runfailed
+No tests found           # zero failures in the batch
+
+$ execute in publicmines:public_mine if block 10 62 10 minecraft:stone
+Test passed               # walkable ground under the arrival area
+$ execute in publicmines:public_mine if block 0 62 0 minecraft:smooth_stone
+Test passed               # the arrival pad block itself
+
+$ ./gradlew runGameTestServer (automated suite)
+All 10 required tests passed :)
+```
+
+### Reproduce
+
+```text
+# 1. automated suite
+.\gradlew.bat build runGameTestServer --console=plain
+
+# 2. dedicated-server prototype
+.\gradlew.bat runServer --console=plain
+#    then via RCON (see tools/m1/rcon_client.py):
+publicmine setup validate
+publicmine setup initialize
+publicmine status
+publicmine config get
+test runall
+test runfailed
+stop
+# restart, then: publicmine status  -> same runId/seed
+
+# 3. simulated partial initialization
+python tools/m1/edit_nbt.py runs/server/world/data/publicmines_run.dat status INITIALIZING
+# restart; observe FAILED + lastError; run: publicmine recover repair
+
+# 4. inspect persisted record
+python tools/m1/dump_nbt.py runs/server/world/data/publicmines_run.dat
+
+# 5. pack smoke (see report for caveats)
+copy publicmines-<ver>.jar into a disposable copy of the pack server and boot
+```
+
 ### Residual risks
 
 - Pack-level RCON does not answer auth packets on this machine (pack-side;
@@ -83,6 +193,25 @@ A fresh read-only review found four material issues, all fixed:
   instead of throwing inside the recovery-critical load path; `initialize()`
   is fully exception-wrapped; dead `LOCKED` state removed (unknown statuses
   load as FAILED).
+
+### PR review remediation (2026-11-02, second round)
+
+A second review of the committed PR head found and resolved:
+
+- **Missing sources in the committed tree:** `.gitignore`'s `run/` pattern
+  matched `src/.../run/`, so the whole `com.rusticcraft.publicmines.run`
+  package was never committed and a clean checkout could not build. The
+  pattern is now anchored to the repository root (`/run/`) and the four
+  missing source files are committed; a detached clean-checkout
+  `compileJava` passes.
+- **Arrival check/teleport mismatch:** `enter()` checked the fixed
+  `ARRIVAL` pad but teleported to the persisted arrival point; the safety
+  check now validates the actual teleport target.
+- **Unsafe leave fallback:** the surface-exit/world-spawn fallback is now
+  safety-checked with the same landing rule; if no destination is safe the
+  player stays in the mine and the command reports failure.
+- **Malformed SavedData risk:** invalid persisted dimension ids and corrupt
+  `OwnedVolume` entries can no longer throw inside the load path.
 
 ---
 
