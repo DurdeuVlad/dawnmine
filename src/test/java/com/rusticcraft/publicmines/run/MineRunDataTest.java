@@ -1,9 +1,13 @@
 package com.rusticcraft.publicmines.run;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import org.junit.jupiter.api.Test;
 
 class MineRunDataTest {
@@ -19,7 +23,7 @@ class MineRunDataTest {
         CompoundTag saved = original.save(new CompoundTag(), null);
         MineRunData restored = MineRunData.load(saved, null);
 
-        assertEquals(2, restored.schema());
+        assertEquals(3, restored.schema());
         assertEquals(RunStatus.READY, restored.status());
         assertEquals("standard", restored.topologyProfile());
         assertEquals("a".repeat(64), restored.topologyFingerprint());
@@ -41,7 +45,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(2, migrated.schema());
+        assertEquals(3, migrated.schema());
         assertEquals(RunStatus.FAILED, migrated.status());
         assertTrue(migrated.lastError().contains("/publicmine recover repair"));
     }
@@ -49,14 +53,14 @@ class MineRunDataTest {
     @Test
     void futureSchemaFailsClosedAndIsPreservedVerbatim() {
         CompoundTag future = new CompoundTag();
-        future.putInt("schema", 3);
+        future.putInt("schema", 4);
         future.putString("status", RunStatus.READY.name());
         future.putString("futureField", "owned by newer mod version");
         CompoundTag original = future.copy();
 
         MineRunData loaded = MineRunData.load(future, null);
 
-        assertEquals(3, loaded.schema());
+        assertEquals(4, loaded.schema());
         assertTrue(loaded.hasUnsupportedSchema());
         assertEquals(RunStatus.FAILED, loaded.status());
         assertTrue(loaded.lastError().contains("update Public Mines"));
@@ -92,5 +96,125 @@ class MineRunDataTest {
         MineRunData valid = new MineRunData();
         valid.setTopology("standard", "abcdef012345" + "0".repeat(52), 42, 41);
         assertEquals("abcdef012345", valid.topologyFingerprintPrefix());
+    }
+
+    @Test
+    void schema2ReadyMigrationPreservesTopologyAndStartsWithEmptyGenerationProgress() {
+        MineRunData original = readyRun();
+        CompoundTag schema2 = original.save(new CompoundTag(), null);
+        schema2.putInt("schema", 2);
+        schema2.remove("generationPlanFingerprint");
+        schema2.remove("pendingGenerationSegments");
+        schema2.remove("completedGenerationSegments");
+        schema2.remove("activeGenerationSegment");
+        schema2.remove("activeGenerationCursor");
+
+        MineRunData migrated = MineRunData.load(schema2, null);
+
+        assertEquals(3, migrated.schema());
+        assertEquals(RunStatus.READY, migrated.status());
+        assertEquals("a".repeat(64), migrated.topologyFingerprint());
+        assertEquals("", migrated.generationPlanFingerprint());
+        assertTrue(migrated.pendingGenerationSegments().isEmpty());
+        assertTrue(migrated.completedGenerationSegments().isEmpty());
+        assertEquals("", migrated.activeGenerationSegment());
+        assertEquals(0, migrated.activeGenerationCursor());
+    }
+
+    @Test
+    void generationQueueCursorAndCompletedSegmentsSurviveRoundTripInOrder() {
+        MineRunData original = readyRun();
+        assertTrue(original.beginGeneration("b".repeat(64)));
+        assertTrue(original.enqueueGenerationSegment("edge:m000-m001"));
+        assertTrue(original.enqueueGenerationSegment("edge:m001-m002"));
+        assertEquals("edge:m000-m001", original.beginNextGenerationSegment());
+        assertTrue(original.advanceGenerationCursor(12));
+        assertTrue(original.completeActiveGenerationSegment());
+        assertEquals("edge:m001-m002", original.beginNextGenerationSegment());
+        assertTrue(original.advanceGenerationCursor(37));
+
+        MineRunData restored = MineRunData.load(
+                original.save(new CompoundTag(), null), null);
+
+        assertEquals("b".repeat(64), restored.generationPlanFingerprint());
+        assertEquals(List.of(), restored.pendingGenerationSegments());
+        assertEquals(List.of("edge:m000-m001"), restored.completedGenerationSegments());
+        assertEquals("edge:m001-m002", restored.activeGenerationSegment());
+        assertEquals(37, restored.activeGenerationCursor());
+    }
+
+    @Test
+    void generationPaletteSettingsArePinnedAcrossConfigChangesAndRestart() {
+        MineRunData original = readyRun();
+        assertTrue(original.beginGeneration("d".repeat(64), true, 512));
+
+        MineRunData restored = MineRunData.load(
+                original.save(new CompoundTag(), null), null);
+
+        assertTrue(restored.generationNetherrackEnabled());
+        assertEquals(512, restored.generationNetherrackInterval());
+        assertFalse(restored.beginGeneration("d".repeat(64), true, 1024),
+                "a config edit must apply to the next run, not mutate a partially generated mine");
+        assertEquals(512, restored.generationNetherrackInterval());
+    }
+
+    @Test
+    void generationEnqueueDeduplicatesAcrossPendingActiveAndCompletedStates() {
+        MineRunData data = readyRun();
+        assertTrue(data.beginGeneration("b".repeat(64)));
+        assertTrue(data.enqueueGenerationSegment("edge:m000-m001"));
+        assertFalse(data.enqueueGenerationSegment("edge:m000-m001"));
+        assertEquals("edge:m000-m001", data.beginNextGenerationSegment());
+        assertFalse(data.enqueueGenerationSegment("edge:m000-m001"));
+        assertTrue(data.completeActiveGenerationSegment());
+        assertFalse(data.enqueueGenerationSegment("edge:m000-m001"));
+        assertFalse(data.enqueueGenerationSegment("bad id"));
+        assertFalse(data.beginGeneration("c".repeat(64)),
+                "progress must not be attached to a different plan fingerprint");
+    }
+
+    @Test
+    void interruptedActiveGenerationSegmentReplaysFromCursorZero() {
+        MineRunData data = readyRun();
+        assertTrue(data.beginGeneration("b".repeat(64)));
+        assertTrue(data.enqueueGenerationSegment("edge:m000-m001"));
+        data.beginNextGenerationSegment();
+        assertTrue(data.advanceGenerationCursor(200));
+
+        data.restartActiveGenerationSegmentForReplay();
+
+        assertEquals("edge:m000-m001", data.activeGenerationSegment());
+        assertEquals(0, data.activeGenerationCursor());
+        assertEquals(List.of(), data.completedGenerationSegments());
+    }
+
+    @Test
+    void malformedGenerationProgressFailsClosedAndIsBounded() {
+        CompoundTag saved = new CompoundTag();
+        saved.putInt("schema", 3);
+        saved.putString("status", RunStatus.READY.name());
+        saved.putString("topologyFingerprint", "a".repeat(64));
+        saved.putString("generationPlanFingerprint", "b".repeat(64));
+        ListTag pending = new ListTag();
+        for (int i = 0; i <= MineRunData.MAX_GENERATION_SEGMENTS; i++) {
+            pending.add(StringTag.valueOf("edge:duplicate"));
+        }
+        saved.put("pendingGenerationSegments", pending);
+        saved.putInt("activeGenerationCursor", MineRunData.MAX_GENERATION_OPERATION_CURSOR + 1);
+
+        MineRunData loaded = MineRunData.load(saved, null);
+
+        assertEquals(RunStatus.FAILED, loaded.status());
+        assertTrue(loaded.lastError().contains("saved generation progress is invalid"));
+        assertTrue(loaded.pendingGenerationSegments().size() <= MineRunData.MAX_GENERATION_SEGMENTS);
+        assertEquals(0, loaded.activeGenerationCursor());
+    }
+
+    private static MineRunData readyRun() {
+        MineRunData data = new MineRunData();
+        data.beginNewRun("2026-11-02-1", 1, 42L, "2026-11-02");
+        data.setTopology("standard", "a".repeat(64), 42, 41);
+        data.markStatus(RunStatus.READY);
+        return data;
     }
 }

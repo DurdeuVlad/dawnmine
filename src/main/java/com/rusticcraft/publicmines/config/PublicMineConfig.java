@@ -58,12 +58,12 @@ public final class PublicMineConfig {
                         "When enabled, generation may place at most one attempt per",
                         "netherrackColumnInterval eligible 16x16 chunk columns in the deepest",
                         "configured region only, with at most one cluster of three blocks per",
-                        "column. Generation work arrives in M3; no config value can make",
+                        "column. Netherrack placement is applied by M2b; no config value can make",
                         "Netherrack more common or shallower than the hard bounds.")
                 .define("netherrackEnabled", false);
 
         NETHERRACK_COLUMN_INTERVAL = builder.comment(
-                        "Eligible-column interval for optional Netherrack placement.",
+                        "Eligible-column interval for optional Chaos-region Netherrack placement.",
                         "Hard range " + NETHERRACK_INTERVAL_MIN + "-" + NETHERRACK_INTERVAL_MAX
                                 + "; larger values make Netherrack rarer.",
                         "Only meaningful when netherrackEnabled is true.")

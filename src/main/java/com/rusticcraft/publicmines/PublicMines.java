@@ -3,6 +3,7 @@ package com.rusticcraft.publicmines;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.command.PublicMineCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.generation.MineGenerator;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.topology.TopologyProfiles;
@@ -15,15 +16,15 @@ import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.slf4j.Logger;
 
 /**
  * Server-safe entry point for the Rustic Craft public-mine mod.
  *
- * <p>M1 scope: one shared persistent run per day with an explicit
- * ownership/recovery boundary, plus permission-gated in-game admin
- * onboarding. No procedural geometry, ore placement, mobs, rewards,
- * checkpoint travel, Dispatch storage, or scheduled reset lives here yet.
+ * <p>Owns mod registration and dispatches lifecycle, generation, and command
+ * events to their domain components. Later milestones add ore placement,
+ * encounters, rewards, checkpoint travel, Dispatch storage, and reset timing.
  */
 @Mod(PublicMines.MOD_ID)
 public class PublicMines {
@@ -36,6 +37,7 @@ public class PublicMines {
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(this::onServerTick);
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
@@ -52,6 +54,11 @@ public class PublicMines {
 
     private void onServerStarted(ServerStartedEvent event) {
         MineManager.get(event.getServer()).onServerStarted();
-        LOGGER.info("Rustic Craft Public Mines loaded (M2a topology)");
+        MineGenerator.get(event.getServer()).onServerStarted();
+        LOGGER.info("Rustic Craft Public Mines loaded (M2b procedural generation)");
+    }
+
+    private void onServerTick(ServerTickEvent.Post event) {
+        MineGenerator.get(event.getServer()).onServerTick(event);
     }
 }
