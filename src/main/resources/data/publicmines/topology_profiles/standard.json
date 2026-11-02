@@ -1,0 +1,56 @@
+{
+  "id": "standard",
+  "boundsMargin": 24,
+  "corridorHalfWidth": 3,
+  "minStep": 18,
+  "maxStep": 44,
+  "maxTurnDeg": 75,
+  "loopMaxDistance": 160,
+  "maxNodes": 260,
+  "maxCorridorLength": 40000,
+  "branchMaxLength": 3,
+  "regions": [
+    {
+      "id": "upper",
+      "name": "Upper Galleries",
+      "topY": 56,
+      "bottomY": 24,
+      "mainRouteNodes": 12,
+      "caverns": 2,
+      "branches": 4,
+      "loops": 1,
+      "pockets": 5,
+      "resourceFields": 5,
+      "landmarks": 2,
+      "checkpoints": 1
+    },
+    {
+      "id": "middle",
+      "name": "Middle Descent",
+      "topY": 24,
+      "bottomY": -16,
+      "mainRouteNodes": 14,
+      "caverns": 3,
+      "branches": 5,
+      "loops": 2,
+      "pockets": 6,
+      "resourceFields": 7,
+      "landmarks": 2,
+      "checkpoints": 1
+    },
+    {
+      "id": "chaos",
+      "name": "Chaos Depths",
+      "topY": -16,
+      "bottomY": -56,
+      "mainRouteNodes": 12,
+      "caverns": 3,
+      "branches": 4,
+      "loops": 2,
+      "pockets": 6,
+      "resourceFields": 7,
+      "landmarks": 3,
+      "checkpoints": 1
+    }
+  ]
+}

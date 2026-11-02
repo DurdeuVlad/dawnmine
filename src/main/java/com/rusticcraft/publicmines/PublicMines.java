@@ -5,11 +5,13 @@ import com.rusticcraft.publicmines.command.PublicMineCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
 import com.rusticcraft.publicmines.run.MineManager;
+import com.rusticcraft.publicmines.topology.TopologyProfiles;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -32,6 +34,7 @@ public class PublicMines {
         container.registerConfig(ModConfig.Type.SERVER, PublicMineConfig.SPEC);
         modEventBus.addListener(this::onRegisterGameTests);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
     }
 
@@ -43,8 +46,12 @@ public class PublicMines {
         event.register(MineLifecycleGameTests.class);
     }
 
+    private void onAddReloadListeners(AddReloadListenerEvent event) {
+        event.addListener(new TopologyProfiles());
+    }
+
     private void onServerStarted(ServerStartedEvent event) {
         MineManager.get(event.getServer()).onServerStarted();
-        LOGGER.info("Rustic Craft Public Mines loaded (M1 lifecycle/admin)");
+        LOGGER.info("Rustic Craft Public Mines loaded (M2a topology)");
     }
 }
