@@ -1,9 +1,12 @@
 package com.rusticcraft.publicmines.run;
 
+import com.rusticcraft.publicmines.config.PublicMineConfig;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -26,7 +29,12 @@ import net.minecraft.world.level.saveddata.SavedData;
  */
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
-    private static final int SCHEMA = 2;
+    private static final int SCHEMA = 3;
+    /** Segment identity count is below the topology planner's hard node cap,
+     * with room for edges and a bounded pending frontier. */
+    static final int MAX_GENERATION_SEGMENTS = 16_384;
+    static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
+    static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;
 
     private int schema = SCHEMA;
     private RunStatus status = RunStatus.UNINITIALIZED;
@@ -51,6 +59,17 @@ public class MineRunData extends SavedData {
     private String topologyFingerprint = "";
     private int topologyNodes = 0;
     private int topologyEdges = 0;
+    /** Fingerprint of the topology + geometry algorithm that owns progress. */
+    private String generationPlanFingerprint = "";
+    /** Run-pinned generation settings; config edits apply to the next run. */
+    private boolean generationNetherrackEnabled;
+    private int generationNetherrackInterval = PublicMineConfig.NETHERRACK_INTERVAL_MIN;
+    /** FIFO order is stable across save/load and determines shared expansion. */
+    private final LinkedHashSet<String> pendingGenerationSegments = new LinkedHashSet<>();
+    private final LinkedHashSet<String> completedGenerationSegments = new LinkedHashSet<>();
+    /** Only one segment is applied at once so the cursor has one unambiguous owner. */
+    private String activeGenerationSegment = "";
+    private int activeGenerationCursor = 0;
     /** Opaque future-version save data must survive this older mod untouched. */
     private CompoundTag unsupportedSchemaTag;
     private final List<OwnedVolume> ownedVolumes = new ArrayList<>();
@@ -91,6 +110,13 @@ public class MineRunData extends SavedData {
         tag.putString("topologyFingerprint", topologyFingerprint);
         tag.putInt("topologyNodes", topologyNodes);
         tag.putInt("topologyEdges", topologyEdges);
+        tag.putString("generationPlanFingerprint", generationPlanFingerprint);
+        tag.putBoolean("generationNetherrackEnabled", generationNetherrackEnabled);
+        tag.putInt("generationNetherrackInterval", generationNetherrackInterval);
+        tag.put("pendingGenerationSegments", saveStringSet(pendingGenerationSegments));
+        tag.put("completedGenerationSegments", saveStringSet(completedGenerationSegments));
+        tag.putString("activeGenerationSegment", activeGenerationSegment);
+        tag.putInt("activeGenerationCursor", activeGenerationCursor);
         ListTag volumes = new ListTag();
         for (OwnedVolume volume : ownedVolumes) {
             volumes.add(volume.save());
@@ -153,6 +179,7 @@ public class MineRunData extends SavedData {
         if (!data.topologyFingerprint.isEmpty() && !isValidTopologyFingerprint(data.topologyFingerprint)) {
             data.markFailed("saved topology fingerprint is malformed; run '/publicmine recover repair'");
         }
+        data.loadGenerationState(tag);
         for (Tag t : tag.getList("ownedVolumes", Tag.TAG_COMPOUND)) {
             try {
                 OwnedVolume volume = OwnedVolume.load((CompoundTag) t);
@@ -201,6 +228,142 @@ public class MineRunData extends SavedData {
         }
     }
 
+    private static ListTag saveStringSet(Set<String> values) {
+        ListTag tags = new ListTag();
+        for (String value : values) {
+            tags.add(net.minecraft.nbt.StringTag.valueOf(value));
+        }
+        return tags;
+    }
+
+    private void loadGenerationState(CompoundTag tag) {
+        if (tag.contains("generationPlanFingerprint")
+                && !tag.contains("generationPlanFingerprint", Tag.TAG_STRING)) {
+            markGenerationStateInvalid("generation plan fingerprint has the wrong NBT type");
+        }
+        generationPlanFingerprint = tag.getString("generationPlanFingerprint");
+        generationNetherrackEnabled = tag.getBoolean("generationNetherrackEnabled");
+        int savedInterval = tag.contains("generationNetherrackInterval", Tag.TAG_INT)
+                ? tag.getInt("generationNetherrackInterval") : PublicMineConfig.NETHERRACK_INTERVAL_MIN;
+        if (savedInterval < PublicMineConfig.NETHERRACK_INTERVAL_MIN
+                || savedInterval > PublicMineConfig.NETHERRACK_INTERVAL_MAX) {
+            markGenerationStateInvalid("saved Netherrack interval is outside the supported range");
+            savedInterval = PublicMineConfig.NETHERRACK_INTERVAL_MIN;
+        }
+        generationNetherrackInterval = savedInterval;
+        if (!generationPlanFingerprint.isEmpty()
+                && !isValidTopologyFingerprint(generationPlanFingerprint)) {
+            markGenerationStateInvalid("generation plan fingerprint is malformed");
+            generationPlanFingerprint = "";
+        }
+        readSegmentIds(tag, "pendingGenerationSegments", pendingGenerationSegments);
+        readSegmentIds(tag, "completedGenerationSegments", completedGenerationSegments);
+        if (tag.contains("activeGenerationSegment")
+                && !tag.contains("activeGenerationSegment", Tag.TAG_STRING)) {
+            markGenerationStateInvalid("active generation segment has the wrong NBT type");
+        }
+        activeGenerationSegment = tag.getString("activeGenerationSegment");
+        if (!activeGenerationSegment.isEmpty() && !isValidSegmentId(activeGenerationSegment)) {
+            markGenerationStateInvalid("active generation segment id is malformed");
+            activeGenerationSegment = "";
+        }
+        if (tag.contains("activeGenerationCursor")
+                && !tag.contains("activeGenerationCursor", Tag.TAG_INT)) {
+            markGenerationStateInvalid("active generation cursor has the wrong NBT type");
+        }
+        activeGenerationCursor = tag.getInt("activeGenerationCursor");
+        if (activeGenerationCursor < 0 || activeGenerationCursor > MAX_GENERATION_OPERATION_CURSOR) {
+            markGenerationStateInvalid("active generation operation cursor is outside the supported range");
+            activeGenerationCursor = 0;
+        }
+        if (!activeGenerationSegment.isEmpty()) {
+            if (completedGenerationSegments.contains(activeGenerationSegment)) {
+                markGenerationStateInvalid("active generation segment is also marked completed");
+                activeGenerationSegment = "";
+                activeGenerationCursor = 0;
+            } else {
+                if (pendingGenerationSegments.size() + completedGenerationSegments.size()
+                        >= MAX_GENERATION_SEGMENTS) {
+                    markGenerationStateInvalid("active segment exceeds the supported unique segment limit of "
+                            + MAX_GENERATION_SEGMENTS);
+                    activeGenerationSegment = "";
+                    activeGenerationCursor = 0;
+                }
+                pendingGenerationSegments.remove(activeGenerationSegment);
+            }
+        } else if (activeGenerationCursor != 0) {
+            markGenerationStateInvalid("generation cursor exists without an active segment");
+            activeGenerationCursor = 0;
+        }
+        if ((!pendingGenerationSegments.isEmpty() || !completedGenerationSegments.isEmpty()
+                    || !activeGenerationSegment.isEmpty())
+                && generationPlanFingerprint.isEmpty()) {
+            markGenerationStateInvalid("segment progress has no generation plan fingerprint");
+        }
+        boolean overlapsCompleted = pendingGenerationSegments.removeIf(completedGenerationSegments::contains);
+        if (overlapsCompleted) {
+            markGenerationStateInvalid("a segment is listed as both pending and completed");
+        }
+    }
+
+    private void readSegmentIds(CompoundTag tag, String key, LinkedHashSet<String> destination) {
+        if (!tag.contains(key)) {
+            return;
+        }
+        Tag stored = tag.get(key);
+        if (!(stored instanceof ListTag list)) {
+            markGenerationStateInvalid(key + " is not a list");
+            return;
+        }
+        if (list.size() > MAX_GENERATION_SEGMENTS) {
+            markGenerationStateInvalid(key + " exceeds the supported segment limit of "
+                    + MAX_GENERATION_SEGMENTS);
+        }
+        int limit = Math.min(list.size(), MAX_GENERATION_SEGMENTS);
+        for (int index = 0; index < limit; index++) {
+            Tag value = list.get(index);
+            if (!(value instanceof net.minecraft.nbt.StringTag stringTag)) {
+                markGenerationStateInvalid(key + " contains a non-string entry");
+                continue;
+            }
+            String id = stringTag.getAsString();
+            if (!isValidSegmentId(id)) {
+                markGenerationStateInvalid(key + " contains a malformed segment id");
+                continue;
+            }
+            if (!destination.contains(id)
+                    && pendingGenerationSegments.size() + completedGenerationSegments.size()
+                            >= MAX_GENERATION_SEGMENTS) {
+                markGenerationStateInvalid(key + " exceeds the supported unique segment limit of "
+                        + MAX_GENERATION_SEGMENTS);
+                break;
+            }
+            destination.add(id);
+        }
+        if (destination == pendingGenerationSegments) {
+            destination.removeAll(completedGenerationSegments);
+        }
+    }
+
+    private void markGenerationStateInvalid(String detail) {
+        markFailed("saved generation progress is invalid: " + detail
+                + "; run '/publicmine recover repair'");
+    }
+
+    private static boolean isValidSegmentId(String id) {
+        if (id == null || id.isBlank() || id.length() > MAX_GENERATION_SEGMENT_ID_LENGTH) {
+            return false;
+        }
+        for (int i = 0; i < id.length(); i++) {
+            char c = id.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                    || (c >= '0' && c <= '9') || c == ':' || c == '_' || c == '-')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public int schema() { return schema; }
     public boolean hasUnsupportedSchema() { return unsupportedSchemaTag != null; }
     public RunStatus status() { return status; }
@@ -230,6 +393,13 @@ public class MineRunData extends SavedData {
     public int topologyNodes() { return topologyNodes; }
     public int topologyEdges() { return topologyEdges; }
     public List<OwnedVolume> ownedVolumes() { return List.copyOf(ownedVolumes); }
+    public String generationPlanFingerprint() { return generationPlanFingerprint; }
+    public boolean generationNetherrackEnabled() { return generationNetherrackEnabled; }
+    public int generationNetherrackInterval() { return generationNetherrackInterval; }
+    public List<String> pendingGenerationSegments() { return List.copyOf(pendingGenerationSegments); }
+    public List<String> completedGenerationSegments() { return List.copyOf(completedGenerationSegments); }
+    public String activeGenerationSegment() { return activeGenerationSegment; }
+    public int activeGenerationCursor() { return activeGenerationCursor; }
 
     public static boolean isValidTopologyFingerprint(String fingerprint) {
         if (fingerprint == null || fingerprint.length() != 64) {
@@ -255,6 +425,7 @@ public class MineRunData extends SavedData {
         this.topologyFingerprint = "";
         this.topologyNodes = 0;
         this.topologyEdges = 0;
+        clearGenerationProgress();
         this.ownedVolumes.clear();
         this.returnPoints.clear();
         this.status = RunStatus.INITIALIZING;
@@ -279,6 +450,111 @@ public class MineRunData extends SavedData {
         this.topologyFingerprint = fingerprint;
         this.topologyNodes = nodes;
         this.topologyEdges = edges;
+        setDirty();
+    }
+
+    /** Pins generation progress to the immutable geometry plan for this run. */
+    public boolean beginGeneration(String fingerprint) {
+        return beginGeneration(fingerprint, false, PublicMineConfig.NETHERRACK_INTERVAL_MIN);
+    }
+
+    /** Pins the immutable generation identity and the next-run-only palette settings. */
+    public boolean beginGeneration(String fingerprint, boolean netherrackEnabled,
+                                   int netherrackInterval) {
+        if (!isValidTopologyFingerprint(fingerprint)) {
+            return false;
+        }
+        if (netherrackInterval < PublicMineConfig.NETHERRACK_INTERVAL_MIN
+                || netherrackInterval > PublicMineConfig.NETHERRACK_INTERVAL_MAX) {
+            return false;
+        }
+        if (!generationPlanFingerprint.isEmpty()) {
+            return generationPlanFingerprint.equals(fingerprint)
+                    && generationNetherrackEnabled == netherrackEnabled
+                    && generationNetherrackInterval == netherrackInterval;
+        }
+        generationPlanFingerprint = fingerprint;
+        generationNetherrackEnabled = netherrackEnabled;
+        generationNetherrackInterval = netherrackInterval;
+        setDirty();
+        return true;
+    }
+
+    /** Adds a segment once, preserving deterministic FIFO enqueue order. */
+    public boolean enqueueGenerationSegment(String segmentId) {
+        if (generationPlanFingerprint.isEmpty() || !isValidSegmentId(segmentId)
+                || pendingGenerationSegments.contains(segmentId)
+                || completedGenerationSegments.contains(segmentId)
+                || activeGenerationSegment.equals(segmentId)
+                || pendingGenerationSegments.size() + completedGenerationSegments.size()
+                        + (activeGenerationSegment.isEmpty() ? 0 : 1)
+                        >= MAX_GENERATION_SEGMENTS) {
+            return false;
+        }
+        pendingGenerationSegments.add(segmentId);
+        setDirty();
+        return true;
+    }
+
+    /** Starts the oldest queued segment or returns empty when there is no work. */
+    public String beginNextGenerationSegment() {
+        if (!activeGenerationSegment.isEmpty()) {
+            return activeGenerationSegment;
+        }
+        if (pendingGenerationSegments.isEmpty()) {
+            return "";
+        }
+        String next = pendingGenerationSegments.iterator().next();
+        pendingGenerationSegments.remove(next);
+        activeGenerationSegment = next;
+        activeGenerationCursor = 0;
+        setDirty();
+        return activeGenerationSegment;
+    }
+
+    /** Advances the active deterministic block-operation cursor. */
+    public boolean advanceGenerationCursor(int processedOperations) {
+        if (activeGenerationSegment.isEmpty() || processedOperations < 0
+                || processedOperations > MAX_GENERATION_OPERATION_CURSOR - activeGenerationCursor) {
+            return false;
+        }
+        if (processedOperations > 0) {
+            activeGenerationCursor += processedOperations;
+            setDirty();
+        }
+        return true;
+    }
+
+    /** Marks active work complete so it is never queued or rewritten again. */
+    public boolean completeActiveGenerationSegment() {
+        if (activeGenerationSegment.isEmpty()
+                || completedGenerationSegments.size() >= MAX_GENERATION_SEGMENTS) {
+            return false;
+        }
+        completedGenerationSegments.add(activeGenerationSegment);
+        activeGenerationSegment = "";
+        activeGenerationCursor = 0;
+        setDirty();
+        return true;
+    }
+
+    /** Deterministic block writes make replay from cursor zero repair partial
+     * chunks if the SavedData cursor was saved ahead of a chunk on shutdown. */
+    public void restartActiveGenerationSegmentForReplay() {
+        if (!activeGenerationSegment.isEmpty() && activeGenerationCursor != 0) {
+            activeGenerationCursor = 0;
+            setDirty();
+        }
+    }
+
+    void clearGenerationProgress() {
+        generationPlanFingerprint = "";
+        generationNetherrackEnabled = false;
+        generationNetherrackInterval = PublicMineConfig.NETHERRACK_INTERVAL_MIN;
+        pendingGenerationSegments.clear();
+        completedGenerationSegments.clear();
+        activeGenerationSegment = "";
+        activeGenerationCursor = 0;
         setDirty();
     }
 

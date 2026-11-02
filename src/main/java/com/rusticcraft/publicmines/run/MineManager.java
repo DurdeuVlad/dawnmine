@@ -68,6 +68,12 @@ public class MineManager {
         return data;
     }
 
+    /** Fails the shared run when the world-generation subsystem detects that
+     * its persisted plan or an owned-volume write is no longer trustworthy. */
+    public synchronized void failGeneration(String detail) {
+        data.markFailed("mine generation stopped: " + (detail == null ? "unknown error" : detail));
+    }
+
     public ServerLevel mineLevel() {
         return server.getLevel(MINE_DIMENSION);
     }
@@ -372,8 +378,10 @@ public class MineManager {
             checks.add(Check.pass("surface exit", "surface exit recorded at " + describePos(data.surfaceExit())));
         }
         checks.add(checkTopology(mine));
-        checks.add(Check.pass("generation frontier", data.frontierRegions()
-                + " generated region(s) recorded (block geometry arrives in M2b)"));
+        checks.add(Check.pass("world geometry", data.completedGenerationSegments().size()
+                + " segment(s) complete, " + data.pendingGenerationSegments().size() + " queued"
+                + (data.activeGenerationSegment().isEmpty() ? "" : ", active "
+                        + data.activeGenerationSegment() + " at operation " + data.activeGenerationCursor())));
         checks.add(Check.warn("reset scheduling",
                 "effective reset is " + String.format("%02d:%02d", PublicMineConfig.resetHour(), PublicMineConfig.resetMinute())
                         + " " + PublicMineConfig.resetZoneId() + " once M7 scheduling ships; nothing resets automatically yet"));

@@ -129,12 +129,16 @@ public final class PublicMineCommand {
             lines.add("Last error: " + data.lastError());
         }
         lines.add("Day: " + (data.dayId().isEmpty() ? "(none)" : data.dayId())
-                + "  seed: " + data.seed() + "  frontier regions: " + data.frontierRegions());
+                + "  seed: " + data.seed());
         lines.add("Topology: " + (data.topologyFingerprint().isEmpty()
                 ? "(not planned)"
                 : data.topologyNodes() + " nodes / " + data.topologyEdges() + " segments, profile "
                         + data.topologyProfile() + ", fingerprint "
                         + data.topologyFingerprintPrefix()));
+        lines.add("Geometry: " + data.completedGenerationSegments().size() + " segments complete, "
+                + data.pendingGenerationSegments().size() + " queued, active "
+                + (data.activeGenerationSegment().isEmpty() ? "(none)"
+                        : data.activeGenerationSegment() + " at operation " + data.activeGenerationCursor()));
         lines.add("Active region: chunks [" + data.boundMinChunkX() + ", " + data.boundMinChunkZ()
                 + "] to [" + data.boundMaxChunkX() + ", " + data.boundMaxChunkZ() + "]");
         lines.add("Arrival: " + (data.mineArrival() == null ? "(not set)" : MineManager.describePos(data.mineArrival()))
