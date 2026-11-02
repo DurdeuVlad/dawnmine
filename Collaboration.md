@@ -2,7 +2,7 @@
 
 ## Ownership
 
-- Product owner: Rustic Craft server owner. The owner decides gameplay policy, supported pack version, reset schedule, public/private release, and acceptance of player economy changes.
+- Product owner: Codex, as explicitly delegated by the server owner. Codex steers gameplay policy, supported pack version, configurable defaults, milestones, and acceptance of player-economy changes. Server operators can configure only the bounded settings exposed in game.
 - Implementer: Devin, working one GitHub issue/milestone at a time and using the installed Flux skills listed in AGENTS.md.
 - Planning and review support: Codex may prepare issue contracts, inspect changes, and give independent review. Devin's implementation claims require actual build/runtime evidence.
 
@@ -12,7 +12,7 @@
 - Before editing, the implementer invokes Flux routing and uses the smallest relevant skill set. Non-trivial tasks include discovery, plan, implementation, verification, independent review, and evaluation.
 - Each implementation is performed on an issue branch or local working branch. The PR body repeats intent, expectation, acceptance criteria, scope, non-goals, dependencies, test evidence, and unresolved risks.
 - An independent reviewer examines behavior, tests, boundaries, and unintended effects before an issue is presented as complete.
-- The owner reviews product-changing defaults (reset hour, mine dimensions/bounds, storage capacity, resource rates) before release.
+- Codex owns product decisions and reviews defaults (reset hour, mine dimensions/bounds, storage capacity, resource rates) before release; Devin may resolve reversible implementation choices inside the accepted contract and should surface evidence that requires changing it.
 - The owner has authorized issue-scoped implementation work to be committed, pushed, and merged on GitHub as it is completed. Merge only after acceptance criteria pass, required checks pass, an independent Flux review passes, and flux-evaluate returns complete. Do not merge failed, blocked, or unsupported verification. Production release and server deployment are not authorized.
 
 ## Communication and handoff

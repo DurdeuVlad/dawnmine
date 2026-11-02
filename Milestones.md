@@ -1,133 +1,151 @@
-# Milestones
+# Public Mines Milestones
 
-Target environment: Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248, Java 21. No dates or effort estimates are assigned. Product owner is the server owner; Devin implements; owner reviews gameplay policy and release. The milestones are outcome boundaries in strict dependency order. Feature work begins after the M0 compatibility evidence is available.
+Target: Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248, Java 21. Codex is product owner and owns the player outcome, milestone contracts, and acceptance decision. Devin implements. An independent reviewer challenges every delivery before it is accepted. No dates or estimates are set.
+
+The desired experience is specified in [Progression.md](Progression.md), with durable decisions in [Decision.md](Decision.md) and player value/success measures in [Business.md](Business.md). Milestones are dependency ordered. M0 proves a safe technical foundation; it does not redefine the product as a compatibility project. All later gameplay milestones remain required to deliver the mine.
 
 ## M0 — Standalone mod foundation and pack compatibility
 
-**Outcome:** A separate mod project builds and loads on a dedicated server beside the target pack; the implementation team has verified the exact ore and Born in Chaos integration surfaces.
+**Outcome:** A separate server-side mod builds and loads beside the exact target pack. The team has reproducible evidence for every pack ore and the actual Born in Chaos, recipe, and equipment integration surfaces needed by later work.
 
-**In scope:** Java 21/NeoForge 21.1.248 scaffold, metadata, server-safe entry point, build configuration, dedicated-server smoke run, artifact and registry audit for Rustic Craft 2 2.2.2, BiC 1.7.6 entity ID report, common ore tag coverage report, and explicit list of untagged ores discovered.
+**Scope:** Java 21 / NeoForge 21.1.248 project, unique mod identity, server-safe entry point, clean build, exact-pack dedicated-server smoke test, artifact hashes, Born in Chaos 1.7.6 registry/entity report, ore-tag versus installed-mod reconciliation (including untagged and unusual ores), and a pack-grounded recipe/equipment progression appendix.
 
-**Out of scope:** Any mine gameplay, custom world, loot changes, entity spawning, or faction-mine edits.
+**Non-goals:** No mine world or gameplay, entity spawning, loot changes, reset, storage, economy balancing, faction-mine edits, or production deployment.
 
-**Dependencies:** None.
+**Depends on:** None.
 
-**Proof:** Clean build; dedicated server loads the mod with the pack; no client-only class-load failures; checked-in compatibility report names the exact artifacts, all ore IDs or a reproducible completeness path, BiC entity IDs, and unresolved hazards.
+**Proof:** Clean build from source; dedicated server reaches ready with the exact pack; no new side/dependency errors; reports can be reproduced from pinned artifacts; every ore is mapped or an explicit unresolved item is listed; source/config diff proves the factions mine is untouched; independent review and evaluation pass.
 
-**Risks/open decisions:** Actual local mod jars may be absent despite the pack catalog; retrieve only the exact approved artifacts needed for inspection. Resolve the mod ID/package with a uniqueness check.
+**Risk:** Pack artifacts and runtime behavior can differ from catalog/static data. Preserve the shared worktree and distinguish inspected facts from runtime/player-playtested behavior.
 
-## M1 — Shared mine run and safe world lifecycle
+## M1 — Shared run lifecycle and in-game admin onboarding
 
-**Outcome:** The server maintains exactly one active, persistent mine run shared by all players, isolated from unrelated world/faction-mine state.
+**Outcome:** One authoritative persistent run is shared by all players, has an explicit owned-area and recovery boundary, and a new operator can set up and validate it using friendly in-game help and commands.
 
-**In scope:** Architecture decision for a custom dimension or isolated bounded region; persisted run seed, run ID/date, generation frontier, owned-area records, depth/region state, lifecycle recovery, and safe entry/exit coordinates. Build a disposable technical prototype before settling world placement.
+**Scope:** Evidence-backed dimension/region choice and disposable prototype; saved run ID, seed, date, lifecycle state, bounds, generated frontier and owned-area records; safe surface/arrival locations; restart/partial-init recovery; `/publicmine help`, status, setup/validation, supported config get/set, permission matrix, idempotent initialization and safe recovery. Keep private admin diagnostics separate from targeted player guidance. No client mod required for server commands.
 
-**Out of scope:** Rich procedural layout, ore generation, encounter tables, locker GUI, and production daily reset policy.
+**Non-goals:** Rich procedural geometry, ore placement, mobs/rewards, private instances, scheduled reset execution, unsafe arbitrary world edits, or faction-mine changes.
 
-**Dependencies:** M0 artifact and server evidence.
+**Depends on:** M0.
 
-**Proof:** Two players observe identical run identity and state; restart restores the active run without duplicating generated state; cleanup can identify only mine-owned areas; ejection coordinates are safe and outside the mine.
+**Proof:** Two players resolve the same active run/state; restart or interrupted initialization recovers without duplication or clearing unrelated areas; new operator completes setup/validation from in-game help; permission tests prove unauthorized mutation is denied; invalid/unbounded settings are rejected; messages reach only the intended players/admins; no faction-mine state changes.
 
-**Risks/open decisions:** Dimension registration and dynamic extension APIs must be checked against NeoForge 21.1.248. Set practical world bounds and per-tick generation budgets from measured results.
+**Risk:** Dimension registration, permission APIs, and cleanup boundaries must be verified against the pinned NeoForge server. Keep setup transactional and never report success before persistence is confirmed.
 
-## M2 — Crystal Hollows-style procedural exploration world
+## M2 — Connected procedural mineshaft exploration
 
-**Outcome:** A large connected shared map gives players multiple routes and regions to discover, and expands ahead of exploration during the run.
+**Outcome:** The shared run feels like a large generated mine to explore, with multiple connected routes, discoveries, recognizable algorithmic landmarks, and frontier expansion ahead of players.
 
-**In scope:** Deterministic seeded block geometry for main routes, branch tunnels, open caverns, loops, dead ends, ore fields, recognizable landmarks, environmental hazards, safe checkpoint alcoves, themed upper/deep/Chaos regions, and persisted frontier generation. Geometry is generated from algorithms and block palettes; no prefab buildings or structure files are required.
+**Scope:** Deterministic seeded topology, mineshaft corridors, branches, loops, dead ends, caverns, pockets, landmarks and checkpoint alcoves; algorithmic block geometry/palettes; persisted segment IDs and frontier; bounded scheduled generation; safe path/connectivity validation and recovery. Build geometry in code. No prefab structure files or predefined buildings are required.
 
-**Out of scope:** Specific ore balance, mob encounters, daily reset completion, or player-specific instances.
+**Non-goals:** Pack-specific ore selection/rates, mob encounter tables, Dispatch persistence, final reset scheduling, authored building assets, or unrelated world generation.
 
-**Dependencies:** M1.
+**Depends on:** M1 ownership, bounds, and run identity.
 
-**Proof:** Same run seed yields the same generated topology; multiple players see the same cells; each generated route is traversable and connects to an existing route; generation is restart-safe, bounded, and stays inside mine-owned limits; forced failure does not leave players trapped.
+**Proof:** Fixed seed/config yields repeatable topology; all main routes connect and are traversable; optional branches are explicitly connected or marked dead ends; restart/interruption never duplicates or disconnects segments; generation stays in the owned bounds, respects measured tick/chunk budgets, and cannot strand players.
 
-**Risks/open decisions:** Random layouts can create disconnected routes or unsafe liquid paths; generation needs deterministic validation and chunk-load/tick budgets.
+**Risk:** Procedural liquid/terrain may create disconnected paths, unsafe pockets, or server stalls. Validate a plan before block mutation and expand in bounded work.
 
-## M3 — Complete modpack ore catalog and depth ecology
+## M3 — Every pack ore in depth-based ecology
 
-**Outcome:** Every ore in the target pack can be found by mining in a deliberate depth tier, with native block behavior and drops preserved.
+**Outcome:** Players can discover and mine every ore in the actual Rustic Craft 2 pack in meaningful depth tiers, using native blocks, tools, and drops.
 
-**In scope:** Runtime discovery through common ore tags plus explicit IDs from the M0 audit, registry reload handling, reviewed ore-to-tier data, all block variants that belong to each ore, ore pocket distribution, Nether ore placement in Chaos Depths (including quartz), and contained lava around suitable resource areas.
+**Scope:** Reviewed machine-readable ore catalog from M0 plus runtime tags; explicit IDs for untagged/special ores and their variants; deterministic depth/region mapping and bounded pockets; quartz in Chaos Depths; contained lava as a readable environmental hazard; server configuration for optional Netherrack, off by default and only at extreme depth with a hard ultra-rare ceiling.
 
-**Out of scope:** Replacing mod ore loot tables, modifying global ore generation, or adding new ores.
+**Non-goals:** Global ore-generation/loot changes, replacing native mining rules, new ore types, or a Netherrack progression requirement.
 
-**Dependencies:** M0 catalog and M2 regions.
+**Depends on:** M0 catalog and M2 regions/resource placements.
 
-**Proof:** A machine-readable catalog comparison shows every pack ore is mapped; a generated-run report shows each catalogued ore in its intended tier; native pickaxe requirements and normal drops still apply; no ore is silently omitted after reload or modlist change.
+**Proof:** Machine-readable comparison has no unclassified pack ores; generated-run samples contain each configured ore in its declared region/depth; native harvest requirements and normal drops work; default config places no Netherrack; enabled Netherrack respects the hard rarity/depth ceiling; reload or modlist mismatch is surfaced rather than silently dropping ores.
 
-**Risks/open decisions:** Poorly tagged or specialized mod ores may require explicit block IDs and dimension-specific handling. All added ore rates require review against the server economy.
+**Risk:** Tags and registry names are imperfect ore taxonomies; verify unusual blocks individually and bound resource yield to protect the server economy.
 
-## M4 — Born in Chaos depth encounters and rewards
+## M4 — Born in Chaos encounters and mine-only rewards
 
-**Outcome:** Exploration becomes more dangerous with depth, using verified BiC mobs and mine-only ore rewards.
+**Outcome:** The mine becomes more dangerous with depth through readable, varied encounters, and fighting is a viable way to contribute useful mine resources.
 
-**In scope:** Encounter sets by region/depth using M0-verified entity IDs, controlled spawn points and population budgets, elite/rare encounter opportunities where the artifact safely supports them, persistent mine-origin tracking, depth-tiered ore/salvage rewards on player kills, and cleanup at reset.
+**Scope:** Reviewed Born in Chaos candidates by region/depth; bounded encounter placement and population; mine-origin tracking, cleanup/recovery, and additional depth-tiered ore/salvage rewards for player kills; verified counterplay, attack cues, and route/hazard interactions. Integrate through public registry IDs and mine-scoped events.
 
-**Out of scope:** Changes to Born in Chaos configuration, natural spawn rates, AI, or loot outside the mine; forced spawning of unverified bosses.
+**Non-goals:** Global Born in Chaos config, AI, natural spawn rates or loot changes; unreviewed bosses; unbounded mob scaling; difficulty based only on health/damage inflation.
 
-**Dependencies:** M0 artifact report and M2 regions. M3 tier definitions inform rewards.
+**Depends on:** M0 artifact/registry report and M2 encounter locations. M3 informs reward tiers and hazards.
 
-**Proof:** Only verified entities spawn; tier pressure rises with depth; player kills inside the mine receive only configured bonus rewards; natural entities outside the mine keep their original behavior/drops; entity cap and unload/cleanup work after restart and reset.
+**Proof:** Only verified entities spawn; depth adds different threat combinations; a real player breaking infected ore and fighting any resulting mob is tested if that hook is used; mine-only kills grant only bounded configured bonuses; outside behavior/drops remain unchanged; populations and cleanup stay bounded after restart/reset.
 
-**Risks/open decisions:** Special BiC abilities can be dangerous in confined caves. Start from a reviewed candidate list and leave any unsafe entity out until an explicit test supports it.
+**Risk:** Confined-space special abilities can be unfair or destabilizing. Candidate entities remain excluded until safe player counterplay is demonstrated.
 
-## M5 — Checkpoints, teleport travel, and Foreman's Dispatch
+## M5 — Shared checkpoints, safe travel, and personal Dispatch
 
-**Outcome:** Players can move through the shared run without losing orientation or inventory capacity, then access their haul outside.
+**Outcome:** Players can navigate the active shared mine, choose when to return, and securely bank a useful haul in persistent themed storage larger than an Ender Chest.
 
-**In scope:** Safe checkpoint pads integrated into generated terrain; enter from surface; return to surface; resume at any checkpoint already generated in the active shared run; every player can use those same stations; checkpoint discovery/status feedback; personal, persistent Dispatch inventory with at least 54 slots as the proposed baseline; deposit and retrieve at every checkpoint and the matching surface depot; locker isolation by player.
+**Scope:** Safe generated checkpoint pads available to everyone after discovery; travel between surface and generated checkpoints; clear enter/exit/resume feedback; a private persistent Foreman's Dispatch (at least 54 slots as the product baseline) accessible at checkpoints and matching surface depot; transactional deposit/retrieve and offline/restart recovery.
 
-**Out of scope:** Item trading, shared guild storage, paid capacity, arbitrary world teleport commands, and any death/inventory-loss policy change.
+**Non-goals:** Player-specific mine instances, shared/guild locker contents, item trading, paid capacity, arbitrary teleport commands, or custom death penalties.
 
-**Dependencies:** M1 owned area and player state; M2 checkpoint placement. M6 reset must preserve this data.
+**Depends on:** M1 ownership/player state and M2 generated stations. M7 must preserve Dispatch data.
 
-**Proof:** Multiple players can independently access only their own locker; items survive relog, restart, and mine reset; deposit/retrieve has no duplication or deletion on full inventory; every teleport lands at an unblocked safe pad; checkpoints not yet generated or belonging to a stale run cannot be selected.
+**Proof:** Multiple players can only access their own Dispatch; inventory-full, disconnect, failed teleport, restart, and reset paths do not delete or duplicate items; teleports land on clear safe pads; only checkpoints in the current generated run are usable.
 
-**Risks/open decisions:** Final capacity is owner-reviewed; preserve inventory transactionally on disconnects and full-storage/failed-teleport cases.
+**Risk:** Inventory mutation and teleport must be atomic or recoverable. A checkpoint is run-local; the personal Dispatch is durable.
 
-## M6 — Configurable morning cycle and complete mine reset
+## M6 — Durable gear progression and expedition economy
 
-**Outcome:** Each scheduled morning starts one fresh shared run and evacuates players without losing personal data or touching unrelated worlds.
+**Outcome:** Useful mining, PvE, and exploration contributions produce bankable inputs for real equipment upgrades. Each upgrade solves one proven earlier problem while the next depth introduces a different tactical challenge.
 
-**In scope:** Configurable reset hour/timezone with proposed default 06:00 server-local time; advance warnings; safe ejection; disable entry during reset; clear mine-owned terrain/entities/loose items; new run ID and seed; idempotent date-based execution; overdue reset after server downtime; operator status/recovery visibility.
+**Scope:** Versioned graph of pack ores, sources, recipes, tools, armor, hazards, mine rewards, yields, sinks, and capability counters; gap handling where the pack has no suitable item; measured resource bounds; player-facing discovery of useful next upgrades; repeated-run validation of persistence and changed capability.
 
-**Out of scope:** Wiping player inventory, Dispatch lockers, faction-mine state, or other dimensions/regions.
+**Non-goals:** Speculative gear trees, permanent depth skips, automatic grants, paid progression, currency, global recipe/loot edits, or extra death loss. Use the smallest namespaced mine item/recipe only when verified pack content cannot supply a needed counter.
 
-**Dependencies:** M1 ownership/reset transaction; M2 generator; M5 teleport and locker persistence.
+**Depends on:** M0 real item/recipe evidence, M3 ore sources, M4 PvE/exploration rewards, and M5 banking.
 
-**Proof:** Test just-before/at/after schedule, restart while reset is pending, server downtime crossing the reset time, and multiple players inside. Exactly one reset is recorded for the date; players end in the safe surface area; new run differs; lockers/inventories/faction-mine fixtures remain intact.
+**Proof:** Every progression edge has artifact-backed source/cost/output and bounded yield; mining, PvE, and exploration each matter without forcing every player into every role; a group banks and crafts/equips an upgrade, returns in a later run, handles an earlier challenge better, and encounters a different new counter; materials and gear survive reset/restart/relog with no duplication route.
 
-**Risks/open decisions:** Owner must confirm reset clock and timezone before release. Reset must be chunk/tick bounded and recover transactionally if interrupted.
+**Risk:** Recipe names or static definitions do not prove obtainable play behavior. Only playtested capability changes count as progression evidence.
 
-## M7 — Pack-level playthrough, balance, and operations readiness
+## M7 — Configurable morning reset and safe evacuation
 
-**Outcome:** The complete mine is reliable and enjoyable in the real modpack and maintainable by server operators.
+**Outcome:** Each morning the shared mine closes, warns only its occupants, safely evacuates them, and creates one fresh run while preserving durable player progression and unrelated worlds.
 
-**In scope:** Full dedicated-server playthrough with multiple players; performance and memory profiling; ore-rate and mob-pressure tuning; reset and recovery playbook; configs/defaults; admin status/recovery commands if justified by observed failure cases; final player-facing entry, depth, reset, and storage instructions.
+**Scope:** Configurable morning hour and explicit server timezone; product default 06:00 server-local time; warnings; entry lock; safe ejection; mine-owned terrain/entity/drop cleanup; new run ID/seed; idempotent date scheduling; downtime catch-up and interrupted-reset recovery; operator status/recovery.
 
-**Out of scope:** Public mod distribution, modpack integration of unrelated features, changes to the factions mine, and unapproved economy changes.
+**Non-goals:** Wiping player inventories, equipment, progression materials, Dispatch contents, faction-mine state, or other worlds; changing the reset to a wipe of player progression.
 
-**Dependencies:** M0-M6.
+**Depends on:** M1 ownership and persisted lifecycle, M2 generation/cleanup, M5 safe travel/persistence, and M6 progression invariants.
 
-**Proof:** Written run-through evidence covers entry, exploration, all tiered ores, Chaos hazards, BiC encounters, kill rewards, checkpoints, storage, restart, and daily reset. Dedicated server remains stable at agreed concurrency; factions-mine regression path is unchanged; operators can inspect and recover a failed reset without editing files by hand.
+**Proof:** Just-before/at/after schedule, online players, offline downtime, restart during each reset phase, and retry cases produce exactly one fresh run per configured date; players end safely outside; all durable data and faction fixtures remain intact; no new entry occurs during cleanup.
 
-**Risks/open decisions:** Set concurrency and acceptable tick-time budgets with the server owner before calling the system release-ready.
+**Risk:** Reset must be chunk/tick bounded and transactional. Effective time and timezone must be visible to operators and players.
 
-## Current execution
+## M8 — Full-pack playtests, challenge balance, and operator readiness
 
-- M0 is ready for Devin to start after its GitHub issue and private repo are created.
-- Later milestones remain planned, not implemented. M0 evidence can revise technical proposals without changing the accepted player experience.
+**Outcome:** Real players can learn early depth, make meaningful mine-or-fight/bank-or-push decisions, improve durable capability, adapt to new threats, and coordinate to reach the deepest intended region. Operators can run and recover the feature without source-code knowledge.
+
+**Scope:** Repeatable solo, group, and multi-day dedicated-server runs; early/mid/deep playtest cards; route, cue/reaction, mining, combat, exploration, banking, upgrade, death/recovery, group-size, tick/memory/entity, and yield observations; targeted player/admin communications; faction-mine regression; operator setup/help/status/config/validation/recovery exercise; tune only from evidence.
+
+**Non-goals:** Public release or production deployment without separate authorization; claiming subjective fun/addictiveness from code tests; redesigning unrelated pack/faction features.
+
+**Depends on:** M0–M7 evidence.
+
+**Proof:** Same deep encounter compared at solo and coordinated group size; evidence shows teamwork materially changes success/effort through simultaneous tactical demands rather than only inflated stats; at least two daily runs demonstrate a useful upgrade and a new counter; mining, PvE, and exploration are viable contributors; players can understand cues and risk; record player choices/short feedback about whether they want another run; all persistence/reset/admin/faction/performance gates pass. Release readiness is withheld if the evidence is insufficient.
+
+**Risk:** Fun and team dependence are empirical claims. Do not infer them from code, a solo developer run, or one successful server boot.
+
+## Current execution status
+
+- M0 is the active implementation handoff. GitHub issue [#1](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1) is open; the shared worktree contains uncommitted scaffold and compatibility evidence, but `PublicMines.java` is still scaffold-only and no implementation PR is open.
+- Preserve the shared worktree. Devin must inspect it before editing; do not reset, clean, or overwrite existing audit/scaffold work.
+- M1–M8 are planned and remain required. No gameplay milestone is complete. No production deployment is authorized.
 
 ## Issue contract map
 
-- M0: docs/issues/M0-foundation.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1
-- M1: docs/issues/M1-shared-run-lifecycle.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/2
-- M2: docs/issues/M2a-procedural-topology.md (#3) and docs/issues/M2b-world-generation.md (#4)
-- M3: docs/issues/M3-ore-ecology.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/5
-- M4: docs/issues/M4a-bic-encounters.md (#6) and docs/issues/M4b-mine-rewards.md (#7)
-- M5: docs/issues/M5a-checkpoints-travel.md (#8) and docs/issues/M5b-dispatch-locker.md (#9)
-- M6: docs/issues/M6-daily-reset.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/10
-- M7: docs/issues/M7-pack-validation.md — https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/11
-
-
+| Milestone | Outcome issues |
+| --- | --- |
+| M0 Foundation and pack compatibility | [#1](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1) |
+| M1 Shared lifecycle and admin onboarding | [#2](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/2), [#12](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/12) |
+| M2 Procedural topology and generation | [#3](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/3), [#4](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/4) |
+| M3 Ore ecology | [#5](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/5) |
+| M4 Born in Chaos and mine rewards | [#6](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/6), [#7](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/7) |
+| M5 Checkpoints, travel, and Dispatch | [#8](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/8), [#9](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/9) |
+| M6 Gear progression and expedition economy | [#13](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/13) |
+| M7 Morning reset | [#10](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/10) |
+| M8 Playtests and operator readiness | [#11](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/11) |

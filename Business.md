@@ -41,11 +41,11 @@ The mine uses generated block geometry. The experience may have recognizable reg
 
 ## Assumptions and open product choices
 
-- Proposed morning reset default is 06:00 server-local time; the exact time and timezone need confirmation before the reset milestone is finalized.
-- Dispatch capacity must exceed 27 slots; 54 slots is the current proposal. Final capacity and expansion rules remain open.
+- Product decision: the configurable morning reset defaults to 06:00 in the configured server timezone. Operators can change the supported schedule in game; the effective time and timezone must be visible.
+- Product decision: Foreman's Dispatch has at least 54 slots in the first version. Expansion rules are deferred; its capacity must remain greater than a vanilla Ender Chest.
 - The exact world dimension/region strategy and daily generation bounds are technical decisions for M0/M1 based on server-safe evidence.
 - The target ore catalog and safe Born in Chaos encounter set must be verified from the actual pack artifacts.
-- Death, item-loss, and checkpoint respawn rules are not defined here; do not invent them during implementation.
+- Death, item-loss, and checkpoint respawn rules remain unchanged from the pack's vanilla behavior in v1; do not add a mine-specific death penalty during implementation.
 
 
 ## Evidence and references

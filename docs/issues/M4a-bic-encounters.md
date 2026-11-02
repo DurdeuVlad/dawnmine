@@ -18,6 +18,7 @@ The mine chooses only entities verified from the exact pack artifact, places enc
 ## Context that code cannot infer
 
 - Target pack catalog lists Born in Chaos 1.7.6 and GeckoLib 4.9.2; M0 must verify exact jar and IDs.
+- M0 now identifies `born_in_chaos_v1:diamond_termite` as a verified pack registry entry. The infected diamond ore player-break procedures call Diamond Termite spawn paths; the ore tables yield no direct items in the tested tool context, while termite shards have a nine-to-one diamond recipe. See the [M0 runtime encounter evidence](../reports/M0-native-loot-smoke.md). This is a promising ambush-and-material loop, but actual player behavior remains untested.
 - Born in Chaos AI and drops outside the mine must remain unchanged.
 - Some BiC mobs have special abilities that may be unsafe in confined tunnels; candidates need review and playtest.
 
@@ -27,6 +28,7 @@ The mine chooses only entities verified from the exact pack artifact, places enc
 - Check mod/artifact availability and fail closed with a clear diagnostic if a configured entity is missing.
 - Spawn only at validated M2 sites with safe floor/headroom and a per-region/population budget.
 - Persist mine-origin identity for runtime cleanup and M4b reward handling.
+- If generated BiC blocks can summon mobs through their native break hooks, capture those resulting entities in the same mine-origin lifecycle so reset cleanup remains bounded; do not change behavior outside the mine.
 - Prevent duplicates after restart and clean up on run reset.
 
 ## Non-goals
@@ -47,7 +49,8 @@ No global spawn-rule changes, BiC class coupling, rebalancing BiC AI/attributes/
 3. Invalid IDs, missing BiC, or bad spawn surfaces do not crash the dedicated server or spawn substitutes silently.
 4. Spawned mobs are tracked as mine-owned, are cleaned on reset/recovery, and cannot accumulate without bound.
 5. Natural BiC spawns outside the mine retain unchanged spawn/AI/drop behavior.
-6. Tests cover missing entity IDs, bad spawn positions, cap enforcement, restart, and cleanup.
+6. If infected diamond ores are included, player-break tests prove their summoned Diamond Termites are tracked, contained, reset-cleaned, and reward shards as expected; otherwise those blocks are excluded from mine generation until the hook is safely integrated.
+7. Tests cover missing entity IDs, bad spawn positions, cap enforcement, restart, and cleanup.
 
 ## Verification
 
