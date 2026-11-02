@@ -12,6 +12,7 @@ import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.dispatch.DispatchManager;
 import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.generation.OreCatalog;
+import com.rusticcraft.publicmines.progression.ProgressionGraph;
 import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineRunData;
@@ -58,6 +59,7 @@ public final class PublicMineCommand {
         root.then(literal("leave").executes(ctx -> leave(ctx)));
         root.then(literal("exit").executes(ctx -> leave(ctx)));
         root.then(literal("checkpoints").executes(ctx -> checkpoints(ctx.getSource())));
+        root.then(literal("progression").executes(ctx -> progression(ctx.getSource())));
         root.then(literal("checkpoint")
                 .then(argument("id", StringArgumentType.word()).suggests(CHECKPOINT_IDS)
                         .executes(ctx -> checkpoint(ctx.getSource(),
@@ -111,11 +113,13 @@ public final class PublicMineCommand {
         lines.add("  /publicmine checkpoints - list shared generated checkpoints");
         lines.add("  /publicmine checkpoint <id> - travel to a generated checkpoint");
         lines.add("  /publicmine dispatch - open your private 54-slot Foreman's Dispatch at a checkpoint or surface depot");
+        lines.add("  /publicmine progression - what your mine finds can become");
         if (admin) {
             lines.add("");
             lines.add("Staff commands (operator level " + ADMIN_LEVEL + "+):");
             lines.add("  /publicmine status            - full run diagnostics");
             lines.add("  /publicmine rewards           - show depth combat bonus rates and purposes");
+            lines.add("  /publicmine progression       - progression graph diagnostics");
             lines.add("  /publicmine setup validate    - check what is missing");
             lines.add("  /publicmine setup initialize  - create or repair the mine (safe to re-run)");
             lines.add("  /publicmine config get [key]  - show settings");
@@ -166,6 +170,9 @@ public final class PublicMineCommand {
                 : OreCatalog.active().completeness(manager.mineLevel());
         lines.add("Ore catalog: " + (oreCatalog == null ? "not validated (mine dimension unavailable)"
                 : OreCatalog.describe(oreCatalog)));
+        ProgressionGraph.ProgressionSnapshot graph = ProgressionGraph.active();
+        lines.add("Progression graph: " + graph.adminSummary()
+                + (graph.completeness().complete() ? " (integrity ok)" : " (integrity issues — see '/publicmine progression')"));
         lines.add("Active region: chunks [" + data.boundMinChunkX() + ", " + data.boundMinChunkZ()
                 + "] to [" + data.boundMaxChunkX() + ", " + data.boundMaxChunkZ() + "]");
         lines.add("Arrival: " + (data.mineArrival() == null ? "(not set)" : MineManager.describePos(data.mineArrival()))
@@ -192,6 +199,82 @@ public final class PublicMineCommand {
         MineMessages.tell(src, "Configured mine combat bonuses: " + MineRewardCatalog.adminSummary());
         MineMessages.tell(src, "These per-encounter rates are configurable by data pack; final balance is subject to M8 playtests.");
         return 1;
+    }
+
+    private static int progression(CommandSourceStack src) {
+        ProgressionGraph.ProgressionSnapshot graph = ProgressionGraph.active();
+        if (graph.materials().isEmpty()) {
+            MineMessages.tell(src, "The mine progression graph failed to load; staff can check the server log.");
+            return 0;
+        }
+        List<String> lines = new ArrayList<>();
+        lines.add("=== What your mine finds can become ===");
+        lines.add("Bank finds on the surface with '/publicmine leave' - carried gear and stored");
+        lines.add("materials are yours to keep across daily runs. Tomorrow's route goes deeper.");
+        for (String tier : new String[] {"upper", "middle", "chaos"}) {
+            List<ProgressionGraph.Upgrade> hints = graph.reachableUpgrades(tier);
+            if (hints.isEmpty()) continue;
+            String title = switch (tier) {
+                case "upper" -> "Upper Galleries";
+                case "middle" -> "Middle Descent";
+                default -> "Chaos Depths";
+            };
+            lines.add("");
+            lines.add(title + ":");
+            for (ProgressionGraph.Upgrade upgrade : hints) {
+                lines.add("  - " + upgrade.output() + " — " + firstSentence(upgrade.solves()));
+            }
+        }
+        if (!src.hasPermission(ADMIN_LEVEL)) {
+            lines.add("");
+            lines.add("Ask a server operator for the full progression report.");
+        } else {
+            lines.add("");
+            lines.add("Graph: " + graph.adminSummary());
+            ProgressionGraph.Completeness completeness = graph.completeness();
+            if (completeness.complete()) {
+                lines.add("Integrity: all sources, drops, rewards, and items resolved.");
+            } else {
+                lines.add("Integrity issues:");
+                if (!completeness.unavailableItems().isEmpty()) {
+                    lines.add("  unavailable items: " + completeness.unavailableItems());
+                }
+                if (!completeness.unknownMiningBlocks().isEmpty()) {
+                    lines.add("  unknown mining blocks: " + completeness.unknownMiningBlocks());
+                }
+                if (!completeness.miningDropMismatches().isEmpty()) {
+                    lines.add("  mining drop mismatches: " + completeness.miningDropMismatches());
+                }
+                if (!completeness.unknownRewardTiers().isEmpty()) {
+                    lines.add("  unknown reward tiers: " + completeness.unknownRewardTiers());
+                }
+                if (!completeness.rewardItemMismatches().isEmpty()) {
+                    lines.add("  reward item mismatches: " + completeness.rewardItemMismatches());
+                }
+                if (!completeness.unavailableSourceEntities().isEmpty()) {
+                    lines.add("  unavailable source entities: " + completeness.unavailableSourceEntities());
+                }
+                if (!completeness.errors().isEmpty()) {
+                    lines.add("  load errors: " + completeness.errors());
+                }
+            }
+            if (!graph.blocked().isEmpty()) {
+                lines.add("Blocked (verified pack gaps, not fabricated):");
+                for (ProgressionGraph.BlockedNode node : graph.blocked()) {
+                    lines.add("  - " + node.item() + ": " + node.reason());
+                }
+            }
+        }
+        MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static String firstSentence(String text) {
+        int end = text.indexOf(". ");
+        if (end < 0) end = text.indexOf(';');
+        if (end < 0) end = Math.min(text.length(), 140);
+        String sentence = text.substring(0, Math.min(end + 1, 160)).trim();
+        return sentence.endsWith(".") ? sentence : sentence + "…";
     }
 
     private static int checkpoints(CommandSourceStack src) {

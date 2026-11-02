@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.command.PublicMineCommand;
 import com.rusticcraft.publicmines.command.OreBreakAuditCommand;
 import com.rusticcraft.publicmines.command.MineEncounterAuditCommand;
+import com.rusticcraft.publicmines.command.MineProgressionAuditCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.dispatch.DispatchManager;
 import com.rusticcraft.publicmines.dispatch.DispatchGameTests;
@@ -15,9 +16,11 @@ import com.rusticcraft.publicmines.generation.PublicMineWorldgen;
 import com.rusticcraft.publicmines.encounter.MineEncounterCatalog;
 import com.rusticcraft.publicmines.encounter.MineRewardCatalog;
 import com.rusticcraft.publicmines.encounter.MineEncounterManager;
+import com.rusticcraft.publicmines.progression.ProgressionGraph;
 import com.rusticcraft.publicmines.protection.MineProtectionEvents;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineProtectionGameTests;
+import com.rusticcraft.publicmines.run.MineProgressionGameTests;
 import com.rusticcraft.publicmines.run.MineEncounterGameTests;
 import com.rusticcraft.publicmines.topology.TopologyProfiles;
 import net.neoforged.bus.api.IEventBus;
@@ -63,12 +66,14 @@ public class PublicMines {
         PublicMineCommand.register(event.getDispatcher());
         OreBreakAuditCommand.register(event.getDispatcher());
         MineEncounterAuditCommand.register(event.getDispatcher());
+        MineProgressionAuditCommand.register(event.getDispatcher());
     }
 
     private void onRegisterGameTests(RegisterGameTestsEvent event) {
         event.register(MineLifecycleGameTests.class);
         event.register(MineProtectionGameTests.class);
         event.register(MineEncounterGameTests.class);
+        event.register(MineProgressionGameTests.class);
         event.register(OreBreakGameTests.class);
         event.register(DispatchGameTests.class);
     }
@@ -78,6 +83,7 @@ public class PublicMines {
         event.addListener(new MineEncounterCatalog());
         event.addListener(new MineRewardCatalog());
         event.addListener(OreCatalog.createReloadListener());
+        event.addListener(ProgressionGraph.createReloadListener());
     }
 
     private void onServerStarted(ServerStartedEvent event) {
