@@ -30,8 +30,6 @@ import net.minecraft.world.level.saveddata.SavedData;
 public class MineRunData extends SavedData {
     public static final String DATA_NAME = "publicmines_run";
     private static final int SCHEMA = 3;
-    /** Segment identity count is below the topology planner's hard node cap,
-     * with room for edges and a bounded pending frontier. */
     static final int MAX_GENERATION_SEGMENTS = 16_384;
     static final int MAX_GENERATION_SEGMENT_ID_LENGTH = 96;
     static final int MAX_GENERATION_OPERATION_CURSOR = 1_000_000;

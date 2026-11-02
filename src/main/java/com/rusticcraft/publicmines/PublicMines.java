@@ -5,6 +5,7 @@ import com.rusticcraft.publicmines.command.PublicMineCommand;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.generation.MineGenerator;
 import com.rusticcraft.publicmines.gametest.MineLifecycleGameTests;
+import com.rusticcraft.publicmines.generation.PublicMineWorldgen;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.topology.TopologyProfiles;
 import net.neoforged.bus.api.IEventBus;
@@ -33,6 +34,7 @@ public class PublicMines {
 
     public PublicMines(IEventBus modEventBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, PublicMineConfig.SPEC);
+        PublicMineWorldgen.register(modEventBus);
         modEventBus.addListener(this::onRegisterGameTests);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);

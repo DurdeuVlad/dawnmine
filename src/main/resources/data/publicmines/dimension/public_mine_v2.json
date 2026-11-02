@@ -1,7 +1,8 @@
 {
-  "type": "publicmines:public_mine",
+  "type": "publicmines:public_mine_v2",
   "generator": {
-    "type": "minecraft:flat",
+    "type": "publicmines:bounded_flat",
+    "shell_radius_chunks": 64,
     "settings": {
       "biome": "minecraft:plains",
       "lakes": false,

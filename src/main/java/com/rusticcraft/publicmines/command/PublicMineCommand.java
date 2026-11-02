@@ -9,6 +9,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineRunData;
 import com.rusticcraft.publicmines.run.OwnedVolume;
@@ -139,6 +140,8 @@ public final class PublicMineCommand {
                 + data.pendingGenerationSegments().size() + " queued, active "
                 + (data.activeGenerationSegment().isEmpty() ? "(none)"
                         : data.activeGenerationSegment() + " at operation " + data.activeGenerationCursor()));
+        lines.add("Boundary shell: " + PublicMineConfig.mineRegionRadiusChunks()
+                + " chunks, generated before each chunk becomes available");
         lines.add("Active region: chunks [" + data.boundMinChunkX() + ", " + data.boundMinChunkZ()
                 + "] to [" + data.boundMaxChunkX() + ", " + data.boundMaxChunkZ() + "]");
         lines.add("Arrival: " + (data.mineArrival() == null ? "(not set)" : MineManager.describePos(data.mineArrival()))

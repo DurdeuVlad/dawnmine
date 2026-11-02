@@ -72,8 +72,11 @@ public final class PublicMineConfig {
 
         MINE_REGION_RADIUS_CHUNKS = builder.comment(
                         "Radius, in 16x16 chunk columns, of the active mine region centred on",
-                        "the arrival point of the public_mine dimension. Range "
+                        "the arrival point of the public_mine_v2 dimension. Range "
                                 + REGION_RADIUS_MIN + "-" + REGION_RADIUS_MAX + ".",
+                        "Must match shell_radius_chunks in data/publicmines/dimension/public_mine_v2.json.",
+                        "A mismatch fails mine setup closed; changing the radius after chunks exist",
+                        "requires a fresh public_mine_v2 dimension so an old shell cannot remain inside it.",
                         "Recorded as the cleanup ownership boundary for M2 generation.",
                         "Changes apply when the next run is initialized; they never resize",
                         "the currently active run.")

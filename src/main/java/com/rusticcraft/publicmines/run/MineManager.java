@@ -3,6 +3,7 @@ package com.rusticcraft.publicmines.run;
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.PublicMines;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.generation.MineShellGeometry;
 import com.rusticcraft.publicmines.topology.MineTopology;
 import com.rusticcraft.publicmines.topology.TopologyException;
 import com.rusticcraft.publicmines.topology.TopologyPlan;
@@ -37,7 +38,7 @@ public class MineManager {
     /** Dimension key of the shared public mine. The dimension is shipped as a
      * datapack resource in this mod and loaded with the world. */
     public static final ResourceKey<Level> MINE_DIMENSION = ResourceKey.create(
-            Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(PublicMines.MOD_ID, "public_mine"));
+            Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(PublicMines.MOD_ID, "public_mine_v2"));
 
     /** Arrival point inside the mine dimension (feet position). */
     public static final BlockPos ARRIVAL = new BlockPos(0, 63, 0);
@@ -118,6 +119,17 @@ public class MineManager {
         }
 
         if (data.status() == RunStatus.READY) {
+            String shellError = MineShellGeometry.configurationError(mineLevel(),
+                    PublicMineConfig.mineRegionRadiusChunks());
+            if (shellError.isEmpty()) {
+                shellError = MineShellGeometry.persistedBoundsError(data,
+                        PublicMineConfig.mineRegionRadiusChunks());
+            }
+            if (!shellError.isEmpty()) {
+                data.markFailed("mine boundary validation failed: " + shellError);
+                steps.add(Step.fail("boundary shell", shellError));
+                return steps;
+            }
             Check topology = checkTopology(mineLevel());
             if (!topology.ok()) {
                 data.markFailed("READY run topology check failed: " + topology.detail());
@@ -137,6 +149,14 @@ public class MineManager {
             return steps;
         }
         steps.add(Step.ok("dimension", "dimension " + MINE_DIMENSION.location() + " is loaded"));
+
+        String shellError = MineShellGeometry.configurationError(mine,
+                PublicMineConfig.mineRegionRadiusChunks());
+        if (!shellError.isEmpty()) {
+            data.markFailed("mine boundary validation failed: " + shellError);
+            steps.add(Step.fail("boundary shell", shellError));
+            return steps;
+        }
 
         try {
             long sequence = data.runSequence() + 1;
@@ -321,6 +341,12 @@ public class MineManager {
                 : Check.fail("dimension", MINE_DIMENSION.location()
                         + " is not loaded; restart the server, then run '/publicmine setup validate' again"));
 
+        String shellError = MineShellGeometry.configurationError(mine,
+                PublicMineConfig.mineRegionRadiusChunks());
+        checks.add(shellError.isEmpty()
+                ? Check.pass("boundary shell", "bounded flat generator matches the configured mine radius")
+                : Check.fail("boundary shell", shellError));
+
         checks.add(PublicMineConfig.isValidTimeZone(PublicMineConfig.resetTimeZoneName())
                 ? Check.pass("reset timezone", "reset clock uses " + PublicMineConfig.resetZoneId()
                         + (PublicMineConfig.resetTimeZoneName().equalsIgnoreCase("server")
@@ -348,6 +374,11 @@ public class MineManager {
     }
 
     private void validateReadyRun(ServerLevel mine, List<Check> checks) {
+        String shellError = MineShellGeometry.persistedBoundsError(data,
+                PublicMineConfig.mineRegionRadiusChunks());
+        checks.add(shellError.isEmpty()
+                ? Check.pass("shell ownership", "saved active bounds match the enclosing bedrock shell")
+                : Check.fail("shell ownership", shellError));
         if (data.runId().isEmpty() || data.seed() == 0) {
             checks.add(Check.fail("run record", "run is READY but run id or seed is missing; run '/publicmine recover repair'"));
         } else {
