@@ -1,0 +1,99 @@
+registry_id,entity_class,mob_category,use_status
+born_in_chaos_v1:baby_skeleton,net.mcreator.borninchaosv.entity.BabySkeletonEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:baby_skeleton_minion,net.mcreator.borninchaosv.entity.BabySkeletonMinionEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:baby_spider,net.mcreator.borninchaosv.entity.BabySpiderEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:baby_spider_controlled,net.mcreator.borninchaosv.entity.BabySpiderControlledEntity,CREATURE,living non-monster category; verify behavior before considering
+born_in_chaos_v1:barrel_zombie,net.mcreator.borninchaosv.entity.BarrelZombieEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:bloody_gadfly,net.mcreator.borninchaosv.entity.BloodyGadflyEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:bone_imp,net.mcreator.borninchaosv.entity.BoneImpEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:bone_imp_minion,net.mcreator.borninchaosv.entity.BoneImpMinionEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:bonescaller,net.mcreator.borninchaosv.entity.BonescallerEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:bonescaller_not_despawn,net.mcreator.borninchaosv.entity.BonescallerNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:controlled_baby_skeleton,net.mcreator.borninchaosv.entity.ControlledBabySkeletonEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:controlled_spiritual_assistant,net.mcreator.borninchaosv.entity.ControlledSpiritualAssistantEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:corpse_fish,net.mcreator.borninchaosv.entity.CorpseFishEntity,WATER_CREATURE,living non-monster category; verify behavior before considering
+born_in_chaos_v1:corpse_fly,net.mcreator.borninchaosv.entity.CorpseFlyEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:dark_vortex,net.mcreator.borninchaosv.entity.DarkVortexEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:decaying_zombie,net.mcreator.borninchaosv.entity.DecayingZombieEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:decaying_zombie_not_despawn,net.mcreator.borninchaosv.entity.DecayingZombieNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:decrepit_skeleton,net.mcreator.borninchaosv.entity.DecrepitSkeletonEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:diamond_termite,net.mcreator.borninchaosv.entity.DiamondThermiteEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:dire_hound_leader,net.mcreator.borninchaosv.entity.DireHoundLeaderEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:door_knight,net.mcreator.borninchaosv.entity.DoorKnightEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:door_knight_not_despawn,net.mcreator.borninchaosv.entity.DoorKnightNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:dread_hound,net.mcreator.borninchaosv.entity.DreadHoundEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:dread_hound_not_despawn,net.mcreator.borninchaosv.entity.DreadHoundNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:fallen_chaos_knight,net.mcreator.borninchaosv.entity.FallenChaosKnightEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:felsteed,net.mcreator.borninchaosv.entity.FelsteedEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:firelight,net.mcreator.borninchaosv.entity.FirelightEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:firelight_not_despawn,net.mcreator.borninchaosv.entity.FirelightNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:glutton_fish,net.mcreator.borninchaosv.entity.GluttonFishEntity,WATER_CREATURE,living non-monster category; verify behavior before considering
+born_in_chaos_v1:infernal_spirit,net.mcreator.borninchaosv.entity.InfernalSpiritEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:intoxicatind_bomb_projectile,net.mcreator.borninchaosv.entity.IntoxicatindBombProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:krampus,net.mcreator.borninchaosv.entity.KrampusEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:krampus_henchman,net.mcreator.borninchaosv.entity.KrampusHenchmanEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lifestealer,net.mcreator.borninchaosv.entity.LifestealerEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lifestealer_true_form,net.mcreator.borninchaosv.entity.LifestealerTrueFormEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lord_pumpkinhead,net.mcreator.borninchaosv.entity.LordPumpkinheadEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lord_pumpkinhead_head,net.mcreator.borninchaosv.entity.LordPumpkinheadHeadEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lord_pumpkinhead_withouta_horse,net.mcreator.borninchaosv.entity.LordPumpkinheadWithoutaHorseEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lord_the_headless,net.mcreator.borninchaosv.entity.LordTheHeadlessEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:lords_felsteed,net.mcreator.borninchaosv.entity.LordsFelsteedEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:maggot,net.mcreator.borninchaosv.entity.MaggotEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:missionary_charge,net.mcreator.borninchaosv.entity.MissionaryChargeEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:missionary_raider,net.mcreator.borninchaosv.entity.MissionaryRaiderEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:missioner,net.mcreator.borninchaosv.entity.MissionerEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:monstrous_easter_egg_projectile,net.mcreator.borninchaosv.entity.MonstrousEasterEggProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:mother_spider,net.mcreator.borninchaosv.entity.MotherSpiderEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:mr_pumpkin,net.mcreator.borninchaosv.entity.MrPumpkinEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:mr_pumpkin_controlled,net.mcreator.borninchaosv.entity.MrPumpkinControlledEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:mrs_pumpkin,net.mcreator.borninchaosv.entity.MrsPumpkinEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:nightmare_stalker,net.mcreator.borninchaosv.entity.NightmareStalkerEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:phantom_bomb_entity,net.mcreator.borninchaosv.entity.PhantomBombEntityEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:phantom_bomb_projectile,net.mcreator.borninchaosv.entity.PhantomBombProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:phantom_creeper,net.mcreator.borninchaosv.entity.PhantomCreeperEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:phantom_creeper_copy,net.mcreator.borninchaosv.entity.PhantomCreeperCopyEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:pumpkin_bomb,net.mcreator.borninchaosv.entity.PumpkinBombEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:pumpkin_bruiser,net.mcreator.borninchaosv.entity.PumpkinBruiserEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:pumpkin_dunce,net.mcreator.borninchaosv.entity.PumpkinDunceEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:pumpkin_pistol_2_projectile,net.mcreator.borninchaosv.entity.PumpkinPistol2ProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:pumpkin_pistol_projectile,net.mcreator.borninchaosv.entity.PumpkinPistolProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:pumpkin_spirit,net.mcreator.borninchaosv.entity.PumpkinSpiritEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:pumpkin_staff_2_projectile,net.mcreator.borninchaosv.entity.PumpkinStaff2ProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:pumpkin_staff_projectile,net.mcreator.borninchaosv.entity.PumpkinStaffProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:pumpkinhead,net.mcreator.borninchaosv.entity.PumpkinheadEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:restless_spirit,net.mcreator.borninchaosv.entity.RestlessSpiritEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:riding_felsteed,net.mcreator.borninchaosv.entity.RidingFelsteedEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:riding_lords_felsteed,net.mcreator.borninchaosv.entity.RidingLordsFelsteedEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:rotten_easter_egg_projectile,net.mcreator.borninchaosv.entity.RottenEasterEggProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:scarlet_persecutor,net.mcreator.borninchaosv.entity.ScarletPersecutorEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:seared_spirit,net.mcreator.borninchaosv.entity.SearedSpiritEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:seared_spirit_not_despawn,net.mcreator.borninchaosv.entity.SearedSpiritNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:senor_pumpkin,net.mcreator.borninchaosv.entity.SenorPumpkinEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:siamese_skeletons,net.mcreator.borninchaosv.entity.SiameseSkeletonsEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:siamese_skeletonsleft,net.mcreator.borninchaosv.entity.SiameseSkeletonsleftEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:siamese_skeletonsright,net.mcreator.borninchaosv.entity.SiameseSkeletonsrightEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:sir_pumpkinhead,net.mcreator.borninchaosv.entity.SirPumpkinheadEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:sir_pumpkinhead_without_horse,net.mcreator.borninchaosv.entity.SirPumpkinheadWithoutHorseEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:sir_the_headless,net.mcreator.borninchaosv.entity.SirTheHeadlessEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:skeleton_demoman,net.mcreator.borninchaosv.entity.SkeletonDemomanEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:skeleton_thrasher,net.mcreator.borninchaosv.entity.SkeletonThrasherEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:skeleton_thrasher_not_despawn,net.mcreator.borninchaosv.entity.SkeletonThrasherNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:spirit_guide,net.mcreator.borninchaosv.entity.SpiritGuideEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:spirit_guide_assistant,net.mcreator.borninchaosv.entity.SpiritGuideAssistantEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:spiritof_chaos,net.mcreator.borninchaosv.entity.SpiritofChaosEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:spiritual_easter_egg_projectile,net.mcreator.borninchaosv.entity.SpiritualEasterEggProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:staffof_blindness_projectile,net.mcreator.borninchaosv.entity.StaffofBlindnessProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:staffof_magic_arrows_2_projectile,net.mcreator.borninchaosv.entity.StaffofMagicArrows2ProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:staffof_magic_arrows_projectile,net.mcreator.borninchaosv.entity.StaffofMagicArrowsProjectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:stimulating_bombprojectile,net.mcreator.borninchaosv.entity.StimulatingBombprojectileEntity,MISC,misc entity; likely projectile/utility; do not use as ordinary mob without review
+born_in_chaos_v1:supreme_bonescaller,net.mcreator.borninchaosv.entity.SupremeBonescallerEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:supreme_bonescaller_not_despawn,net.mcreator.borninchaosv.entity.SupremeBonescallerNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:supreme_bonescaller_stage_2,net.mcreator.borninchaosv.entity.SupremeBonescallerStage2Entity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:swarmer,net.mcreator.borninchaosv.entity.SwarmerEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:thornshell_crab,net.mcreator.borninchaosv.entity.ThornshellCrabEntity,CREATURE,living non-monster category; verify behavior before considering
+born_in_chaos_v1:zombie_bruiser,net.mcreator.borninchaosv.entity.ZombieBruiserEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:zombie_clown,net.mcreator.borninchaosv.entity.ZombieClownEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:zombie_clown_not_despawn,net.mcreator.borninchaosv.entity.ZombieClownNotDespawnEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:zombie_fisherman,net.mcreator.borninchaosv.entity.ZombieFishermanEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"
+born_in_chaos_v1:zombie_lumberjack,net.mcreator.borninchaosv.entity.ZombieLumberjackEntity,MONSTER,"monster category; candidate only—verify AI, behavior, spawn suitability, and playtest"

@@ -1,0 +1,30 @@
+block_id,tool_context,loot_table,observed_outcome,observed_item_id,observed_count,log_timestamp
+abyssal_decor:seabrass_ore,minecraft:diamond_pickaxe (no enchantments),abyssal_decor:blocks/seabrass_ore,1 [Raw Seabrass],abyssal_decor:raw_seabrass,1,02:47:46
+born_in_chaos_v1:infected_deepslate_diamond_ore,minecraft:diamond_pickaxe (no enchantments),born_in_chaos_v1:blocks/infected_deepslate_diamond_ore,0 items,,,02:47:46
+born_in_chaos_v1:infected_diamond_ore,minecraft:diamond_pickaxe (no enchantments),born_in_chaos_v1:blocks/infected_diamond_ore,0 items,,,02:47:46
+butchery:deepslate_sulfur_ore,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/deepslate_sulfur_ore,4 [Sulfur],butchery:sulfur,4,02:47:46
+butchery:sulfur_ore,minecraft:diamond_pickaxe (no enchantments),butchery:blocks/sulfur_ore,3 [Sulfur],butchery:sulfur,3,02:47:46
+create:deepslate_zinc_ore,minecraft:diamond_pickaxe (no enchantments),create:blocks/deepslate_zinc_ore,1 [Raw Zinc],create:raw_zinc,1,02:47:46
+create:zinc_ore,minecraft:diamond_pickaxe (no enchantments),create:blocks/zinc_ore,1 [Raw Zinc],create:raw_zinc,1,02:47:46
+fungidelight:truffle_dirt,minecraft:diamond_pickaxe (no enchantments),fungidelight:blocks/truffle_dirt,2 [Truffle],fungidelight:truffle,2,02:47:46
+minecraft:ancient_debris,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/ancient_debris,1 [Ancient Debris],minecraft:ancient_debris,1,02:47:56
+minecraft:coal_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/coal_ore,1 [Coal],minecraft:coal,1,02:47:56
+minecraft:copper_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/copper_ore,2 [Raw Copper],minecraft:raw_copper,2,02:47:56
+minecraft:deepslate_coal_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_coal_ore,1 [Coal],minecraft:coal,1,02:47:56
+minecraft:deepslate_copper_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_copper_ore,3 [Raw Copper],minecraft:raw_copper,3,02:47:56
+minecraft:deepslate_diamond_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_diamond_ore,1 [Diamond],minecraft:diamond,1,02:47:56
+minecraft:deepslate_emerald_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_emerald_ore,1 [Emerald],minecraft:emerald,1,02:47:56
+minecraft:deepslate_gold_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_gold_ore,1 [Raw Gold],minecraft:raw_gold,1,02:47:56
+minecraft:deepslate_iron_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_iron_ore,1 [Raw Iron],minecraft:raw_iron,1,02:47:56
+minecraft:deepslate_lapis_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_lapis_ore,7 [Lapis Lazuli],minecraft:lapis_lazuli,7,02:47:56
+minecraft:deepslate_redstone_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/deepslate_redstone_ore,5 [Redstone Dust],minecraft:redstone,5,02:47:56
+minecraft:diamond_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/diamond_ore,1 [Diamond],minecraft:diamond,1,02:47:56
+minecraft:emerald_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/emerald_ore,1 [Emerald],minecraft:emerald,1,02:47:56
+minecraft:gold_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/gold_ore,1 [Raw Gold],minecraft:raw_gold,1,02:47:56
+minecraft:iron_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/iron_ore,1 [Raw Iron],minecraft:raw_iron,1,02:47:56
+minecraft:lapis_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/lapis_ore,7 [Lapis Lazuli],minecraft:lapis_lazuli,7,02:47:56
+minecraft:nether_gold_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/nether_gold_ore,3 [Gold Nugget],minecraft:gold_nugget,3,02:47:56
+minecraft:nether_quartz_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/nether_quartz_ore,1 [Nether Quartz],minecraft:quartz,1,02:47:56
+minecraft:redstone_ore,minecraft:diamond_pickaxe (no enchantments),minecraft:blocks/redstone_ore,4 [Redstone Dust],minecraft:redstone,4,02:47:56
+werewolves:deepslate_silver_ore,minecraft:diamond_pickaxe (no enchantments),werewolves:blocks/deepslate_silver_ore,1 [Raw Silver],werewolves:raw_silver,1,02:47:46
+werewolves:silver_ore,minecraft:diamond_pickaxe (no enchantments),werewolves:blocks/silver_ore,1 [Raw Silver],werewolves:raw_silver,1,02:47:46
