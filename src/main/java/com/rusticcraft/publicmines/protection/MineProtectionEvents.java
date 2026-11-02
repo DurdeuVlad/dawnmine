@@ -297,8 +297,10 @@ public final class MineProtectionEvents {
     public void onProjectileJoin(EntityJoinLevelEvent event) {
         if (!(event.getEntity() instanceof Projectile projectile)
                 || !(event.getLevel() instanceof ServerLevel level)
-                || !isMineWorld(level)) return;
+                || !isMineWorld(level) && !isOverworld(level)) return;
         if (event.loadedFromDisk() && projectile.getPersistentData().getBoolean(SAFE_ZONE_LAUNCH_TAG)) return;
+        MineRunData currentData = MineManager.get(level.getServer()).data();
+        if (!isMineWorld(level) && !currentData.hasSafeZonesInDimension(level.dimension())) return;
         List<Entity> sources = ownerChain(projectile);
         MineRunData data = dataForEntities(level, sources, projectile);
         if (data == null) return;
@@ -315,8 +317,9 @@ public final class MineProtectionEvents {
         Entity hostile = event.getEntity();
         if (!(hostile instanceof Enemy)
                 || !(event.getLevel() instanceof ServerLevel level)
-                || !isMineWorld(level)) return;
+                || !isMineWorld(level) && !isOverworld(level)) return;
         MineRunData data = MineManager.get(level.getServer()).data();
+        if (isOverworld(level) && !data.hasSafeZonesInDimension(level.dimension())) return;
         if (intersectsSafeZone(data, level, hostile)) {
             event.setCanceled(true);
         }
@@ -328,8 +331,9 @@ public final class MineProtectionEvents {
         Entity entity = event.getEntity();
         if (!(entity instanceof Enemy)
                 || !(entity.level() instanceof ServerLevel level)
-                || !isMineWorld(level)) return;
+                || !isMineWorld(level) && !isOverworld(level)) return;
         MineRunData data = MineManager.get(level.getServer()).data();
+        if (isOverworld(level) && !data.hasSafeZonesInDimension(level.dimension())) return;
         if (intersectsSafeZone(data, level, entity)) {
             entity.discard();
         }
@@ -337,17 +341,25 @@ public final class MineProtectionEvents {
 
     private static boolean intersectsSafeZone(MineRunData data, ServerLevel level, Entity entity) {
         AABB bounds = entity.getBoundingBox();
+        if (isOverworld(level)) {
+            MineRunData.SafeZone exitZone = data.safeZone(MineRunData.surfaceExitSafeZoneId());
+            return exitZone != null && intersects(bounds, exitZone.volume());
+        }
         String activeRunId = data.runId();
         return data.safeZones().stream()
                 .filter(zone -> zone.runId().equals(activeRunId)
                         && zone.volume().dimension().equals(level.dimension()))
                 .map(MineRunData.SafeZone::volume)
-                .anyMatch(volume -> bounds.maxX > volume.min().getX()
-                        && bounds.minX < volume.max().getX() + 1.0
-                        && bounds.maxY > volume.min().getY()
-                        && bounds.minY < volume.max().getY() + 1.0
-                        && bounds.maxZ > volume.min().getZ()
-                        && bounds.minZ < volume.max().getZ() + 1.0);
+                .anyMatch(volume -> intersects(bounds, volume));
+    }
+
+    private static boolean intersects(AABB bounds, com.rusticcraft.publicmines.run.OwnedVolume volume) {
+        return bounds.maxX > volume.min().getX()
+                && bounds.minX < volume.max().getX() + 1.0
+                && bounds.maxY > volume.min().getY()
+                && bounds.minY < volume.max().getY() + 1.0
+                && bounds.maxZ > volume.min().getZ()
+                && bounds.minZ < volume.max().getZ() + 1.0;
     }
 
     private static boolean hasSafeZoneProjectileOrigin(List<Entity> sources) {
@@ -416,7 +428,7 @@ public final class MineProtectionEvents {
     }
 
     private static MineRunData dataForEntities(ServerLevel level, List<Entity> attackers, Entity target) {
-        if (!isMineWorld(level) || target.level() != level) return null;
+        if (target.level() != level || !isMineWorld(level) && !isOverworld(level)) return null;
         MineRunData data = MineManager.get(level.getServer()).data();
         boolean inside = isMinePvPEndpoint(data, level, target.blockPosition())
                 || attackers.stream().filter(entity -> entity.level() == level)
@@ -428,13 +440,13 @@ public final class MineProtectionEvents {
     }
 
     private static MineRunData dataForTarget(ServerLevel level, Entity target) {
-        if (!isMineWorld(level)) return null;
+        if (target.level() != level || !isMineWorld(level) && !isOverworld(level)) return null;
         MineRunData data = MineManager.get(level.getServer()).data();
         return isSafeZoneEndpoint(data, level, target.blockPosition()) ? data : null;
     }
 
     private static MineRunData dataIfRelevant(ServerLevel level, BlockPos attacker, BlockPos target) {
-        if (!isMineWorld(level)) return null;
+        if (!isMineWorld(level) && !isOverworld(level)) return null;
         MineRunData data = MineManager.get(level.getServer()).data();
         return isMinePvPEndpoint(data, level, attacker) || isMinePvPEndpoint(data, level, target)
                 || isSafeZoneEndpoint(data, level, attacker) || isSafeZoneEndpoint(data, level, target)
@@ -443,6 +455,10 @@ public final class MineProtectionEvents {
 
     private static boolean isMineWorld(Level level) {
         return level.dimension().equals(MineManager.MINE_DIMENSION);
+    }
+
+    private static boolean isOverworld(Level level) {
+        return level.dimension().equals(Level.OVERWORLD);
     }
 
     private static boolean isOwnedMinePosition(ServerLevel level, BlockPos pos) {
@@ -456,7 +472,7 @@ public final class MineProtectionEvents {
     }
 
     private static boolean isSafeZoneEndpoint(MineRunData data, ServerLevel level, BlockPos pos) {
-        return isMineWorld(level) && data.isInSafeZone(level, pos);
+        return data.isInSafeZone(level, pos);
     }
 
     private static void sendDenial(Player player, Action action, String message) {

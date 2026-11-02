@@ -28,7 +28,7 @@ class MineRunDataTest {
         CompoundTag saved = original.save(new CompoundTag(), null);
         MineRunData restored = MineRunData.load(saved, null);
 
-        assertEquals(7, restored.schema());
+        assertEquals(8, restored.schema());
         assertEquals(RunStatus.READY, restored.status());
         assertEquals("standard", restored.topologyProfile());
         assertEquals("a".repeat(64), restored.topologyFingerprint());
@@ -70,7 +70,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(7, migrated.schema());
+        assertEquals(8, migrated.schema());
         assertEquals(RunStatus.FAILED, migrated.status());
         assertTrue(migrated.lastError().contains("/publicmine recover repair"));
     }
@@ -78,14 +78,14 @@ class MineRunDataTest {
     @Test
     void futureSchemaFailsClosedAndIsPreservedVerbatim() {
         CompoundTag future = new CompoundTag();
-        future.putInt("schema", 8);
+        future.putInt("schema", 9);
         future.putString("status", RunStatus.READY.name());
         future.putString("futureField", "owned by newer mod version");
         CompoundTag original = future.copy();
 
         MineRunData loaded = MineRunData.load(future, null);
 
-        assertEquals(8, loaded.schema());
+        assertEquals(9, loaded.schema());
         assertTrue(loaded.hasUnsupportedSchema());
         assertEquals(RunStatus.FAILED, loaded.status());
         assertTrue(loaded.lastError().contains("update Public Mines"));
@@ -136,7 +136,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema2, null);
 
-        assertEquals(7, migrated.schema());
+        assertEquals(8, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertEquals("a".repeat(64), migrated.topologyFingerprint());
         assertEquals("", migrated.generationPlanFingerprint());
@@ -156,7 +156,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(schema3, null);
 
-        assertEquals(7, migrated.schema());
+        assertEquals(8, migrated.schema());
         assertEquals(RunStatus.READY, migrated.status());
         assertTrue(migrated.safeZones().isEmpty());
         assertTrue(migrated.mineOreOrigins().isEmpty());
@@ -266,6 +266,91 @@ class MineRunDataTest {
     }
 
     @Test
+    void generatedCheckpointStationsPersistSharedAccessAndClearTheirZoneOnReset() {
+        MineRunData data = readyRun();
+        data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
+        BlockPos arrival = new BlockPos(40, 20, 40);
+        OwnedVolume zone = ownedVolume("checkpoint_cp_01_safe_zone", 38, 19, 38, 42, 22, 42);
+
+        assertTrue(data.registerCheckpointStation("cp_01", "Upper checkpoint", "upper", 70, arrival, zone));
+        assertTrue(data.registerCheckpointStation("cp_01", "Upper checkpoint", "upper", 70, arrival, zone),
+                "generation replay is idempotent");
+        assertFalse(data.registerCheckpointStation("cp_01", "Rebound", "upper", 70,
+                new BlockPos(50, 20, 50), zone), "station IDs cannot be rebound");
+        assertFalse(data.registerCheckpointStation("bad/id", "Invalid", "upper", 1, arrival, zone));
+        assertFalse(data.registerCheckpointStation("cp_bad", "Invalid", "upper", 1, arrival,
+                ownedVolume("not_five_wide", 39, 19, 38, 42, 22, 42)));
+
+        MineRunData restored = MineRunData.load(data.save(new CompoundTag(), null), null);
+        assertEquals(List.of(data.checkpointStation("cp_01")), restored.checkpointStations());
+        assertEquals("upper", restored.checkpointStation("cp_01").region());
+        assertTrue(restored.isInSafeZone(MineManager.MINE_DIMENSION, arrival));
+        assertFalse(restored.isInSafeZone(MineManager.MINE_DIMENSION, new BlockPos(43, 20, 40)),
+                "the zone ends at the generated 5x5 station pad bounds");
+
+        restored.beginNewRun("2026-11-03-2", 2, 99L, "2026-11-03");
+        assertTrue(restored.checkpointStations().isEmpty());
+        assertTrue(restored.safeZones().isEmpty());
+    }
+
+    @Test
+    void checkpointRegistryIsBoundedAndWrongNbtTypeFailsClosed() {
+        MineRunData data = readyRun();
+        data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
+        for (int index = 0; index < MineRunData.MAX_CHECKPOINT_STATIONS; index++) {
+            int x = 10 + (index % 16) * 6;
+            int z = 10 + (index / 16) * 6;
+            BlockPos arrival = new BlockPos(x, 20, z);
+            OwnedVolume zone = ownedVolume("cp_" + index, x - 2, 19, z - 2, x + 2, 22, z + 2);
+            assertTrue(data.registerCheckpointStation("cp_" + index, "Checkpoint " + index,
+                    "upper", 10, arrival, zone));
+        }
+        BlockPos extra = new BlockPos(210, 20, 210);
+        assertFalse(data.registerCheckpointStation("too_many", "Overflow", "upper", 10, extra,
+                ownedVolume("extra", 208, 19, 208, 212, 22, 212)));
+        assertEquals(MineRunData.MAX_CHECKPOINT_STATIONS, data.checkpointStations().size());
+
+        CompoundTag malformed = readyRun().save(new CompoundTag(), null);
+        malformed.putString("checkpointStations", "wrong-type");
+        MineRunData loaded = MineRunData.load(malformed, null);
+        assertEquals(RunStatus.FAILED, loaded.status());
+        assertTrue(loaded.lastError().contains("checkpoint registry has the wrong NBT type"));
+    }
+
+    @Test
+    void surfaceExitSafeZoneIsFixedToRecordedOverworldPadAndRejectsOtherAreas() {
+        MineRunData data = readyRun();
+        BlockPos exit = new BlockPos(0, 64, 0);
+        data.setSurfaceExit(exit);
+
+        assertTrue(data.registerSurfaceExitSafeZone());
+        assertTrue(data.hasSafeZonesInDimension(Level.OVERWORLD));
+        assertTrue(data.isInSafeZone(Level.OVERWORLD, exit));
+        assertTrue(data.isInSafeZone(Level.OVERWORLD, exit.offset(2, 2, 2)),
+                "the fixed station-sized volume includes its exact outer block corner");
+        assertFalse(data.isInSafeZone(Level.OVERWORLD, exit.offset(3, 0, 0)),
+                "the volume does not include an arbitrary radius");
+        assertFalse(data.isInSafeZone(MineManager.MINE_DIMENSION, exit),
+                "the external zone is dimension-qualified");
+        assertFalse(data.registerSafeZone("publicmines:custom_overworld_zone",
+                new OwnedVolume("outside", Level.OVERWORLD, exit.offset(-2, -1, -2), exit.offset(2, 2, 2))),
+                "generic zone registration cannot target arbitrary overworld areas");
+        assertFalse(data.registerSafeZone("publicmines:custom_nether_zone",
+                new OwnedVolume("outside", Level.NETHER, exit.offset(-2, -1, -2), exit.offset(2, 2, 2))));
+
+        MineRunData restored = MineRunData.load(data.save(new CompoundTag(), null), null);
+        assertTrue(restored.isInSafeZone(Level.OVERWORLD, exit));
+        assertTrue(restored.hasSafeZonesInDimension(Level.OVERWORLD));
+        restored.beginNewRun("2026-11-03-3", 3, 100L, "2026-11-03");
+        assertFalse(restored.hasSafeZonesInDimension(Level.OVERWORLD),
+                "the surface exit protection belongs to one active run");
+
+        MineRunData missingExit = readyRun();
+        assertFalse(missingExit.registerSurfaceExitSafeZone(),
+                "there is no public surface zone until the shared exit has been recorded");
+    }
+
+    @Test
     void mineEntitiesAndEncounterSiteClaimsPersistAndClearOnNewRun() {
         MineRunData data = readyRun();
         data.addOwnedVolume(ownedVolume("active_region", -16, -64, -16, 255, 320, 255));
@@ -330,7 +415,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(7, migrated.schema());
+        assertEquals(8, migrated.schema());
         assertTrue(migrated.mineEntities().isEmpty());
         assertFalse(migrated.hasClaimedEncounterSite("node:m001"));
     }
@@ -349,7 +434,7 @@ class MineRunDataTest {
 
         MineRunData migrated = MineRunData.load(legacy, null);
 
-        assertEquals(7, migrated.schema());
+        assertEquals(8, migrated.schema());
         assertTrue(migrated.mineEntities().isEmpty());
         assertTrue(migrated.hasClaimedEncounterSite("node:m001"));
     }

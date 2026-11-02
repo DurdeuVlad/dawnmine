@@ -94,7 +94,19 @@ public final class MineGenerator {
         MineRunData data = manager.data();
         data.restartActiveGenerationSegmentForReplay();
         if (refreshPlan(true)) {
+            restoreCompletedCheckpointStations(data);
             ensureBootstrapQueued();
+        }
+    }
+
+    /** Backfills shared stations for runs generated before M5a's registry existed. */
+    private void restoreCompletedCheckpointStations(MineRunData data) {
+        for (String segmentId : data.completedGenerationSegments()) {
+            if (!segmentId.startsWith("node:")) continue;
+            TopoNode node = topology.node(segmentId.substring("node:".length()));
+            if (node != null && node.has(com.rusticcraft.publicmines.topology.NodeFeature.CHECKPOINT)) {
+                registerCheckpointStation(node);
+            }
         }
     }
 
@@ -479,6 +491,7 @@ public final class MineGenerator {
             TopoNode node = topology.node(segmentId.substring("node:".length()));
             if (node != null) {
                 MineEncounterManager.onNodeGenerated(server, node);
+                registerCheckpointStation(node);
             }
         }
         LOGGER.info("[publicmines] Generated segment {} ({} complete, {} queued).",
@@ -491,6 +504,19 @@ public final class MineGenerator {
                 String.format(Locale.ROOT, "%.2f", segmentMaxSliceNanos / 1_000_000.0),
                 String.format(Locale.ROOT, "%.2f", segmentMaxOperationNanos / 1_000_000.0),
                 OPERATIONS_PER_TICK, SLICE_BUDGET_NANOS / 1_000_000L);
+    }
+
+    private void registerCheckpointStation(TopoNode node) {
+        if (!node.has(com.rusticcraft.publicmines.topology.NodeFeature.CHECKPOINT)) return;
+        BlockPos arrival = new BlockPos(node.pos().x(), node.pos().y(), node.pos().z());
+        OwnedVolume zone = new OwnedVolume("checkpoint_" + node.id() + "_safe_zone",
+                MineManager.MINE_DIMENSION, arrival.offset(-2, -1, -2), arrival.offset(2, 2, 2));
+        int depth = Math.max(0, ARRIVAL.y() - node.pos().y());
+        String label = node.label().isBlank() ? "Checkpoint " + node.id() : node.label();
+        if (!manager.data().registerCheckpointStation(node.id(), label, node.region(), depth, arrival, zone)) {
+            manager.failGeneration("checkpoint station " + node.id() + " could not be registered safely");
+            LOGGER.error("[publicmines] Completed checkpoint node {} but station registration failed", node.id());
+        }
     }
 
     private void failSegment(MineRunData data, String detail) {
