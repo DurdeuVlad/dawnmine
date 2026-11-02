@@ -26,7 +26,7 @@
 ## Current evidence
 
 - Repo: private `DurdeuVlad/rusticcraft-public-mines`, default branch `main`.
-- The M0 implementation and compatibility evidence are delivered in open PR [#15](https://github.com/DurdeuVlad/rusticcraft-public-mines/pull/15) (`m0-foundation` branch). Exact-pack registry/tag/artifact hashes and dedicated-server snapshots are independently verified; the 99-candidate `/loot ... mine` set matches the candidate inventory. A fresh clean build passed in the isolated M0 handoff worktree; the full independent review requested three stale handoff wording fixes, which are being corrected before final review/evaluation.
+- The M0 implementation and compatibility evidence are delivered in open PR [#15](https://github.com/DurdeuVlad/rusticcraft-public-mines/pull/15) (`m0-foundation` branch). Exact-pack registry/tag/artifact hashes and dedicated-server snapshots are independently verified; the 99-candidate `/loot ... mine` set matches the candidate inventory. A fresh clean build passed in the isolated M0 handoff worktree. Independent review passed with caveats; its handoff findings were corrected and rechecked in merged PRs #17 and #19. Final Flux evaluation and M0 merge remain.
 - Product roadmap includes a distinct M6 progression economy and M1 admin onboarding issue. Static pack recipes provide iron-to-steel and steel/silver weapon hooks. Runtime loot testing shows Born in Chaos infected ores yield no direct items; pinned bytecode calls a Diamond Termite encounter and the termite shard has a nine-to-one diamond recipe. Actual player mining/combat/crafting, item stats, and exact upgrade pacing remain unverified.
 - Default morning reset is 06:00 in configured server timezone. Netherrack defaults off.
 
