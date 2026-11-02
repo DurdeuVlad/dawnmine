@@ -64,7 +64,7 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Outcome:** Players explore the intended generated routes rather than entering through natural caves, mining through the mine boundary, or reshaping terrain to bypass mobs. Ore mining and floor-placed torches remain supported.
 
-**Scope:** Replace or seal natural cave intersections inside the mine-owned region; generate a continuous external bedrock shell with only intentional entrances; include shell and replaced terrain in persisted bounds, cleanup, restart recovery, and reset; server-side permissions allow breaking only catalogued mine ores and placing only ordinary or soul torches on floor surfaces; prevent common terrain-altering mechanics from bypassing these protections; preserve sanctioned permission-gated admin recovery.
+**Scope:** Fully replace any natural cave volume overlapping the playable mine footprint and seal adjacent natural cave space outside it; generate a continuous external bedrock shell with only intentional entrances; include shell and replaced terrain in persisted bounds, cleanup, restart recovery, and reset; server-side permissions allow breaking only catalogued mine ores and placing only ordinary or soul torches on floor surfaces; prevent common terrain-altering mechanics from bypassing these protections; preserve sanctioned permission-gated admin recovery.
 
 **Non-goals:** No changes to natural caves or terrain outside mine-owned bounds, faction mine, global mining/placement rules, mob AI, prefab buildings, or new ore types.
 
