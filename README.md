@@ -2,7 +2,7 @@
 
 Standalone server-side NeoForge mod for a shared, Crystal Hollows-style public mining world in Rustic Craft 2.
 
-The mine is a large, connected, procedurally generated exploration space shared by all online players during a daily run. It grows as players explore, places every ore in the pack into depth-appropriate regions, and introduces stronger Born in Chaos encounters deeper down. Checkpoints provide safe travel and personal cargo storage. Each morning the shared mine warns players, evacuates them, and starts a fresh run while preserving their inventories and Dispatch lockers.
+The mine is a large, connected, procedurally generated expedition shared by all online players during a daily run. Players explore and choose routes, mine deposits, fight changing Born in Chaos threats, and decide when to bank or push deeper. Useful materials and equipment persist across daily resets so later runs can reach harder depths; the deepest content rewards coordinated teams. Checkpoints provide safe travel and private Foreman's Dispatch storage. Netherrack is off by default and can only be enabled through a bounded ultra-rare extreme-depth setting.
 
 ## Repository
 

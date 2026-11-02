@@ -9,23 +9,26 @@
 
 ## Intent
 
-Let players explore a large shared mine, leave for the surface, and re-enter at stations the community has reached without requiring players to walk the full route every session.
+Let players explore a large shared mine, leave for the surface, and re-enter at stations the community has reached while making a clear decision to bank or risk pushing farther.
 
 ## Expectation
 
-The surface entrance and generated checkpoints provide safe teleport actions. Any checkpoint already generated in the current shared run is available to every player. On a new daily run, the previous run's checkpoint stations and destinations are unavailable until regenerated.
+The surface entrance and generated checkpoints provide safe teleport and bank access. Any checkpoint already generated in the current shared run is available to every player. Checkpoint feedback shows current depth, next route/risk where known, and the option to bank or push. On a new daily run, previous stations expire until regenerated.
 
 ## Context that code cannot infer
 
 - The user explicitly chose a shared public mine and asked for teleporting inside/outside and useful checkpoints.
-- Planning default: checkpoint availability is shared because the mine and run progress are shared; personal lockers remain private. Record a contrary owner decision before changing this rule.
+- Product decision: checkpoint availability is shared because the mine and run progress are shared; personal lockers remain private. Record evidence in Decision.md before changing this rule.
 - A daily reset evacuates everyone before mine cleanup.
+- Daily map/run state resets, but useful carried equipment/materials and private Dispatch contents persist. Checkpoints and banking should make extraction understandable, not impose an undocumented penalty.
+- The first version preserves vanilla death/inventory behavior; no extra mod-specific death penalty.
 
 ## Scope
 
 - Add surface entry and return-to-surface travel through station interactions/commands consistent with M0's server-safe interaction pattern.
 - Make generated checkpoint stations accessible to all players once present in the shared run.
 - Provide a clear checkpoint status and safe arrival destination.
+- Show relevant nearby route/depth and bank/extract feedback before players commit to travel or push farther.
 - Reject teleport requests during initialization/reset and recover players whose destination becomes invalid.
 
 ## Non-goals
@@ -35,8 +38,8 @@ No arbitrary coordinate teleports, private mine instances, checkpoint respawn/de
 ## Dependencies and open decisions
 
 - Depends on M1 safe entry/exit contracts and M2 checkpoint locations.
-- M6 uses this ejection path.
-- Owner: server owner. Implementer: Devin. Reviewer: independent.
+- M7 uses this ejection path.
+- Product owner: Codex. Implementer: Devin. Reviewer: independent.
 
 ## Acceptance criteria
 

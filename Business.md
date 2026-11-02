@@ -12,18 +12,23 @@ Players describe repetitive strip mining as unengaging. The server needs a publi
 
 ## Intended experience
 
-Players enter one shared, daily seeded Crystal Hollows-style mining world. They explore interconnected procedural caves, branches, landmarks, resource pockets, and encounters. The world grows as players reach its frontier. Deeper regions contain progressively more valuable pack ores and tougher Born in Chaos mobs. The Chaos Depths use Nether materials, including quartz, and contained lava hazards.
+Players enter one shared, daily seeded Crystal Hollows-style expedition. They learn the upper mine, choose routes with different resource/risk profiles, mine deposits, fight dangerous encounters, and decide when to bank or push farther. Useful materials and equipment persist between runs so players can prepare for deeper regions on later days. Deeper regions introduce new tactical problems as earlier upgrades solve old ones; the deepest intended content should demand team coordination. The Chaos Depths use Nether materials such as quartz and contained lava hazards. Netherrack is disabled by default; if enabled, allow at most one placement attempt per 256 eligible 16×16 chunk columns in the deepest region, with one cluster up to three blocks, and permit operators only to make it rarer.
 
 Players reach safe checkpoints that support travel between the mine and the surface and open their personal Foreman's Dispatch locker. The locker has materially more capacity than a vanilla Ender Chest, supports depositing and retrieving items, and remains available outside the mine. At the configured morning reset, the server warns and evacuates players, creates a new shared layout, and preserves carried and stored player items.
 
-The mine uses generated block geometry. The experience may have recognizable regions and landmarks, but does not rely on predefined building structures.
+The mine uses generated block geometry. The experience may have recognizable regions, checkpoints, and service stations, but does not rely on predefined building structures. Difficulty comes from readable mechanics, route and hazard decisions, varied verified encounters, and teamwork—not only inflated health or damage.
 
 ## Product rules
 
 - The mine is public and shared; every player sees the same active run and layout.
 - Layout variation is stable for the whole daily run. Players do not receive private copies.
 - Generation progresses as the community explores and remains within explicit server-controlled bounds and budgets.
+- Terrain, mobs, loose drops, and run-local checkpoints reset daily, while carried equipment, progression materials, and private Dispatch contents persist.
+- Mine progression links mining, combat, and exploration to pack-verified recipes/equipment. Each upgrade has a documented earlier-depth problem it helps solve and a later challenge it does not trivialize.
+- Checkpoints are safe bank-and-travel decisions: players can deposit into their private persistent Dispatch and choose whether to push farther. The first version preserves vanilla death/inventory behavior and adds no mod-specific death penalty.
+- Deep difficulty is measured in solo and group playtests; the deepest intended tier must reward coordination and cannot be deemed team-required from config alone.
 - Every ore in the target pack is assigned to a depth tier. Ordinary and modded ores retain their native blocks, mining requirements, and drops. Nether ores such as quartz belong in the Chaos Depths.
+- Netherrack generation is off by default. If an operator enables it, hard validation bounds it to very rare generation at extreme depth.
 - Mine-specific mob rewards are awarded only for mine encounters. Born in Chaos behavior outside the mine remains unchanged.
 - A checkpoint is a safe, in-world point with travel and Dispatch access, not a prefab building.
 - The morning reset clears mine-owned terrain, mobs, loose drops, and run progress. It preserves player inventories and personal Dispatch storage.
@@ -35,6 +40,8 @@ The mine uses generated block geometry. The experience may have recognizable reg
 - All pack ores found in runtime ore tags or the explicit pack audit are accounted for and appear in their configured depth tiers.
 - Multiple players share the same generated layout, frontier, and checkpoints during a run.
 - Mine encounters increase in difficulty with depth; mine rewards do not change Born in Chaos drops outside the mine.
+- Repeatable playtests show readable early learning, meaningful gear progression, varied mid/deep challenges, and a material teamwork advantage at the deepest intended encounters.
+- A new operator can use in-game help and permission-gated setup/config/status/validation/recovery commands, and players receive friendly targeted messages without reading source code.
 - Players can enter, checkpoint-travel, evacuate, and recover items through personal Dispatch storage.
 - The morning cycle resets the mine once, safely handles online and offline cases, and does not lose player storage or affect the factions mine.
 - Generation, reset, and encounters remain within documented server time, memory, entity-count, and world-bound limits.
@@ -45,7 +52,8 @@ The mine uses generated block geometry. The experience may have recognizable reg
 - Product decision: Foreman's Dispatch has at least 54 slots in the first version. Expansion rules are deferred; its capacity must remain greater than a vanilla Ender Chest.
 - The exact world dimension/region strategy and daily generation bounds are technical decisions for M0/M1 based on server-safe evidence.
 - The target ore catalog and safe Born in Chaos encounter set must be verified from the actual pack artifacts.
-- Death, item-loss, and checkpoint respawn rules remain unchanged from the pack's vanilla behavior in v1; do not add a mine-specific death penalty during implementation.
+- Death, item-loss, and checkpoint respawn rules remain unchanged from the pack's vanilla behavior in v1; do not add a mine-specific death penalty during implementation. Any extra item-loss rule requires a product decision.
+- Upgrade recipes and named gear tiers must be selected from the actual pack audit. User examples such as steel or silver are cues, not presumed pack facts.
 
 
 ## Evidence and references

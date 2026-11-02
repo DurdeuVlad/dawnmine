@@ -10,6 +10,24 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 - Decision: Codex owns the product direction, issue/milestone acceptance, and reversible defaults while the server owner is hands-off.
 - Consequence: Devin may choose implementation details that satisfy the contract; product-scope changes and acceptance are decided by Codex. Server operators receive only bounded in-game configuration controls. Production deployment remains separately unauthorized.
 
+### Progress across days through persistent capability
+
+- Status: Accepted by owner direction (“leave with useful items so you can go even deeper the next time”).
+- Decision: Daily terrain, mobs, loose drops, and run-local progress reset; carried equipment, mined progression materials, and private Dispatch contents survive. Gear should make earlier threats manageable while deeper regions introduce new problems.
+- Consequence: Build the economy from actual pack recipes/items and test it across repeat runs. Do not assume an unverified steel/silver progression.
+
+### Skill-based depth escalation and team-required endgame
+
+- Status: Accepted by owner direction.
+- Decision: Progression rewards mining, PvE, exploration, quick tactical decisions, equipment preparation, and group coordination. Early depth teaches; later difficulty comes from changing readable mechanics and threats. Deepest intended content requires coordinated players in actual playtests.
+- Consequence: High mob health/damage alone is not evidence of depth difficulty or team dependency.
+
+### Operator onboarding and Netherrack default
+
+- Status: Accepted by owner direction.
+- Decision: Provide friendly in-game help and permission-gated setup/config/status/validation/recovery commands. Netherrack is absent by default; if enabled, allow at most one placement attempt per 256 eligible 16×16 chunk columns in the deepest configured region, with a cluster up to three blocks. Operators may only make it rarer, up to a 65,536-column interval.
+- Consequence: Config defaults, server-side permission checks, targeted messages, and safe failure behavior are acceptance requirements.
+
 ### Use a standalone server-side NeoForge mod
 
 - Status: Accepted by owner.
@@ -31,7 +49,7 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 ### Include every ore in the modpack
 
 - Status: Accepted by owner.
-- Decision: Account for all ores in the actual pack and assign them to depth tiers; include Nether ores such as quartz in the Chaos Depths.
+- Decision: Account for all ores in the actual pack and assign them to depth tiers; include quartz in the Chaos Depths. Netherrack remains off by default under the bounded option above.
 - Consequence: Runtime tags alone are insufficient proof. A pack artifact/catalog audit must identify untagged ores and explicitly include them.
 
 ### Integrate Born in Chaos and preserve outside behavior
@@ -44,6 +62,7 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 - Status: Accepted by owner.
 - Decision: Warn and teleport players still inside to the surface, clear/reseed the shared mine, and preserve player inventories and Dispatch storage.
 - Product default: configurable 06:00 in the configured server timezone; operators can change it through the supported in-game configuration command.
+- Durable player equipment/material progression and private Dispatch contents are outside reset-owned state and must persist.
 
 ### Checkpoints and personal Dispatch storage
 
@@ -89,6 +108,7 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 - Dimension versus isolated region placement, world bounds, maximum generation frontier, and cleanup strategy: M0/M1 technical decision backed by a disposable server prototype.
 - Dispatch expansion model beyond the 54-slot minimum: deferred; test usability and storage costs before adding upgrades.
 - Which Born in Chaos mobs fit each depth tier and which special encounters are safe in confined geometry: verify from the exact 1.7.6 jar and test in M4.
+- Exact upgrade chain, recipes/materials, and encounter/group thresholds: resolve from the M0 pack audit and multiplayer playtests; do not infer from item names.
 
 ## Revisit conditions
 
@@ -96,7 +116,7 @@ Revisit a decision only when pack evidence, a dedicated-server prototype, compat
 
 ### Checkpoints are shared when generated
 
-- Status: Planning default inferred from the owner's accepted shared-world decision; owner may revise before M5.
+- Status: Accepted product decision based on the shared-world requirement.
 - Decision: A checkpoint becomes usable by every player once it has been generated in the active shared run. Each Dispatch locker remains private to its player.
 - Rationale: This matches a shared exploration world, lets players benefit from group progress, and avoids separate checkpoint-unlock state that would conflict with the shared map.
 
@@ -105,5 +125,7 @@ Revisit a decision only when pack evidence, a dedicated-server prototype, compat
 - NeoForge 1.21.1 getting started and Java 21 requirement: https://docs.neoforged.net/docs/1.21.1/gettingstarted/
 - NeoForge tags and common namespace guidance: https://docs.neoforged.net/docs/1.21.1/resources/server/tags/
 - Born in Chaos version/platform listing: https://modrinth.com/mod/borninchaos/versions
+- NeoForge 1.21.1 config system and server config behavior: https://docs.neoforged.net/docs/1.21.1/misc/config/
+- NeoForge command registration and server permission predicates: https://docs.neoforged.net/docs/misc/commands/
 - Target pack manifest: C:\Users\Vlad\Documents\Github\rustic-craft-2-modpack\modpack.json
 - Target pack mod catalog: C:\Users\Vlad\Documents\Github\rustic-craft-2-modpack\catalog\mods.json
