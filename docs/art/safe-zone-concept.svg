@@ -56,8 +56,8 @@
   <text x="400" y="392" font-size="11" fill="#69f0ae" text-anchor="middle" font-weight="600">5×5 pad = safe-zone floor</text>
 
   <!-- concept props OUTSIDE the registered volume, on surrounding alcove cells -->
-  <rect x="324" y="404" width="18" height="18" fill="#6d4c41" stroke="#d4a017" stroke-width="1.5"/>
-  <text x="333" y="416" font-size="8" fill="#ffd54f" text-anchor="middle">D</text>
+  <rect x="332" y="404" width="18" height="18" fill="#6d4c41" stroke="#d4a017" stroke-width="1.5"/>
+  <text x="341" y="416" font-size="8" fill="#ffd54f" text-anchor="middle">D</text>
   <rect x="458" y="404" width="18" height="18" fill="#6d4c41" stroke="#a1887f"/>
   <text x="467" y="416" font-size="8" fill="#d7ccc8" text-anchor="middle">B</text>
   <!-- floor torches on two pad cells (the only allowed placement) -->
