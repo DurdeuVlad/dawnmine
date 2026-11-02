@@ -337,7 +337,7 @@ public final class PublicMineCommand {
 
     private static void statusForPlayer(CommandSourceStack src, MineManager manager) {
         RunStatus status = manager.data().status();
-        if (status.entryAllowed()) {
+        if (status.entryAllowed() && !manager.data().resetInProgress()) {
             MineMessages.tell(src, "The Public Mine is open! Travel in with '/publicmine enter'.");
         } else if (status == RunStatus.RESETTING) {
             MineMessages.tell(src, "The Public Mine is resetting for a new day - "

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -700,6 +701,47 @@ public class MineManager {
         }
         data.clearReturnPoint(player.getUUID());
         return LeaveResult.LEFT;
+    }
+
+    /**
+     * Evacuates a player who logged in inside the mine while being there is
+     * unsafe: a reset transaction is in flight, the run is not enterable, or
+     * their saved position is now inside solid restored terrain. Covers the
+     * offline-at-reset login — online occupants are evacuated by the reset
+     * driver itself, but a returning player's saved position can be entombed
+     * by rebuilt columns with no evacuation pass left to catch them.
+     */
+    public synchronized void evacuateUnsafeMineLogin(ServerPlayer player) {
+        if (!player.level().dimension().equals(MINE_DIMENSION)) {
+            return;
+        }
+        boolean resetting = data.resetInProgress();
+        boolean closed = !data.status().entryAllowed();
+        if (!resetting && !closed && !isEntombed(player)) {
+            return;
+        }
+        LeaveResult result = leave(player);
+        if (result == LeaveResult.LEFT) {
+            player.sendSystemMessage(Component.literal(
+                    "The Public Mine reset for a new day while you were away - you were moved to the surface "
+                            + "with everything you carried."));
+            LOGGER.info("[publicmines] Evacuated returning player {} from the mine "
+                            + "(resetting={} status={}).",
+                    player.getGameProfile().getName(), resetting, data.status());
+        } else {
+            LOGGER.warn("[publicmines] Returning player {} stayed inside the mine after login "
+                            + "(resetting={} status={} result={}); they can still use '/publicmine leave'.",
+                    player.getGameProfile().getName(), resetting, data.status(), result);
+        }
+    }
+
+    /** True when the player's feet or head are inside a solid block, i.e. the
+     * restored flat baseline swallowed their saved position. */
+    private boolean isEntombed(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) player.level();
+        BlockPos pos = player.blockPosition();
+        return level.getBlockState(pos).isSolidRender(level, pos)
+                || level.getBlockState(pos.above()).isSolidRender(level, pos.above());
     }
 
     /** The nearest position where a player can stand without falling or

@@ -60,6 +60,7 @@ public class PublicMines {
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerTick);
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
     }
 
@@ -99,6 +100,12 @@ public class PublicMines {
         DispatchManager.get(event.getServer()).tick();
         MineDailyReset.get(event.getServer()).onServerTick(event);
         MineGenerator.get(event.getServer()).onServerTick(event);
+    }
+
+    private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            MineManager.get(player.getServer()).evacuateUnsafeMineLogin(player);
+        }
     }
 
     private void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {

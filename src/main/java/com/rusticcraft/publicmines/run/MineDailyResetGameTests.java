@@ -445,4 +445,56 @@ public final class MineDailyResetGameTests {
             prior.restore(data);
         });
     }
+
+    /** A player who logged out inside the mine and returns while a reset
+     * transaction is in flight — or whose saved position the restored flat
+     * baseline entombed — must be evacuated with their inventory. Online
+     * occupants are evacuated by the reset driver; returning players are the
+     * gap between evacuation passes. */
+    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    public static void loginInsideMineDuringOrAfterResetIsEvacuated(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        MineManager manager = MineManager.get(level.getServer());
+        MineRunData data = manager.data();
+        ServerLevel mine = manager.mineLevel();
+        if (mine == null) {
+            LOGGER.info("[publicmines] M7 login-evacuation GameTest skipped: {} is not loaded.",
+                    MineManager.MINE_DIMENSION.location());
+            helper.succeed();
+            return;
+        }
+        manager.initialize();
+        if (data.status() != RunStatus.READY) {
+            LOGGER.info("[publicmines] M7 login-evacuation GameTest skipped: run cannot reach "
+                    + "READY here ({}); the live leg runs on the pack server.", data.status());
+            helper.succeed();
+            return;
+        }
+        SavedResetState prior = SavedResetState.capture(data);
+        try {
+            ServerPlayer player = fakePlayer(helper);
+            player.getInventory().add(new ItemStack(Items.DIAMOND, 3));
+            // Leg 1: an in-flight reset phase owns the mine.
+            player.teleportTo(mine, 16.5, 65.0, 16.5, 0.0F, 0.0F);
+            data.beginDailyReset("login-test");
+            manager.evacuateUnsafeMineLogin(player);
+            helper.assertFalse(player.level().dimension().equals(MineManager.MINE_DIMENSION),
+                    "returning player stayed inside the mine during an in-flight reset");
+            // Leg 2: run is READY again, but the restored baseline entombed
+            // the saved position in solid stone.
+            data.completeDailyReset("login-test");
+            data.markStatus(RunStatus.READY);
+            BlockPos tomb = new BlockPos(900, 40, 900);
+            mine.getChunk(tomb.getX() >> 4, tomb.getZ() >> 4);
+            player.teleportTo(mine, tomb.getX() + 0.5, tomb.getY(), tomb.getZ() + 0.5, 0.0F, 0.0F);
+            manager.evacuateUnsafeMineLogin(player);
+            helper.assertFalse(player.level().dimension().equals(MineManager.MINE_DIMENSION),
+                    "entombed returning player stayed inside the mine");
+            helper.assertValueEqual(player.getInventory().countItem(Items.DIAMOND), 3,
+                    "carried inventory changed during login evacuation");
+        } finally {
+            prior.restore(data);
+        }
+        helper.succeed();
+    }
 }
