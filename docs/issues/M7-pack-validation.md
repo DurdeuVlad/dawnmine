@@ -22,7 +22,7 @@ A set of repeatable solo/group dedicated-server playtests covers shared explorat
 - Do not call the mod ready from compile success alone; the closest safely available dedicated-server environment is required.
 - A claim of fun/addictiveness is not proven by code tests. Record repeat-session choices and short player feedback without overstating subjective outcomes.
 - Team-required depth needs a recorded solo-versus-coordinated-group comparison at the same gear/depth encounter.
-- Any release/publication or production deployment still requires separate owner authorization.
+- The product owner has authorized a tester-focused GitHub prerelease after all milestones pass; this does not authorize production-server deployment.
 
 ## Scope
 
@@ -30,15 +30,15 @@ A set of repeatable solo/group dedicated-server playtests covers shared explorat
 - Profile generation and entity pressure; tune only from recorded observations and documented product-owner decisions.
 - Run at least two successive daily runs to prove durable gear/material progression and fresh run state.
 - Document install/configuration, daily reset behavior, permission matrix, in-game onboarding, targeted messaging, admin diagnostics, and recovery.
-- Record any residual unsupported scenarios or defer release where evidence is insufficient.
+- Record any residual unsupported scenarios or defer release where evidence is insufficient. Publish a tester-focused GitHub prerelease containing the verified target-compatible JAR, SHA-256 checksum, changelog, tester install/run instructions, and known limitations.
 
 ## Non-goals
 
-No public mod release, production deployment, license decision, modpack unrelated updates, or faction-mine redesign.
+No production-server deployment, stable release, license decision, modpack unrelated updates, or faction-mine redesign.
 
 ## Dependencies and open decisions
 
-- Depends on completed M0-M7 evidence, the configured 06:00 server-timezone reset default, and reviewed ore/mob reward rates.
+- Depends on completed M0-M7 and M2c evidence, the configured 06:00 server-timezone reset default, and reviewed ore/mob reward rates.
 - Target concurrency and acceptable tick-time budget must be recorded in the M8 evidence plan before release sign-off.
 - Product owner: Codex. Implementer: Devin. Reviewer: independent.
 
@@ -57,10 +57,11 @@ No public mod release, production deployment, license decision, modpack unrelate
 11. A new operator completes setup/help/status/config/validation/recovery using the documented permission matrix; messages reach only intended audiences.
 12. A faction-mine regression check confirms its existing claim/access/progression/reset flow remains unchanged.
 13. Independent Flux review and Flux evaluation support the final release-readiness verdict.
+14. A tester-focused GitHub prerelease is available only after acceptance gates pass and contains the verified JAR, matching SHA-256 checksum, changelog, clear install/run steps for the target pack, and known limitations.
 
 ## Verification
 
-Use the real target pack on a dedicated server with multiple players. Capture version manifest, test commands/log references, before/after storage snapshots, reset date/run IDs, performance observations, and faction-mine regression evidence.
+Use the real target pack on a dedicated server with multiple players. Capture version manifest, test commands/log references, before/after storage snapshots, reset date/run IDs, performance observations, and faction-mine regression evidence. Download the release artifact and verify its checksum and tester instructions against the tested build.
 
 ## PR contract
 

@@ -60,6 +60,20 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Risk:** Tags and registry names are imperfect ore taxonomies; verify unusual blocks individually and bound resource yield to protect the server economy.
 
+## M2c — Mine isolation and fair-play rules
+
+**Outcome:** Players explore the intended generated routes rather than entering through natural caves, mining through the mine boundary, or reshaping terrain to bypass mobs. Ore mining and floor-placed torches remain supported.
+
+**Scope:** Fully replace any natural cave volume overlapping the playable mine footprint and seal adjacent natural cave space outside it; generate a continuous external bedrock shell with only intentional entrances; include shell and replaced terrain in persisted bounds, cleanup, restart recovery, and reset; server-side permissions allow breaking only catalogued mine ores and placing only ordinary or soul torches on floor surfaces; prevent common terrain-altering mechanics from bypassing these protections; preserve sanctioned permission-gated admin recovery.
+
+**Non-goals:** No changes to natural caves or terrain outside mine-owned bounds, faction mine, global mining/placement rules, mob AI, prefab buildings, or new ore types.
+
+**Depends on:** M2b world generation (#4) for bounded generated geometry; M3 ore catalog (#5) for the complete allowlist; both issues in M2c must pass before M4 encounters (#6) are accepted.
+
+**Proof:** Dedicated-server fixtures show no unintended cave connection; every shell face and corner blocks survival mining from outside and escape from inside; approved entrances and internal routes remain explorable; every catalogued ore retains native harvest/drop behavior; all non-ore breaks and non-torch placement are denied; representative terrain bypass mechanics fail; faction-mine and other-dimension behavior is unchanged; recovery/reset remains idempotent and confined to owned bounds.
+
+**Risk:** Protection hooks may interact with modded ore harvest events, explosions, pistons, or fluids. Use the verified M3 catalog, fail closed for unknown blocks, and validate the actual target pack.
+
 ## M4 — Born in Chaos encounters and mine-only rewards
 
 **Outcome:** The mine becomes more dangerous with depth through readable, varied encounters, and fighting is a viable way to contribute useful mine resources.
@@ -68,7 +82,7 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Non-goals:** Global Born in Chaos config, AI, natural spawn rates or loot changes; unreviewed bosses; unbounded mob scaling; difficulty based only on health/damage inflation.
 
-**Depends on:** M0 artifact/registry report and M2 encounter locations. M3 informs reward tiers and hazards.
+**Depends on:** M0 artifact/registry report, M2 encounter locations, and accepted M2c issues #22 (mine boundary shell) and #23 (interaction protections). M3 informs reward tiers and hazards.
 
 **Proof:** Only verified entities spawn; depth adds different threat combinations; a real player breaking infected ore and fighting any resulting mob is tested if that hook is used; mine-only kills grant only bounded configured bonuses; outside behavior/drops remain unchanged; populations and cleanup stay bounded after restart/reset.
 
@@ -120,22 +134,23 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 **Outcome:** Real players can learn early depth, make meaningful mine-or-fight/bank-or-push decisions, improve durable capability, adapt to new threats, and coordinate to reach the deepest intended region. Operators can run and recover the feature without source-code knowledge.
 
-**Scope:** Repeatable solo, group, and multi-day dedicated-server runs; early/mid/deep playtest cards; route, cue/reaction, mining, combat, exploration, banking, upgrade, death/recovery, group-size, tick/memory/entity, and yield observations; targeted player/admin communications; faction-mine regression; operator setup/help/status/config/validation/recovery exercise; tune only from evidence.
+**Scope:** Repeatable solo, group, and multi-day dedicated-server runs; early/mid/deep playtest cards; route, cue/reaction, mining, combat, exploration, banking, upgrade, death/recovery, group-size, tick/memory/entity, and yield observations; targeted player/admin communications; faction-mine regression; operator setup/help/status/config/validation/recovery exercise; tune only from evidence; publish a tester-focused GitHub prerelease with the verified JAR, changelog, and clear tester instructions.
 
-**Non-goals:** Public release or production deployment without separate authorization; claiming subjective fun/addictiveness from code tests; redesigning unrelated pack/faction features.
+**Non-goals:** Production-server deployment or stable release; claiming subjective fun/addictiveness from code tests; redesigning unrelated pack/faction features.
 
-**Depends on:** M0–M7 evidence.
+**Depends on:** M0–M7 and M2c evidence.
 
-**Proof:** Same deep encounter compared at solo and coordinated group size; evidence shows teamwork materially changes success/effort through simultaneous tactical demands rather than only inflated stats; at least two daily runs demonstrate a useful upgrade and a new counter; mining, PvE, and exploration are viable contributors; players can understand cues and risk; record player choices/short feedback about whether they want another run; all persistence/reset/admin/faction/performance gates pass. Release readiness is withheld if the evidence is insufficient.
+**Proof:** Same deep encounter compared at solo and coordinated group size; evidence shows teamwork materially changes success/effort through simultaneous tactical demands rather than only inflated stats; at least two daily runs demonstrate a useful upgrade and a new counter; mining, PvE, and exploration are viable contributors; players can understand cues and risk; record player choices/short feedback about whether they want another run; all persistence/reset/admin/faction/performance gates pass. Release readiness is withheld if the evidence is insufficient; the tester prerelease contains only the verified target-compatible JAR and includes its checksum, changelog, install/run instructions, and known limitations.
 
 **Risk:** Fun and team dependence are empirical claims. Do not infer them from code, a solo developer run, or one successful server boot.
 
 ## Current execution status
 
-- M0 is the active implementation handoff. GitHub issue [#1](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1) is open; the scaffold and exact-pack compatibility evidence are committed on the `m0-foundation` issue branch for independent review. `PublicMines.java` is intentionally scaffold-only in this milestone.
-- Preserve the shared worktree. Devin must inspect it before editing; do not reset, clean, or overwrite existing audit/scaffold work.
-- M1–M8 are planned and remain required. No gameplay milestone is complete. No production deployment is authorized.
-
+- M0 (#1) and M1 (#2, #12) are merged.
+- M2a (#3) is in implementation. M2b (#4) remains open.
+- M2c is GitHub milestone #10 with issues #22 (depends on #4) and #23 (depends on #4 and #5); both gate M4a (#6).
+- M3–M8 remain required. All changes require independent review and verified evidence before merge.
+- M8 includes a tester-focused GitHub prerelease after acceptance evidence passes. Production-server deployment is not authorized.
 ## Issue contract map
 
 | Milestone | Outcome issues |
@@ -144,6 +159,7 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 | M1 Shared lifecycle and admin onboarding | [#2](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/2), [#12](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/12) |
 | M2 Procedural topology and generation | [#3](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/3), [#4](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/4) |
 | M3 Ore ecology | [#5](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/5) |
+| M2c Mine isolation and fair-play rules | [#22](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/22), [#23](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/23) |
 | M4 Born in Chaos and mine rewards | [#6](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/6), [#7](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/7) |
 | M5 Checkpoints, travel, and Dispatch | [#8](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/8), [#9](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/9) |
 | M6 Gear progression and expedition economy | [#13](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/13) |
