@@ -48,7 +48,7 @@ def registry_candidate_ids(all_blocks: set[str], tags_by_block: dict[str, set[st
     mod_specific = {
         block
         for block, tags in tags_by_block.items()
-        if any(tag.endswith("_ore") and not tag.startswith("c:") for tag in tags)
+        if any(re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:") for tag in tags)
     }
     id_candidates = {
         block for block in all_blocks if block.split(":", 1)[1].endswith("_ore")
@@ -147,11 +147,14 @@ def write_ore_candidates(out_dir: Path, candidates, tags_by_block, evidence) -> 
                 for tag in tags_by_block.get(block, set())
                 if tag == "c:ores"
                 or tag.startswith("c:ores/")
-                or (tag.endswith("_ore") and not tag.startswith("c:"))
+                or (re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:"))
             )
             item = evidence[block]
             common = any(tag == "c:ores" or tag.startswith("c:ores/") for tag in tags)
-            specific = any(tag.endswith("_ore") and not tag.startswith("c:") for tag in tags)
+            specific = any(
+                re.search(r"_ores?$", tag.split(":", 1)[-1]) and not tag.startswith("c:")
+                for tag in tags
+            )
             if common:
                 basis = "resolved common c:ores family"
                 assessment = "common-tagged resource candidate; confirm mine tier and native drops"

@@ -19,7 +19,7 @@ A personal Dispatch locker is available at each generated checkpoint and the sur
 
 - User-approved behavior: checkpoints are inventory deposit stops and contents are retrievable outside.
 - The storage is private to each player and persistent across daily mine resets.
-- Accepted product default: exactly 54 personal slots, twice vanilla Ender Chest capacity. Do not add upgrade/paid capacity in this version.
+- Accepted product default: at least 54 personal slots (twice vanilla Ender Chest capacity) in v1; expansion rules are deferred. Do not add upgrade/paid capacity in this version.
 - This locker is a separate mine feature, not a change to vanilla Ender Chest contents.
 - Banked materials feed the audited progression economy in M6; see `Progression.md`.
 

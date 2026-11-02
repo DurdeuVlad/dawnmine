@@ -31,6 +31,8 @@ GEAR_WORDS = (
     "flail", "bow", "crossbow", "rapier", "sabre", "saber", "scythe",
     "shortsword", "longsword", "broadsword", "bastardsword", "zweihander",
     "greatsword", "flamebladedsword", "swordbreaker", "morningstar",
+    "katana", "claymore", "estoc", "armet", "bascinet", "barbute",
+    "sallet", "brigandine", "gambeson", "cuirass", "pauldron", "greaves",
 )
 MATERIAL_PRODUCT_WORDS = {
     "ore", "raw", "ingot", "nugget", "dust", "gem", "crystal", "block",
@@ -152,9 +154,10 @@ def scan_recipes(mods_dir: Path, expected: dict[str, str]):
                     malformed.append((jar_name, resource, str(error)))
                     continue
                 outputs: set[str] = set()
-                walk_refs(recipe.get("result", {}), outputs)
-                if isinstance(recipe.get("result"), str) and ":" in recipe["result"]:
-                    outputs.add(recipe["result"])
+                for result_key in ("result", "results"):
+                    walk_refs(recipe.get(result_key, {}), outputs)
+                    if isinstance(recipe.get(result_key), str) and ":" in recipe[result_key]:
+                        outputs.add(recipe[result_key])
                 ingredients: set[str] = set()
                 for key in INPUT_KEYS:
                     if key in recipe:
