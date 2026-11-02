@@ -127,6 +127,17 @@ public final class MineGenerator {
         if (data.status() != RunStatus.READY || mine == null) {
             return false;
         }
+        String shellError = MineShellGeometry.configurationError(mine,
+                PublicMineConfig.mineRegionRadiusChunks());
+        if (shellError.isEmpty()) {
+            shellError = MineShellGeometry.persistedBoundsError(data,
+                    PublicMineConfig.mineRegionRadiusChunks());
+        }
+        if (!shellError.isEmpty()) {
+            manager.failGeneration("mine boundary validation failed: " + shellError);
+            LOGGER.error("[publicmines] Refusing generation because boundary validation failed: {}", shellError);
+            return false;
+        }
         try {
             TopologyPlan planned = MineTopology.plan(data, mine);
             TopologyReport report = MineTopology.validate(planned);
