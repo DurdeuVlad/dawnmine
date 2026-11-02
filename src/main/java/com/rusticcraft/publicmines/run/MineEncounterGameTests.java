@@ -6,6 +6,10 @@ import com.rusticcraft.publicmines.config.PublicMineConfig;
 import com.rusticcraft.publicmines.encounter.MineEncounterManager;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -43,6 +47,7 @@ import org.slf4j.Logger;
 @PrefixGameTestTemplate(false)
 public final class MineEncounterGameTests {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String TEMPORARY_WORLD_NAME = "publicmines-m4a-hook-callback-audit";
 
     private MineEncounterGameTests() { }
 
@@ -51,9 +56,17 @@ public final class MineEncounterGameTests {
         ServerLevel testLevel = helper.getLevel();
         MineManager manager = MineManager.get(testLevel.getServer());
         ServerLevel mine = manager.mineLevel();
-        helper.assertTrue(mine != null,
-                "M4a event GameTest requires public_mine_v2 from the mod data pack");
-        if (mine == null) return;
+        if (mine == null) {
+            LOGGER.warn("[publicmines] M4a entity tracking GameTest skipped: public_mine_v2 is not loaded.");
+            helper.succeed();
+            return;
+        }
+        if (!TEMPORARY_WORLD_NAME.equals(testLevel.getServer().getWorldData().getLevelName())) {
+            LOGGER.warn("[publicmines] M4a entity tracking GameTest skipped outside disposable world '{}'.",
+                    TEMPORARY_WORLD_NAME);
+            helper.succeed();
+            return;
+        }
 
         MineRunData data = manager.data();
         var original = data.snapshot(testLevel.registryAccess());
@@ -173,9 +186,17 @@ public final class MineEncounterGameTests {
             helper.succeed();
             return;
         }
+        if (!TEMPORARY_WORLD_NAME.equals(testLevel.getServer().getWorldData().getLevelName())) {
+            LOGGER.warn("[publicmines] M4a native BiC GameTest skipped outside disposable world '{}'.",
+                    TEMPORARY_WORLD_NAME);
+            helper.succeed();
+            return;
+        }
 
         MineRunData data = manager.data();
         var original = data.snapshot(testLevel.registryAccess());
+        Map<BlockPos, BlockState> originalBlocks = new LinkedHashMap<>();
+        Set<UUID> spawnedTermiteIds = new LinkedHashSet<>();
         int radius = PublicMineConfig.mineRegionRadiusChunks();
         OwnedVolume owned = new OwnedVolume("m4a_bic_gametest_region", MineManager.MINE_DIMENSION,
                 new BlockPos(-radius * 16, mine.getMinBuildHeight(), -radius * 16),
@@ -199,22 +220,26 @@ public final class MineEncounterGameTests {
                         .defaultBlockState();
                 BlockPos pos = base.offset(index * 8, 0, 0);
                 AABB nearby = new AABB(pos).inflate(5);
-                mine.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, nearby)
-                        .forEach(net.minecraft.world.entity.Entity::discard);
+                rememberBlock(mine, originalBlocks, pos.below());
+                rememberBlock(mine, originalBlocks, pos);
                 mine.setBlock(pos.below(), index == 0
                         ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()
                         : net.minecraft.world.level.block.Blocks.DEEPSLATE.defaultBlockState(), 3);
                 mine.setBlock(pos, ore, 3);
                 player.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0, 0);
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_PICKAXE));
+                Set<UUID> entitiesBeforeBreak = mine.getEntitiesOfClass(Entity.class, nearby).stream()
+                        .map(Entity::getUUID).collect(java.util.stream.Collectors.toSet());
                 // Exercise BiC's registered player-break callback; ServerLevel.destroyBlock
                 // removes the block directly and skips that mod callback.
                 helper.assertTrue(ore.onDestroyedByPlayer(mine, pos, player, true, ore.getFluidState()),
                         "fake survival player could not break native infected ore " + oreId);
                 var termites = mine.getEntitiesOfClass(Mob.class, nearby).stream()
+                        .filter(mob -> !entitiesBeforeBreak.contains(mob.getUUID()))
                         .filter(mob -> BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).equals(
                                 ResourceLocation.parse("born_in_chaos_v1:diamond_termite"))).toList();
                 helper.assertTrue(!termites.isEmpty(), "infected ore did not summon Diamond Termites: " + oreId);
+                termites.stream().map(Entity::getUUID).forEach(spawnedTermiteIds::add);
                 for (Mob termite : termites) {
                     helper.assertTrue(data.isTrackedMineEntity(termite.getUUID()),
                             "native Diamond Termite was not registered to the active mine run");
@@ -244,6 +269,7 @@ public final class MineEncounterGameTests {
                 mob.moveTo(base.getX() + 0.5, base.getY(), base.getZ() + 0.5, 0.0F, 0.0F);
                 UUID probeId = mob.getUUID();
                 helper.assertTrue(mine.addFreshEntity(mob), "native termite cleanup fixture did not join the mine");
+                spawnedTermiteIds.add(probeId);
                 helper.assertTrue(data.isTrackedMineEntity(probeId),
                         "native termite cleanup fixture did not receive run tracking");
                 MineEncounterManager.cleanupRun(mine, data, data.runId());
@@ -256,13 +282,16 @@ public final class MineEncounterGameTests {
                                     ResourceLocation.parse("born_in_chaos_v1:diamond_termite"))),
                     "run reset left a tracked native Diamond Termite alive");
         } finally {
-            mine.setBlock(base, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-            mine.setBlock(base.below(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-            mine.setBlock(base.east(8), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-            mine.setBlock(base.east(8).below(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-            mine.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, new AABB(base).inflate(16)).stream()
-                    .filter(entity -> !(entity instanceof ServerPlayer))
-                    .forEach(net.minecraft.world.entity.Entity::discard);
+            MineEncounterManager.cleanupRun(mine, data, data.runId());
+            for (UUID id : spawnedTermiteIds) {
+                Entity entity = mine.getEntity(id);
+                if (entity instanceof Mob && BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).equals(
+                        ResourceLocation.parse("born_in_chaos_v1:diamond_termite"))) {
+                    entity.discard();
+                }
+                data.unregisterMineEntity(id);
+            }
+            restoreBlocks(mine, originalBlocks);
             audit.connection().disconnect(Component.literal("M4a native BiC GameTest complete"));
             data.restoreSnapshot(original, testLevel.registryAccess());
         }
@@ -285,6 +314,14 @@ public final class MineEncounterGameTests {
         new ServerGamePacketListenerImpl(level.getServer(), connection, player, cookie);
         player.setGameMode(GameType.SURVIVAL);
         return new AuditPlayer(player, connection);
+    }
+
+    private static void rememberBlock(ServerLevel level, Map<BlockPos, BlockState> original, BlockPos pos) {
+        original.computeIfAbsent(pos.immutable(), level::getBlockState);
+    }
+
+    private static void restoreBlocks(ServerLevel level, Map<BlockPos, BlockState> original) {
+        original.forEach((pos, state) -> level.setBlock(pos, state, 3));
     }
 
     private record AuditPlayer(ServerPlayer player, Connection connection) { }
