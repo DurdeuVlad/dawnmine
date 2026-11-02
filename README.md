@@ -10,7 +10,23 @@ Private GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mine
 
 ## Project status
 
-M0 is active. The shared worktree contains the standalone mod scaffold and exact-pack compatibility evidence; implementation and acceptance checks are still in progress. No mine gameplay milestone is complete yet.
+M0 foundation is merged to `main` (PR #15). The `m1-lifecycle-admin` branch adds the shared-run lifecycle and admin commands as dependent work on top of merged M0; see [docs/reports/M1-dedicated-server-lifecycle-evidence.md](docs/reports/M1-dedicated-server-lifecycle-evidence.md).
+
+## Operator quick-start (M1)
+
+Install `publicmines-<version>.jar` in the server's `mods/` folder alongside the Rustic Craft 2 pack and boot once. Then, in game or from the console:
+
+1. `/publicmine setup validate` — shows exactly what's missing (dimension, run record, pad, exit) with a fix per line.
+2. `/publicmine setup initialize` — creates the shared run: records the run id/seed, the active region, the arrival pad, and the surface exit. Safe to re-run; it will not duplicate state.
+3. `/publicmine status` — confirm `READY`; the run is shared by every player.
+
+Players use `/publicmine enter` and `/publicmine leave` (also `exit`).
+
+If a boot ever interrupts setup, the next start marks the run `FAILED` with a plain-language reason; `/publicmine recover check` inspects it and `/publicmine recover repair` repairs only mine-owned state — nothing else is ever cleared, including the factions mine.
+
+`/publicmine help` covers the same flow in game. Staff commands (`setup`, `config`, `recover`, detailed `status`) require operator level 2+; players get read-only help, a friendly status, and travel commands.
+
+Config lives in `world/serverconfig/publicmines-server.toml` and is also changeable in game with `/publicmine config get` / `config set <key> <value>` (persisted immediately, with bounds and examples on rejection). Netherrack stays off by default; its interval cannot go below 256 eligible columns or above 65536.
 
 ## Target environment
 

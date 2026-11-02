@@ -82,6 +82,23 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 - Decision: The mod uses mod ID `publicmines`, package `com.rusticcraft.publicmines`, display name `Rustic Craft Public Mines`, and initial version `0.1.0`. The audit-only helper mod `publicmines_auditprobe` lives under `tools/audit/runtime-tag-probe` and is installed only in disposable audit servers, never shipped to the live pack.
 - Evidence: a scan of all 300 mod descriptor files across the pinned 283-JAR Rustic Craft 2 2.2.2 server set found no other `publicmines*` mod ID; both JARs load on the exact-pack dedicated server. See [docs/reports/M0-runtime-audit.md](docs/reports/M0-runtime-audit.md).
 
+### Place the shared mine in a dedicated dimension
+
+- Status: Accepted for M1, backed by the dedicated-server prototype.
+- Decision: The daily shared run lives in its own dimension `publicmines:public_mine`, shipped as a datapack `dimension`/`dimension_type` with overworld-like rules and a flat minimal generator for M1 (procedural geometry arrives in M2).
+- Tradeoffs: a separate dimension gives the mine its own world directory, an unambiguous ownership boundary, and isolation from the factions mine and overworld, at the cost of custom-dimension datapack plumbing and no GameTest-server coverage for dimension paths (verified on a real dedicated server instead). The alternative — carving a reserved region of the overworld — was rejected because it couples cleanup to overworld block state, risks overlap with player/faction builds, and makes "mine-owned" a fuzzy predicate rather than a recorded fact.
+- Bounds: a 128x128 chunk-column active region centred on the arrival point (configurable 16-512 via `mineRegionRadiusChunks`), plus the arrival pad, are the only volumes ever eligible for cleanup; both are recorded in the run record before entry opens.
+- Recovery: setup validates dimension, run record, ownership, arrival, and exit; a stop mid-initialization is flagged `FAILED` on the next boot with a plain-language last error; `/publicmine recover repair` rebuilds only mine-owned state and never touches other dimensions or the factions mine.
+- Evidence: [docs/reports/M1-dedicated-server-lifecycle-evidence.md](docs/reports/M1-dedicated-server-lifecycle-evidence.md) — shared run id/seed across players, restart recovery, partial-init recovery, ownership listing, and zero GameTest failures on a live dedicated server.
+- Revisit: if pack integration shows dimension-registration conflicts or unacceptable world-size cost, revisit before M2 commits to in-dimension generation.
+
+### Persist the shared run as SavedData, not world JSON
+
+- Status: Accepted for M1.
+- Decision: The authoritative run record is a NeoForge/Minecraft `SavedData` instance (`publicmines_run.dat`) in the overworld data folder. It stores lifecycle status, run id, shared seed, day identity, bounds, owned volumes, arrival/exit anchors, per-player return points, and the last error.
+- Rationale: `SavedData` gives atomic write-on-markDirty semantics, automatic migration-safe NBT, and reload parity with the level — exactly what a cross-restart lifecycle needs — without inventing a file format or racing the chunk system.
+- Evidence: persisted NBT dump and restart-recovery evidence in [docs/reports/M1-dedicated-server-lifecycle-evidence.md](docs/reports/M1-dedicated-server-lifecycle-evidence.md).
+
 ## Proposed technical defaults
 
 ### Use runtime/configured ore catalog, not name guessing
@@ -105,7 +122,7 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 ## Open decisions
 
 - Reset schedule: implement a configurable 06:00 server-timezone default and expose the effective schedule; adjust only if server playtests or operational evidence show a need.
-- Dimension versus isolated region placement, world bounds, maximum generation frontier, and cleanup strategy: M0/M1 technical decision backed by a disposable server prototype.
+- ~~Dimension versus isolated region placement, world bounds, maximum generation frontier, and cleanup strategy: M0/M1 technical decision backed by a disposable server prototype.~~ Resolved for M1: dedicated dimension + SavedData run record, 128x128 chunk active region, cleanup limited to recorded mine-owned volumes — see "Place the shared mine in a dedicated dimension" above.
 - Dispatch expansion model beyond the 54-slot minimum: deferred; test usability and storage costs before adding upgrades.
 - Which Born in Chaos mobs fit each depth tier and which special encounters are safe in confined geometry: verify from the exact 1.7.6 jar and test in M4.
 - Exact upgrade chain, recipes/materials, and encounter/group thresholds: resolve from the M0 pack audit and multiplayer playtests; do not infer from item names.

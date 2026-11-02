@@ -10,7 +10,7 @@ out/
 
 # Local run worlds and server data
 runs/
-run/
+/run/
 world/
 logs/
 crash-reports/
@@ -24,3 +24,5 @@ crash-reports/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+__pycache__/
