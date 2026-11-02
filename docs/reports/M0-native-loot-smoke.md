@@ -6,7 +6,7 @@ This exact-pack server-console run evaluated the runtime loot table for every on
 
 For each candidate, the server ran `setblock 100 100 100 <block>` and then `loot spawn 100 100 100 mine 100 100 100 minecraft:diamond_pickaxe`, recording the console's `Dropped N [item] from loot table <id>` output and, where the spawned stack was observable, an item-entity data query. The test chunk had been force-loaded for the run.
 
-Source log: `C:\m0s-audit\audit-run-9.log` (SHA-256 `6A7E9332C0D8D8AEE51ED81884056CA21DAB4288715BDDBA27A9293A2B988652`). The checked-in result CSV contains the normalized per-candidate outcome and server log timestamp.
+Source log: `C:\m0s-audit\audit-run-9.log` (SHA-256 `2E16A9E05B26FCDC1ED72128A7127441D639A6E8F1AFD8281AE97144DBDBA440`, final flushed file). An immutable compressed copy is checked in as [M0-loot-smoke-run-9.log.gz](M0-loot-smoke-run-9.log.gz) (SHA-256 `1AAD58F39F1A32B7D1D1C4F8B723041DB6F90C6C68B884BC11F5CCD197DC6EDE`) and decompresses to exactly this file. An earlier recorded hash was taken before the shutdown output finished flushing and is superseded. The checked-in result CSV contains the normalized per-candidate outcome and server log timestamp; re-parsing the current source log reproduces the checked-in CSV byte-for-byte.
 
 An earlier run on the original 29-candidate table used the same harness; its archived log is `C:\m0s-audit\logs\2026-11-02-7.log.gz` (gzip SHA-256 `0D7A7780FB3EE419F31DB569473CDCAD8134A4B42A907495D002FB18215A8720`, decompressed SHA-256 `2CDBBCFFEB337DB8938E38A60E239F93B539E0B8B2E1DEEA92D4FCDD3B91B4F8`). Its results for those 29 blocks are consistent with the expanded run: the same two candidates produced zero items both times.
 
