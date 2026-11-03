@@ -58,7 +58,7 @@ The mine uses generated block geometry. The experience may have recognizable reg
 
 ## Evidence and references
 
-- The target pack is identified by C:\Users\Vlad\Documents\Github\rustic-craft-2-modpack\modpack.json (Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248); the matching catalog lists Born in Chaos 1.7.6 and GeckoLib 4.9.2.
+- The target pack is identified by rustic-craft-2-modpack (sibling private repo)\modpack.json (Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248); the matching catalog lists Born in Chaos 1.7.6 and GeckoLib 4.9.2.
 - The Crystal Hollows reference is described as a randomly generated mining location with multiple sub-locations: https://hypixelskyblock.minecraft.wiki/w/Crystal_Hollows
 - NeoForge 1.21.1 Java 21 project setup: https://docs.neoforged.net/docs/1.21.1/gettingstarted/
 - NeoForge common tag model: https://docs.neoforged.net/docs/1.21.1/resources/server/tags/

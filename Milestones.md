@@ -155,13 +155,13 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 | Milestone | Outcome issues |
 | --- | --- |
-| M0 Foundation and pack compatibility | [#1](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/1) |
-| M1 Shared lifecycle and admin onboarding | [#2](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/2), [#12](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/12) |
-| M2 Procedural topology and generation | [#3](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/3), [#4](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/4) |
-| M3 Ore ecology | [#5](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/5) |
-| M2c Mine isolation and fair-play rules | [#22](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/22), [#23](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/23) |
-| M4 Born in Chaos and mine rewards | [#6](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/6), [#7](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/7) |
-| M5 Checkpoints, travel, and Dispatch | [#8](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/8), [#9](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/9) |
-| M6 Gear progression and expedition economy | [#13](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/13) |
-| M7 Morning reset | [#10](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/10) |
-| M8 Playtests and operator readiness | [#11](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/11) |
+| M0 Foundation and pack compatibility | [#1](https://github.com/DurdeuVlad/dawnmine/issues/1) |
+| M1 Shared lifecycle and admin onboarding | [#2](https://github.com/DurdeuVlad/dawnmine/issues/2), [#12](https://github.com/DurdeuVlad/dawnmine/issues/12) |
+| M2 Procedural topology and generation | [#3](https://github.com/DurdeuVlad/dawnmine/issues/3), [#4](https://github.com/DurdeuVlad/dawnmine/issues/4) |
+| M3 Ore ecology | [#5](https://github.com/DurdeuVlad/dawnmine/issues/5) |
+| M2c Mine isolation and fair-play rules | [#22](https://github.com/DurdeuVlad/dawnmine/issues/22), [#23](https://github.com/DurdeuVlad/dawnmine/issues/23) |
+| M4 Born in Chaos and mine rewards | [#6](https://github.com/DurdeuVlad/dawnmine/issues/6), [#7](https://github.com/DurdeuVlad/dawnmine/issues/7) |
+| M5 Checkpoints, travel, and Dispatch | [#8](https://github.com/DurdeuVlad/dawnmine/issues/8), [#9](https://github.com/DurdeuVlad/dawnmine/issues/9) |
+| M6 Gear progression and expedition economy | [#13](https://github.com/DurdeuVlad/dawnmine/issues/13) |
+| M7 Morning reset | [#10](https://github.com/DurdeuVlad/dawnmine/issues/10) |
+| M8 Playtests and operator readiness | [#11](https://github.com/DurdeuVlad/dawnmine/issues/11) |

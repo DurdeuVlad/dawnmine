@@ -2,7 +2,7 @@
 
 Verification for issue #10 on branch `codex/m7-daily-reset`, Minecraft 1.21.1 /
 NeoForge 21.1.248 / Java 21, disposable copy of the Rustic Craft 2 pack
-(`Rustic Craft Main Server Testing/_pm-m7-verify`, mod `publicmines-0.1.0.jar`).
+(`staged server dir _pm-m7-verify`, mod `publicmines-0.1.0.jar`).
 
 ## Test results
 

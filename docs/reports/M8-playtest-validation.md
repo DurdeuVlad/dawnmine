@@ -8,8 +8,8 @@ plus the built `publicmines-0.1.0.jar` (284 jars at runtime).
 Two surfaces were used because NeoForge disables GameTests in production mode
 even with `-Dneoforge.enableGameTest=true`:
 
-1. **Production-style staged server** (`Rustic Craft Main Server
-   Testing/pm-m8-playtest`) — exact pack running as a real dedicated server;
+1. **Production-style staged server** (`pm-m8-playtest`) — exact pack
+   running as a real dedicated server;
    used for all operator/RCON flows, live resets, persistence, and policy
    checks. `/test` is unavailable here by design.
 2. **Dev pack mirror** (`runs/server` via `gradlew runServer`) — the same 284
@@ -150,7 +150,7 @@ concurrently; concurrent reset fixtures deadlocked shared state).
 ## Production-style staged-server evidence (exact pack, RCON)
 
 RCON helper: `python rcon25600.py "<command>"` in
-`Rustic Craft Main Server Testing/pm-m8-playtest`.
+`staged server dir pm-m8-playtest`.
 
 ### Operator flows (all exercised on the real server)
 

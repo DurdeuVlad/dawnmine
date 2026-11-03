@@ -79,7 +79,7 @@ Status labels: accepted decisions are user-approved; proposals guide discovery b
 ### Mod identity for the standalone mod
 
 - Status: Implementation decision recorded for M0.
-- Decision: The mod uses mod ID `publicmines`, package `com.rusticcraft.publicmines`, display name `Rustic Craft Public Mines`, and initial version `0.1.0`. The audit-only helper mod `publicmines_auditprobe` lives under `tools/audit/runtime-tag-probe` and is installed only in disposable audit servers, never shipped to the live pack.
+- Decision: The mod uses mod ID `publicmines`, package `com.rusticcraft.publicmines`, display name `Dawnmine`, and initial version `0.1.0`. The audit-only helper mod `publicmines_auditprobe` lives under `tools/audit/runtime-tag-probe` and is installed only in disposable audit servers, never shipped to the live pack.
 - Evidence: a scan of all 300 mod descriptor files across the pinned 283-JAR Rustic Craft 2 2.2.2 server set found no other `publicmines*` mod ID; both JARs load on the exact-pack dedicated server. See [docs/reports/M0-runtime-audit.md](docs/reports/M0-runtime-audit.md).
 
 ### Place the shared mine in a dedicated dimension
@@ -144,5 +144,5 @@ Revisit a decision only when pack evidence, a dedicated-server prototype, compat
 - Born in Chaos version/platform listing: https://modrinth.com/mod/borninchaos/versions
 - NeoForge 1.21.1 config system and server config behavior: https://docs.neoforged.net/docs/1.21.1/misc/config/
 - NeoForge command registration and server permission predicates: https://docs.neoforged.net/docs/misc/commands/
-- Target pack manifest: C:\Users\Vlad\Documents\Github\rustic-craft-2-modpack\modpack.json
-- Target pack mod catalog: C:\Users\Vlad\Documents\Github\rustic-craft-2-modpack\catalog\mods.json
+- Target pack manifest: rustic-craft-2-modpack (sibling private repo)\modpack.json
+- Target pack mod catalog: rustic-craft-2-modpack (sibling private repo)\catalog\mods.json

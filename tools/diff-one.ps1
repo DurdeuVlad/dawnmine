@@ -1,5 +1,5 @@
 param([string]$File)
-Set-Location 'C:\Users\Vlad\Documents\Github\rusticcraft-public-mines'
+Set-Location (Split-Path $PSScriptRoot -Parent)
 $tmpUp = Join-Path $env:TEMP 'up-check.txt'
 git show "origin/main:$File" | Out-File -Encoding utf8 $tmpUp
 $up = (Get-Content $tmpUp -Raw) -replace "`r`n", "`n"

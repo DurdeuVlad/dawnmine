@@ -1,13 +1,13 @@
 # M6 progression graph evidence
 
-Issue: [#13](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/13) — "Durable equipment and depth progression economy".
+Issue: [#13](https://github.com/DurdeuVlad/dawnmine/issues/13) — "Durable equipment and depth progression economy".
 
 This report backs the machine-readable graph in
 `src/main/resources/data/publicmines/progression/standard.json`
 (schema 1, SHA-256 fingerprint emitted on every load) and the flat CSV
 mirror at `docs/reports/M6-progression-graph.csv`. Every pack claim is
 grounded in the M0 audit artifacts of the exact composed pack
-(`C:\Users\Vlad\Documents\Github\Rustic Craft Main Server Testing\_rc220_composed`,
+(`staged dir _rc220_composed`,
 284 JARs, per-mod SHA-256 in `docs/reports/M0-server-mods.sha256`) or in
 direct reads of the pinned JAR recipe/loot resources named per node.
 

@@ -79,7 +79,7 @@ Every implementation PR must repeat intent, expectation, acceptance criteria and
 
 ## Background and research
 
-- The local target manifest at C:\Users\Vlad\Documents\Github\rustic-craft-2-modpack\modpack.json pins Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248.
+- The local target manifest at the rustic-craft-2-modpack sibling repo (modpack.json) pins Rustic Craft 2 2.2.2, Minecraft 1.21.1, NeoForge 21.1.248.
 - The local mod catalog lists Born in Chaos 1.7.6 and GeckoLib 4.9.2. Verify the exact deployed artifacts before integration.
 - NeoForge setup and Java 21 reference: https://docs.neoforged.net/docs/1.21.1/gettingstarted/
 - NeoForge tag reference: https://docs.neoforged.net/docs/1.21.1/resources/server/tags/
