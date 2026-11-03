@@ -69,6 +69,7 @@ public final class PublicMineCommand {
 
         root.then(literal("setup").requires(src -> src.hasPermission(ADMIN_LEVEL))
                 .executes(ctx -> setupUsage(ctx.getSource()))
+                .then(literal("guide").executes(ctx -> setupGuide(ctx.getSource())))
                 .then(literal("validate").executes(ctx -> validate(ctx.getSource())))
                 .then(literal("initialize").executes(ctx -> initialize(ctx.getSource()))));
 
@@ -127,6 +128,7 @@ public final class PublicMineCommand {
             lines.add("  /publicmine status            - full run diagnostics");
             lines.add("  /publicmine rewards           - show depth combat bonus rates and purposes");
             lines.add("  /publicmine progression       - progression graph diagnostics");
+            lines.add("  /publicmine setup guide       - walk through first-time setup step by step");
             lines.add("  /publicmine setup validate    - check what is missing");
             lines.add("  /publicmine setup initialize  - create or repair the mine (safe to re-run)");
             lines.add("  /publicmine config get [key]  - show settings");
@@ -137,7 +139,8 @@ public final class PublicMineCommand {
             lines.add("  /publicmine reset now         - run the reset cycle immediately");
             lines.add("  /publicmine reset retry       - re-arm a halted reset");
             lines.add("");
-            lines.add("First-time setup: run '/publicmine setup validate', fix any blockers,");
+            lines.add("First-time setup: run '/publicmine setup guide' and follow the steps,");
+            lines.add("or run '/publicmine setup validate', fix any blockers,");
             lines.add("then '/publicmine setup initialize' and '/publicmine status' to confirm.");
             lines.add("If anything goes wrong, '/publicmine recover repair' is the safe fix.");
         } else {
@@ -436,10 +439,63 @@ public final class PublicMineCommand {
 
     private static int setupUsage(CommandSourceStack src) {
         MineMessages.tellLines(src, List.of(
-                "Usage: '/publicmine setup validate' to check readiness,",
+                "Usage: '/publicmine setup guide' for a step-by-step walkthrough,",
+                "'/publicmine setup validate' to check readiness,",
                 "or '/publicmine setup initialize' to create/repair the shared mine.",
-                "Both are safe to re-run and only touch mine-owned state."));
+                "All are safe to re-run and only touch mine-owned state."));
         return 0;
+    }
+
+    /** State-aware walkthrough for first-time operators/testers: marks each
+     * setup step done/next/todo from the live run state and names the exact
+     * command to run, stopping early when a step is still outstanding. */
+    private static int setupGuide(CommandSourceStack src) {
+        MineManager manager = MineManager.get(src.getServer());
+        MineRunData data = manager.data();
+        boolean dimensionLoaded = manager.mineLevel() != null;
+        long failures = manager.validate().stream()
+                .filter(c -> c.severity() == MineManager.Severity.FAIL).count();
+        boolean ready = data.status() == RunStatus.READY && !data.resetInProgress();
+        List<String> lines = new ArrayList<>();
+        lines.add("=== Public Mines setup guide ===");
+        lines.add("Work down the list; [done] steps are already finished on this server.");
+        lines.add("");
+        lines.add((dimensionLoaded ? " [done] " : " [next] ")
+                + "1. Mod + mine dimension loaded"
+                + (dimensionLoaded ? "" : " - public_mine_v2 is NOT registered; check the jar in mods/ and restart"));
+        if (!dimensionLoaded) {
+            lines.add("         Stop here: the mine cannot initialize without its dimension.");
+            MineMessages.tellLines(src, lines);
+            return 0;
+        }
+        lines.add((failures == 0 ? " [done] " : " [next] ")
+                + "2. '/publicmine setup validate' passes"
+                + (failures == 0 ? "" : " - " + failures + " [!!] item(s) need the fix each line names"));
+        if (failures > 0) {
+            lines.add("         Fix them, then re-run '/publicmine setup guide'. Stuck halfway? '/publicmine recover repair'.");
+            MineMessages.tellLines(src, lines);
+            return 0;
+        }
+        lines.add((ready ? " [done] " : " [next] ")
+                + "3. '/publicmine setup initialize' run READY"
+                + (ready ? " (run " + data.runId() + ")" : " - creates the shared mine; safe to re-run"));
+        if (!ready) {
+            lines.add("         Generation is incremental - watch '/publicmine status' until it shows READY/open.");
+            if (data.status() == RunStatus.FAILED) {
+                lines.add("         Run is FAILED: '/publicmine recover check' then '/publicmine recover repair'.");
+            }
+            MineMessages.tellLines(src, lines);
+            return 0;
+        }
+        lines.add(" [todo] 4. Confirm open: '/publicmine status' should show the mine open.");
+        lines.add(" [todo] 5. Try the player path: '/publicmine enter', '/publicmine checkpoints',");
+        lines.add("         '/publicmine dispatch' at a depot or checkpoint, then '/publicmine leave'.");
+        lines.add(" [todo] 6. Check the daily reset is armed: '/publicmine reset status'.");
+        lines.add("");
+        lines.add("Setup complete - tell testers to run '/publicmine help'.");
+        lines.add("If anything breaks later: '/publicmine recover check' then '/publicmine recover repair'.");
+        MineMessages.tellLines(src, lines);
+        return 1;
     }
 
     private static int validate(CommandSourceStack src) {

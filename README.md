@@ -16,6 +16,7 @@ M0 foundation is merged to `main` (PR #15). The `m1-lifecycle-admin` branch adds
 
 Install `publicmines-<version>.jar` in the server's `mods/` folder alongside the Rustic Craft 2 pack and boot once. Then, in game or from the console:
 
+0. `/publicmine setup guide` — state-aware walkthrough that marks each step done/next/todo and names the exact command to run. Recommended for first-time testers.
 1. `/publicmine setup validate` — shows exactly what's missing (dimension, run record, pad, exit) with a fix per line.
 2. `/publicmine setup initialize` — creates the shared run: records the run id/seed, the active region, the arrival pad, and the surface exit. Safe to re-run; it will not duplicate state.
 3. `/publicmine status` — confirm `READY`; the run is shared by every player.
