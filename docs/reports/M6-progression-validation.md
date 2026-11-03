@@ -21,7 +21,7 @@ Issue: [#13](https://github.com/DurdeuVlad/dawnmine/issues/13) — "Durable equi
 ## Exact Rustic Craft pack audit
 
 The audit used the pinned Rustic Craft 2 2.2.2 server pack staged at
-`C:\Users\Vlad\Documents\Github\Rustic Craft Main Server Testing\pm-m6-audit`
+`staged server dir pm-m6-audit`
 (Minecraft 1.21.1, NeoForge 21.1.248, Java 21.0.12, 283 manifest JARs +
 `publicmines-0.1.0.jar` above). JVM flags: `-Xmx10G -Xms4G
 -Dpublicmines.enableMineProgressionAudit=true`. World

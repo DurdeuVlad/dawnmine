@@ -1,8 +1,8 @@
 $ErrorActionPreference = 'Stop'
-Set-Location 'C:\Users\Vlad\Documents\Github\rusticcraft-public-mines'
+Set-Location (Split-Path $PSScriptRoot -Parent)
 $files = @(
     'Progression.md',
-    '.devin/product-owner-checklist.md',
+    
     'docs/issues/M1-admin-onboarding.md',
     'docs/issues/M6-progression-economy.md'
 )
