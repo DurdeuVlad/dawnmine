@@ -2,6 +2,7 @@ package com.rusticcraft.publicmines.dispatch;
 
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.gametest.MockServerPlayers;
 import com.rusticcraft.publicmines.run.MineManager;
 import com.rusticcraft.publicmines.run.MineRunData;
 import com.rusticcraft.publicmines.run.MineRunDataTestSupport;
@@ -123,7 +124,7 @@ public final class DispatchGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 1200)
     public static void fullLockerTransferLeavesPlayerStackUntouched(GameTestHelper helper) {
-        var player = helper.makeMockServerPlayerInLevel();
+        var player = MockServerPlayers.inLevel(helper);
         DispatchData data = new DispatchData();
         DispatchContainer locker = new DispatchContainer(data, player.getUUID());
         for (int slot = 0; slot < DispatchData.SLOT_COUNT; slot++) {
@@ -148,7 +149,7 @@ public final class DispatchGameTests {
      * can open the Dispatch again. */
     @GameTest(template = "empty", timeoutTicks = 1200)
     public static void logoutReleasesSessionAndReturnsCarriedStack(GameTestHelper helper) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = MockServerPlayers.inLevel(helper);
         DispatchManager manager = DispatchManager.get(helper.getLevel().getServer());
         DispatchData data = manager.data();
         UUID owner = player.getUUID();
@@ -209,7 +210,7 @@ public final class DispatchGameTests {
                         + "checkpoint-terminal coverage runs on the dedicated server.");
             }
 
-            player = helper.makeMockServerPlayerInLevel();
+            player = MockServerPlayers.inLevel(helper);
             UUID owner = player.getUUID();
 
             // Away from every station the command must refuse with guidance.

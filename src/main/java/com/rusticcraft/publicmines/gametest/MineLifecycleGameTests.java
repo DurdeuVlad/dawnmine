@@ -62,10 +62,11 @@ public class MineLifecycleGameTests {
     }
 
     /** EmbeddedChannel-backed mock player. FakePlayerFactory instances have no
-     * netty channel, so cross-dimension teleports NPE on a live server. */
-    @SuppressWarnings("deprecation")
+     * netty channel, so cross-dimension teleports NPE on a live server. The
+     * channel is pre-negotiated so pack mods' join payloads do not fault the
+     * test — see {@link MockServerPlayers}. */
     private static ServerPlayer fakePlayer(GameTestHelper helper) {
-        return helper.makeMockServerPlayerInLevel();
+        return MockServerPlayers.inLevel(helper);
     }
 
     // ------------------------------------------------------------------

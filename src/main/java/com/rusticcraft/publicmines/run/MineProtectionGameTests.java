@@ -2,6 +2,7 @@ package com.rusticcraft.publicmines.run;
 
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.gametest.MockServerPlayers;
 import com.rusticcraft.publicmines.generation.OreCatalog;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -47,9 +48,8 @@ public final class MineProtectionGameTests {
 
     private MineProtectionGameTests() { }
 
-    @SuppressWarnings("deprecation")
     private static ServerPlayer fakePlayer(GameTestHelper helper) {
-        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ServerPlayer player = MockServerPlayers.inLevel(helper);
         player.setGameMode(GameType.SURVIVAL);
         return player;
     }

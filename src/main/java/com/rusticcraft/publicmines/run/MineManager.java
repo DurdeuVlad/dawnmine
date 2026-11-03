@@ -554,7 +554,10 @@ public class MineManager {
         }
         ServerLevel mine = mineLevel();
         BlockPos target = data.mineArrival() != null ? data.mineArrival() : ARRIVAL;
-        if (mine == null || !mine.hasChunkAt(target) || !isArrivalSafe(mine, target)) {
+        // isArrivalSafe reads blocks on demand, which loads the pad column;
+        // gating on hasChunkAt wrongly denied the first entrant whenever the
+        // generated pad chunk had simply unloaded from memory.
+        if (mine == null || !isArrivalSafe(mine, target)) {
             return new EnterOutcome(EnterResult.ARRIVAL_UNSAFE,
                     "the mine entrance is not safe right now; staff have been asked to check it");
         }
@@ -610,7 +613,7 @@ public class MineManager {
             target = data.mineArrival();
             fallback = true;
         }
-        if (target == null || !mine.hasChunkAt(target) || !isArrivalSafe(mine, target)) {
+        if (target == null || !isArrivalSafe(mine, target)) {
             return new CheckpointOutcome(CheckpointResult.FAILED,
                     "the checkpoint and entrance are unavailable; you were not moved", station, fallback);
         }
@@ -691,8 +694,18 @@ public class MineManager {
             }
         }
         if (landing == null) {
-            // Nothing safe to teleport to; keep the player where they are.
-            return LeaveResult.FAILED;
+            // Nothing in the scanned columns can be stood on (open water,
+            // void, or a removed surface). Evacuation must not leave a player
+            // inside a resetting mine just because the landing is awkward:
+            // put them at the recorded surface exit, else world spawn, and
+            // let vanilla handle the wet landing.
+            BlockPos base = data.surfaceExit() != null
+                    ? data.surfaceExit() : overworld.getSharedSpawnPos();
+            landing = base;
+            destination = overworld;
+            x = base.getX() + 0.5;
+            y = base.getY();
+            z = base.getZ() + 0.5;
         }
         try {
             player.teleportTo(destination, x, y, z, yaw, pitch);
@@ -747,9 +760,11 @@ public class MineManager {
     /** The nearest position where a player can stand without falling or
      * suffocating, searching down first (respawn-style) then a few blocks up. */
     private BlockPos findSafeLanding(ServerLevel level, BlockPos base) {
-        if (!level.hasChunkAt(base)) {
-            return null;
-        }
+        // The chunk must be loaded to judge the landing; block reads below
+        // load it on demand. Refusing unloaded chunks made evacuation fail
+        // whenever a return point or spawn sat in an unloaded column — on a
+        // dedicated server spawn chunks are not force-loaded, so a daily
+        // reset could leave occupants inside while terrain restored.
         if (isSafeLanding(level, base)) {
             return base;
         }

@@ -1,6 +1,7 @@
 package com.rusticcraft.publicmines.run;
 
 import com.rusticcraft.publicmines.generation.OreCatalog;
+import com.rusticcraft.publicmines.gametest.MockServerPlayers;
 import com.rusticcraft.publicmines.progression.ProgressionGraph;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -43,9 +44,8 @@ public final class MineProgressionGameTests {
                 data.seed() ^ 0x5DEECE66DL, LocalDate.now().toString());
     }
 
-    @SuppressWarnings("deprecation") // same mock-player API the existing suite uses
     private static ServerPlayer fakePlayer(GameTestHelper helper) {
-        return helper.makeMockServerPlayerInLevel();
+        return MockServerPlayers.inLevel(helper);
     }
 
     @GameTest(template = "empty", timeoutTicks = 600)
