@@ -19,6 +19,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -253,6 +254,11 @@ public final class OreBreakAudit {
         };
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
         new EmbeddedChannel(connection);
+        // Mods may send custom payloads when the audit player breaks blocks
+        // (advancement/book unlock sync). A raw embedded connection rejects
+        // those with "may not be sent to the client"; configure it the same
+        // way GameTest mock connections are so the payloads are tolerated.
+        NetworkRegistry.configureMockConnection(connection);
         new ServerGamePacketListenerImpl(level.getServer(), connection, player, cookie);
         player.setGameMode(GameType.SURVIVAL);
         return new AuditPlayer(player, connection);

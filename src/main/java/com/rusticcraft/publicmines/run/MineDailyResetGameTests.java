@@ -2,6 +2,7 @@ package com.rusticcraft.publicmines.run;
 
 import com.mojang.logging.LogUtils;
 import com.rusticcraft.publicmines.config.PublicMineConfig;
+import com.rusticcraft.publicmines.gametest.MockServerPlayers;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
@@ -70,9 +71,8 @@ public final class MineDailyResetGameTests {
         return String.join("\n", out.messages);
     }
 
-    @SuppressWarnings("deprecation")
     private static ServerPlayer fakePlayer(GameTestHelper helper) {
-        return helper.makeMockServerPlayerInLevel();
+        return MockServerPlayers.inLevel(helper);
     }
 
     /** A scheduled occurrence at the configured wall time on a fixed date, so
@@ -99,7 +99,7 @@ public final class MineDailyResetGameTests {
 
     private static final LocalDate TEST_DAY = LocalDate.of(2030, 1, 5);
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_scheduled", timeoutTicks = 1200)
     public static void scheduledOccurrenceStartsExactlyOneResetAndLocksEntry(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
@@ -151,7 +151,7 @@ public final class MineDailyResetGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_downtime", timeoutTicks = 1200)
     public static void downtimeCatchUpRunsExactlyOneReset(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
@@ -185,7 +185,7 @@ public final class MineDailyResetGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_uninitialized", timeoutTicks = 1200)
     public static void uninitializedRunConsumesOccurrenceWithoutCleaning(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
@@ -209,7 +209,7 @@ public final class MineDailyResetGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_cursor", timeoutTicks = 1200)
     public static void interruptedCleanupResumesFromPersistedCursor(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         // A dedicated record, not the shared SavedData: earlier tests may have
@@ -239,7 +239,7 @@ public final class MineDailyResetGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_manual", timeoutTicks = 1200)
     public static void manualResetIsSingleFlightAndStatusIsOperatorFacing(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
@@ -273,7 +273,7 @@ public final class MineDailyResetGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_halt", timeoutTicks = 1200)
     public static void haltedResetStaysHaltedUntilStaffRearm(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
@@ -305,7 +305,7 @@ public final class MineDailyResetGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_warnings", timeoutTicks = 1200)
     public static void warningOffsetsAreConfigurableAndBounded(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         // Bad values are rejected with bounds; a valid list persists.
@@ -345,7 +345,7 @@ public final class MineDailyResetGameTests {
      * the run cannot reach READY, the test skips cleanly; the scheduling and
      * transaction contract is covered by the other tests in this batch.
      */
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 48000)
+    @GameTest(template = "empty", batch = "m7_reset_live", timeoutTicks = 48000)
     public static void liveResetEvacuatesCleansOwnedVolumesAndRebuildsRun(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
@@ -451,7 +451,7 @@ public final class MineDailyResetGameTests {
      * baseline entombed — must be evacuated with their inventory. Online
      * occupants are evacuated by the reset driver; returning players are the
      * gap between evacuation passes. */
-    @GameTest(template = "empty", batch = "m7_daily_reset", timeoutTicks = 1200)
+    @GameTest(template = "empty", batch = "m7_reset_login_evac", timeoutTicks = 1200)
     public static void loginInsideMineDuringOrAfterResetIsEvacuated(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         MineManager manager = MineManager.get(level.getServer());
