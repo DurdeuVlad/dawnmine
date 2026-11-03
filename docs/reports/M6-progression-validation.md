@@ -1,6 +1,6 @@
 # M6 progression validation
 
-Issue: [#13](https://github.com/DurdeuVlad/rusticcraft-public-mines/issues/13) — "Durable equipment and depth progression economy".
+Issue: [#13](https://github.com/DurdeuVlad/dawnmine/issues/13) — "Durable equipment and depth progression economy".
 
 ## Automated checks
 

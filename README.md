@@ -1,58 +1,48 @@
-# Rustic Craft Public Mines
+# Dawnmine
 
-Standalone server-side NeoForge mod for a shared, Crystal Hollows-style public mining world in Rustic Craft 2.
+A standalone server-side NeoForge mod that gives every player on the server **one shared mine, fresh each dawn**.
 
-The mine is a large, connected, procedurally generated expedition shared by all online players during a daily run. Players explore and choose routes, mine deposits, fight changing Born in Chaos threats, and decide when to bank or push deeper. Useful materials and equipment persist across daily resets so later runs can reach harder depths; the deepest content rewards coordinated teams. Checkpoints provide safe travel and private Foreman's Dispatch storage. Netherrack is off by default and can only be enabled through a bounded ultra-rare extreme-depth setting.
+The mine is a large, connected, procedurally generated expedition inside its own dimension (`publicmines:public_mine_v2`), enclosed in a generated bedrock shell. All online players share the same daily run: they explore generated routes, mine the pack's real ores, fight depth-scaled Born in Chaos threats, and choose when to bank or push deeper. Checkpoints provide safe travel and private persistent **Foreman's Dispatch** storage; useful materials and gear persist across daily resets so later runs reach harder depths. The deepest content is tuned for coordinated teams.
 
-## Repository
+- **Shared run, one seed** — everyone descends the same mine; it expands as players explore.
+- **Deeper = richer + deadlier** — three regions (Upper Galleries → Middle Descent → Chaos Depths) with all 32 Rustic Craft 2 ore types, quartz + contained lava at depth, and bounded mine-only combat rewards.
+- **Daily 06:00 reset** — configurable time/timezone, occupant warnings, entry lock, evacuation with inventories, then exactly one new run.
+- **Fair play enforced server-side** — no PvP anywhere in the mine; no PvE in safe zones; only catalogued mine ores breakable; only allowed floor torches placed.
+- **Durable progression** — a pack-audited equipment/material graph where each upgrade solves a named earlier-depth problem.
+- **Nothing outside the mine is ever touched** — cleanup is dimension- and volume-qualified; the factions mine and all other dimensions are out of reach by construction.
 
-Private GitHub repository: https://github.com/DurdeuVlad/rusticcraft-public-mines
+## Requirements
 
-## Project status
+- Rustic Craft 2 pack **2.2.2** (designed and verified against it; may work on other 1.21.1 NeoForge packs — untested)
+- Minecraft **1.21.1** · NeoForge **21.1.248** · Java **21**
+- Server-side only — clients need no install.
 
-M0 foundation is merged to `main` (PR #15). The `m1-lifecycle-admin` branch adds the shared-run lifecycle and admin commands as dependent work on top of merged M0; see [docs/reports/M1-dedicated-server-lifecycle-evidence.md](docs/reports/M1-dedicated-server-lifecycle-evidence.md).
+## Install
 
-## Operator quick-start (M1)
+1. Grab `publicmines-<version>.jar` from [Releases](https://github.com/DurdeuVlad/dawnmine/releases) and verify the `.sha256`.
+2. Drop it in the server's `mods/` folder alongside the pack and boot once.
+3. In game or console, run **`/publicmine setup guide`** — a state-aware walkthrough that marks each step `[done]`/`[next]`/`[todo]` and names the exact command to run. (Manual path: `setup validate` → `setup initialize` → `status`.)
 
-Install `publicmines-<version>.jar` in the server's `mods/` folder alongside the Rustic Craft 2 pack and boot once. Then, in game or from the console:
+Players use `/publicmine enter`, `leave`, `checkpoints`, `checkpoint <id>`, `dispatch`, `progression`, `status`, `help`.
 
-0. `/publicmine setup guide` — state-aware walkthrough that marks each step done/next/todo and names the exact command to run. Recommended for first-time testers.
-1. `/publicmine setup validate` — shows exactly what's missing (dimension, run record, pad, exit) with a fix per line.
-2. `/publicmine setup initialize` — creates the shared run: records the run id/seed, the active region, the arrival pad, and the surface exit. Safe to re-run; it will not duplicate state.
-3. `/publicmine status` — confirm `READY`; the run is shared by every player.
+## Operations
 
-Players use `/publicmine enter` and `/publicmine leave` (also `exit`).
+- **Daily reset** — `resetHour:resetMinute` in `resetTimeZone` (default `06:00` host zone). Warnings at `resetWarningMinutes` (default `15,5,1`) go only to mine occupants; entry locks; occupants are evacuated with their inventories; recorded mine-owned terrain is restored and exactly one new run is created. Downtime produces exactly one catch-up reset. Staff: `reset status|now|retry`.
+- **Config** — `world/serverconfig/publicmines-server.toml` or `/publicmine config get|set` (validated with bounds). Netherrack is off by default and can only be made *rarer* (interval floor 256 columns, cluster ≤3).
+- **Recovery** — if a boot interrupts setup or a reset halts, `/publicmine recover check` explains it and `/publicmine recover repair` fixes only mine-owned state.
+- Staff commands require operator level 2+; player commands are read-only/help + travel.
 
-If a boot ever interrupts setup, the next start marks the run `FAILED` with a plain-language reason; `/publicmine recover check` inspects it and `/publicmine recover repair` repairs only mine-owned state — nothing else is ever cleared, including the factions mine.
+## Evidence
 
-`/publicmine help` covers the same flow in game. Staff commands (`setup`, `config`, `recover`, `reset`, detailed `status`) require operator level 2+; players get read-only help, a friendly status, and travel commands.
+Every milestone shipped with dedicated-server verification on the exact target pack: **39/39 GameTests** in the real dimension, live reset cycles, locker persistence proven byte-identical across reset, a 60-case ore-break audit, and 20.000 TPS under a 284-mod server. See [`docs/reports/`](docs/reports/), especially `M8-playtest-validation.md`.
 
-Config lives in `world/serverconfig/publicmines-server.toml` and is also changeable in game with `/publicmine config get` / `config set <key> <value>` (persisted immediately, with bounds and examples on rejection). Netherrack stays off by default; its interval cannot go below 256 eligible columns or above 65536.
+## Project docs
 
-## Daily reset (M7)
+- `Business.md` / `Progression.md` — the experience contract and progression design
+- `Milestones.md` / `docs/issues/` — milestone plan and per-issue contracts with acceptance evidence
+- `docs/architecture/` — how the run lifecycle, generation, protection, reset, dispatch, and progression work
+- `docs/art/` + `docs/concept-art/` — builder handoff concept art for the entrance hub and safe zones
 
-Every morning at `resetHour:resetMinute` in `resetTimeZone` (default `06:00`, zone `server` = host default) the mod warns only the players currently inside the mine at the `resetWarningMinutes` offsets (default `15,5,1`; `none` disables), locks new entry, evacuates every occupant to the overworld surface exit, restores recorded mine-owned terrain to the generated baseline (never touching anything outside owned bounds — including the factions mine), and creates exactly one new shared run with a fresh seed. Carried inventories and personal storage are never touched. Downtime crossing the scheduled time produces exactly one catch-up reset.
+## Contributing & license
 
-Staff commands: `/publicmine reset status` (schedule, next reset, live phase/cursor/attempts, last completed occurrence), `/publicmine reset now` (immediate manual reset — never consumes a scheduled occurrence), and `/publicmine reset retry` (re-arms a reset halted after three failed attempts). `/publicmine status` and `/publicmine help` show the same state to operators. See [docs/architecture/M7-daily-reset.md](docs/architecture/M7-daily-reset.md) and [docs/reports/M7-daily-reset-evidence.md](docs/reports/M7-daily-reset-evidence.md).
-
-## Target environment
-
-- Rustic Craft 2 pack 2.2.2
-- Minecraft 1.21.1
-- NeoForge 21.1.248
-- Java 21
-- Born in Chaos 1.7.6 and GeckoLib 4.9.2 are listed in the local pack catalog
-
-## Documents
-
-- Business.md: player problem, intended experience, and success measures
-- Decision.md: accepted decisions, proposals, and unresolved choices
-- Milestones.md: ordered outcome plan and acceptance evidence
-- Progression.md: player loop, skill/team challenge, lasting progression, extraction, admin UX, and playtest evidence contract
-- Collaboration.md: product authority, implementation, and review expectations
-- docs/issues/: executable issue contracts, beginning with M0
-
-The existing KubeJS faction-mine system is outside this project and must remain unchanged.
-
-
-
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md). Licensed **LGPL-3.0-only** ([LICENSE](LICENSE)); the mod id, dimension key, and data namespaces remain `publicmines` for world compatibility.
