@@ -1,5 +1,9 @@
 # Runtime tag probe
 
+This directory is frozen historical tooling for the 0.2 Public Mines audit.
+Its old mod/package identifiers and command intentionally reproduce that audit;
+it is not part of Dawnmine 0.3, its build, or its release artifacts.
+
 This is an audit-only NeoForge mod. It exports the loaded block registry and each block holder's resolved tag memberships to `reports/runtime-block-tags.tsv` when an operator runs `/publicmines-audit block-tags`, and the equivalent item registry/tag dump to `reports/runtime-item-tags.tsv` with `/publicmines-audit item-tags`.
 
 Build it from the repository root:

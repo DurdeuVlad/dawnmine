@@ -1,0 +1,12 @@
+{
+  "type": "dawnmine:mine",
+  "generator": {
+    "type": "dawnmine:run_noise",
+    "shell_radius_chunks": 64,
+    "settings": "dawnmine:mine",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "dawnmine:mine"
+    }
+  }
+}

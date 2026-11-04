@@ -1,0 +1,195 @@
+package com.dwurdy.dawnmine.command;
+
+import com.dwurdy.dawnmine.config.DawnmineConfig;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+/**
+ * Registry of config keys exposed through {@code /dawnmine config}.
+ *
+ * <p>Each key declares its parser, hard bounds, documentation, and when a
+ * change takes effect. Only listed keys are writable; unknown keys are
+ * rejected with the valid list.
+ */
+public final class ConfigKeys {
+    private ConfigKeys() {}
+
+    /** When a config change takes effect. */
+    public enum Timing {
+        IMMEDIATE("immediately"),
+        NEXT_RUN("when the next run is initialized"),
+        NEXT_RESET("at the next scheduled reset"),
+        NEXT_RESTART("after a server restart");
+
+        public final String phrase;
+        Timing(String phrase) { this.phrase = phrase; }
+    }
+
+    public abstract static class Key {
+        public final String name;
+        public final String doc;
+        public final String validRange;
+        public final String example;
+        public final Timing timing;
+
+        Key(String name, String doc, String validRange, String example, Timing timing) {
+            this.name = name;
+            this.doc = doc;
+            this.validRange = validRange;
+            this.example = example;
+            this.timing = timing;
+        }
+
+        public abstract String get();
+        /** Returns empty on success, or the friendly rejection reason. */
+        public abstract Optional<String> set(String raw);
+    }
+
+    private static Key intKey(String name, String doc, int min, int max, Timing timing,
+            ModConfigSpec.ConfigValue<Integer> backing, String example) {
+        return new Key(name, doc, "an integer between " + min + " and " + max, example, timing) {
+            @Override public String get() { return String.valueOf(backing.get()); }
+            @Override public Optional<String> set(String raw) {
+                final int value;
+                try {
+                    value = Integer.parseInt(raw.trim());
+                } catch (NumberFormatException e) {
+                    return Optional.of("'" + raw + "' is not a number");
+                }
+                if (value < min || value > max) {
+                    return Optional.of(value + " is outside the allowed range " + min + "-" + max);
+                }
+                backing.set(value);
+                backing.save();
+                return Optional.empty();
+            }
+        };
+    }
+
+    private static Key boolKey(String name, String doc, Timing timing,
+            ModConfigSpec.ConfigValue<Boolean> backing, String example) {
+        return new Key(name, doc, "true or false", example, timing) {
+            @Override public String get() { return String.valueOf(backing.get()); }
+            @Override public Optional<String> set(String raw) {
+                String v = raw.trim().toLowerCase();
+                if (!v.equals("true") && !v.equals("false")) {
+                    return Optional.of("'" + raw + "' must be true or false");
+                }
+                backing.set(Boolean.parseBoolean(v));
+                backing.save();
+                return Optional.empty();
+            }
+        };
+    }
+
+    private static Key intListKey(String name, String doc, int min, int max, int maxCount,
+            Timing timing, ModConfigSpec.ConfigValue<List<? extends Integer>> backing, String example) {
+        return new Key(name, doc, "a comma-separated list of up to " + maxCount
+                + " integers, each between " + min + " and " + max
+                + " (an empty list disables)", example, timing) {
+            @Override public String get() {
+                List<? extends Integer> values = backing.get();
+                if (values == null || values.isEmpty()) {
+                    return "(empty)";
+                }
+                StringBuilder out = new StringBuilder();
+                for (Integer value : values) {
+                    if (out.length() > 0) {
+                        out.append(',');
+                    }
+                    out.append(value);
+                }
+                return out.toString();
+            }
+            @Override public Optional<String> set(String raw) {
+                String trimmed = raw.trim();
+                List<Integer> values = new ArrayList<>();
+                if (!trimmed.isEmpty() && !trimmed.equalsIgnoreCase("none")
+                        && !trimmed.equalsIgnoreCase("empty")) {
+                    for (String part : trimmed.split(",")) {
+                        String piece = part.trim();
+                        if (piece.isEmpty()) {
+                            continue;
+                        }
+                        final int value;
+                        try {
+                            value = Integer.parseInt(piece);
+                        } catch (NumberFormatException e) {
+                            return Optional.of("'" + piece + "' is not a number");
+                        }
+                        if (value < min || value > max) {
+                            return Optional.of(value + " is outside the allowed range "
+                                    + min + "-" + max);
+                        }
+                        if (!values.contains(value)) {
+                            values.add(value);
+                        }
+                        if (values.size() > maxCount) {
+                            return Optional.of("at most " + maxCount + " entries are allowed");
+                        }
+                    }
+                }
+                backing.set(List.copyOf(values));
+                backing.save();
+                return Optional.empty();
+            }
+        };
+    }
+
+    private static Key timeZoneKey(String name, String doc, Timing timing,
+            ModConfigSpec.ConfigValue<String> backing, String example) {
+        return new Key(name, doc, "an IANA time zone like Europe/Bucharest, or 'server'", example, timing) {
+            @Override public String get() { return backing.get(); }
+            @Override public Optional<String> set(String raw) {
+                String v = raw.trim();
+                if (!DawnmineConfig.isValidTimeZone(v)) {
+                    return Optional.of("'" + raw + "' is not a known time zone");
+                }
+                backing.set(v);
+                backing.save();
+                return Optional.empty();
+            }
+        };
+    }
+
+    public static final List<Key> ALL = List.of(
+            intKey("resetHour", "local hour of the daily reset", 0, 23,
+                    Timing.NEXT_RESET, DawnmineConfig.resetHourValue(), "6"),
+            intKey("resetMinute", "local minute of the daily reset", 0, 59,
+                    Timing.NEXT_RESET, DawnmineConfig.resetMinuteValue(), "0"),
+            timeZoneKey("resetTimeZone", "time zone used for the reset clock",
+                    Timing.NEXT_RESET, DawnmineConfig.resetTimeZoneValue(), "Europe/Bucharest"),
+            intListKey("resetWarningMinutes",
+                    "minutes before the reset when mine occupants are warned",
+                    DawnmineConfig.RESET_WARNING_MIN_MINUTES, DawnmineConfig.RESET_WARNING_MAX_MINUTES,
+                    DawnmineConfig.RESET_WARNING_MAX_COUNT,
+                    Timing.NEXT_RESET, DawnmineConfig.resetWarningMinutesValue(), "15,5,1"),
+            boolKey("netherrackEnabled", "optional ultra-rare Netherrack placement (off by default)",
+                    Timing.NEXT_RUN, DawnmineConfig.netherrackEnabledValue(), "false"),
+            intKey("netherrackColumnInterval",
+                    "one Netherrack attempt per N eligible 16x16 chunk columns (larger = rarer)",
+                    DawnmineConfig.NETHERRACK_INTERVAL_MIN, DawnmineConfig.NETHERRACK_INTERVAL_MAX,
+                    Timing.NEXT_RUN, DawnmineConfig.netherrackColumnIntervalValue(), "512"),
+            intKey("mineRegionRadiusChunks", "radius of the active mine region in chunk columns",
+                    DawnmineConfig.REGION_RADIUS_MIN, DawnmineConfig.REGION_RADIUS_MAX,
+                    Timing.NEXT_RUN, DawnmineConfig.mineRegionRadiusChunksValue(), "64"));
+
+    public static Optional<Key> find(String name) {
+        for (Key key : ALL) {
+            if (key.name.equalsIgnoreCase(name)) {
+                return Optional.of(key);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static List<String> names() {
+        List<String> names = new ArrayList<>();
+        for (Key key : ALL) {
+            names.add(key.name);
+        }
+        return names;
+    }
+}
