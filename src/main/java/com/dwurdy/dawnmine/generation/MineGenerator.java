@@ -62,6 +62,19 @@ public final class MineGenerator {
     private static final int CHUNK_REQUEST_WINDOW = 9;
     /** How often generated nodes are checked for approaching players. */
     private static final int ENCOUNTER_SCAN_TICKS = 30;
+    /** Outstanding region-pregen futures. getChunkFuture pumps main-thread
+     * chunk work while it waits, so issue count per tick must stay small -
+     * issuing many at once stalled the tick past the watchdog timeout. */
+    private static final int PREGEN_WINDOW = 32;
+    /** New chunk futures issued per tick; mirrors the proven segment
+     * request window (9) so issuing never stalls a tick. */
+    private static final int PREGEN_ISSUE_PER_TICK = 8;
+    /** Columns scanned per tick while looking for ungenerated region chunks. */
+    private static final int PREGEN_SCAN_PER_TICK = 256;
+    /** How often mine occupants are scanned for lookahead pregen. */
+    private static final int LOOKAHEAD_TICKS = 20;
+    /** Chunk radius silently pregenerated ahead of each mine occupant. */
+    private static final int LOOKAHEAD_RADIUS = 10;
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
@@ -84,6 +97,25 @@ public final class MineGenerator {
     private final Map<Long, CompletableFuture<?>> chunkRequests = new LinkedHashMap<>();
     /** Region tickets this generator owns; released on every terminal path. */
     private final Set<Long> heldTickets = new HashSet<>();
+    /** Whole-region pregen: every shell column is generated before entry
+     * opens, so no player ever watches terrain carve itself. The backlog is
+     * a scan cursor over the persisted shell bounds; futures are bounded
+     * async loads that never touch the server thread. */
+    private final Map<Long, CompletableFuture<?>> pregenRequests = new LinkedHashMap<>();
+    /** Every column ever queued this run; dedupes backlog and lookahead. */
+    private final Set<Long> pregenPlanned = new HashSet<>();
+    /** Lookahead columns offered by player proximity; drained before the
+     * square scan so approaching players get their neighborhood first. */
+    private final java.util.ArrayDeque<Long> pregenPriority = new java.util.ArrayDeque<>();
+    private int pregenScanX;
+    private int pregenScanZ;
+    private int pregenMinX;
+    private int pregenMinZ;
+    private int pregenMaxX;
+    private int pregenMaxZ;
+    private boolean pregenComplete;
+    private boolean pregenCompletionLogged;
+    private long lastLookaheadScan = Long.MIN_VALUE;
     private static final TicketType<ChunkPos> GENERATION_TICKET = TicketType.create(
             "dawnmine_preparation", Comparator.comparingLong(ChunkPos::toLong));
     private SegmentGeometry.SegmentPlan activePlan;
@@ -157,6 +189,11 @@ public final class MineGenerator {
         }
         ensurePreparedQueued(data);
         processOneSlice(data, manager.mineLevel());
+        drainRegionPregen(manager.mineLevel());
+        if (tick - lastLookaheadScan >= LOOKAHEAD_TICKS) {
+            lastLookaheadScan = tick;
+            scanPlayerLookahead(manager.mineLevel());
+        }
         if (tick - lastEncounterScan >= ENCOUNTER_SCAN_TICKS) {
             lastEncounterScan = tick;
             spawnApproachingEncounters(data, manager.mineLevel());
@@ -278,7 +315,7 @@ public final class MineGenerator {
     }
 
     public synchronized boolean preparationComplete() {
-        return preparation().complete();
+        return preparation().complete() && pregenComplete;
     }
 
     /** Readiness is checked outside the tick loop too (entry gating), so the
@@ -303,6 +340,7 @@ public final class MineGenerator {
             nodesByChunk = indexNodes(planned);
             ownedVolumes = List.copyOf(data.ownedVolumes());
             expectedSegments = PreparationPlan.expectedSegments(planned);
+            resetRegionPregen(data);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -316,7 +354,11 @@ public final class MineGenerator {
         String segmentId = data.beginNextGenerationSegment();
         if (segmentId.isEmpty()) {
             activePlan = null;
-            notePreparationComplete(data);
+            // Entry must not open (and optional structures must not place)
+            // until the whole region is silently generated behind the scenes.
+            if (pregenComplete) {
+                notePreparationComplete(data);
+            }
             return;
         }
         try {
@@ -489,10 +531,153 @@ public final class MineGenerator {
         mine.getChunkSource().removeRegionTicket(GENERATION_TICKET, pos, 0, pos);
     }
 
+    /** Initializes the whole-region pregen backlog for the active run. The
+     * scan cursor walks the persisted shell square (or the configured
+     * radius when bounds were never persisted), one column at a time. */
+    private void resetRegionPregen(MineRunData data) {
+        pregenRequests.clear();
+        pregenPriority.clear();
+        pregenPlanned.clear();
+        pregenComplete = false;
+        pregenCompletionLogged = false;
+        int radius = DawnmineConfig.mineRegionRadiusChunks();
+        int sizeX = data.boundMaxChunkX() - data.boundMinChunkX() + 1;
+        int sizeZ = data.boundMaxChunkZ() - data.boundMinChunkZ() + 1;
+        // Persisted bounds from older saves can be degenerate (e.g. a 1x1
+        // default); only trust bounds that plausibly cover the shell.
+        if (sizeX >= radius && sizeZ >= radius) {
+            pregenMinX = data.boundMinChunkX();
+            pregenMinZ = data.boundMinChunkZ();
+            pregenMaxX = data.boundMaxChunkX();
+            pregenMaxZ = data.boundMaxChunkZ();
+        } else {
+            pregenMinX = -radius;
+            pregenMinZ = -radius;
+            pregenMaxX = radius;
+            pregenMaxZ = radius;
+        }
+        pregenScanX = pregenMinX;
+        pregenScanZ = pregenMinZ;
+    }
+
+    /** Issues bounded async FULL-chunk loads for every shell column not yet
+     * generated. Work happens on the chunk executor; the tick only maintains
+     * the window and polls completions, so the server never stalls. */
+    private void drainRegionPregen(ServerLevel mine) {
+        if (pregenComplete || mine == null) {
+            return;
+        }
+        pregenRequests.entrySet().removeIf(entry -> {
+            CompletableFuture<?> future = entry.getValue();
+            if (future.isCompletedExceptionally() || future.isCancelled()) {
+                LOGGER.warn("[dawnmine] Region pregen chunk {} failed; skipping column.",
+                        new ChunkPos(entry.getKey()));
+                return true;
+            }
+            return future.isDone()
+                    || mine.getChunkSource().hasChunk(
+                            ChunkPos.getX(entry.getKey()), ChunkPos.getZ(entry.getKey()));
+        });
+        int issued = 0;
+        while (pregenRequests.size() < PREGEN_WINDOW && issued < PREGEN_ISSUE_PER_TICK) {
+            Long packed = pregenPriority.pollFirst();
+            if (packed == null) {
+                packed = nextRegionColumn(mine);
+            }
+            if (packed == null) {
+                break;
+            }
+            issued++;
+            int cx = ChunkPos.getX(packed);
+            int cz = ChunkPos.getZ(packed);
+            CompletableFuture<?> future = mine.getChunkSource()
+                    .getChunkFuture(cx, cz, ChunkStatus.FULL, true);
+            long column = packed;
+            future.whenComplete((result, error) -> {
+                if (error != null) {
+                    LOGGER.error("[dawnmine] Region pregen chunk ({},{}) failed: {}",
+                            cx, cz, error.getMessage());
+                }
+            });
+            pregenRequests.put(column, future);
+        }
+        if (pregenScanX > pregenMaxX && pregenPriority.isEmpty() && pregenRequests.isEmpty()) {
+            pregenComplete = true;
+            if (!pregenCompletionLogged) {
+                pregenCompletionLogged = true;
+                LOGGER.info("[dawnmine] Region pregen complete for run {}: all {} shell columns generated.",
+                        manager.data().runId(), pregenPlanned.size());
+            }
+        }
+    }
+
+    /** Next ungenerated column in the row-major shell scan, or null when the
+     * scan is exhausted (or this tick's scan budget is spent). */
+    private Long nextRegionColumn(ServerLevel mine) {
+        int radius = DawnmineConfig.mineRegionRadiusChunks();
+        int scanned = 0;
+        while (pregenScanX <= pregenMaxX && scanned++ < PREGEN_SCAN_PER_TICK) {
+            int cx = pregenScanX;
+            int cz = pregenScanZ;
+            if (++pregenScanZ > pregenMaxZ) {
+                pregenScanZ = pregenMinZ;
+                pregenScanX++;
+            }
+            if (!MineShellGeometry.inside(cx, cz, radius)) {
+                continue;
+            }
+            long packed = ChunkPos.asLong(cx, cz);
+            if (pregenPlanned.contains(packed)) {
+                continue;
+            }
+            pregenPlanned.add(packed);
+            if (mine.getChunkSource().hasChunk(cx, cz)) {
+                continue;
+            }
+            return packed;
+        }
+        return null;
+    }
+
+    /** Silent lookahead: when an occupant is inside the mine, queue any
+     * ungenerated shell columns in a radius ahead of them at the front of
+     * the pregen queue - the surrounding area materializes before they get
+     * there, without a single tick of synchronous generation. */
+    private void scanPlayerLookahead(ServerLevel mine) {
+        if (pregenComplete || mine == null) {
+            return;
+        }
+        int radius = DawnmineConfig.mineRegionRadiusChunks();
+        int offered = 0;
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.serverLevel() != mine) {
+                continue;
+            }
+            int pcx = player.blockPosition().getX() >> 4;
+            int pcz = player.blockPosition().getZ() >> 4;
+            for (int dz = -LOOKAHEAD_RADIUS; dz <= LOOKAHEAD_RADIUS && offered < 32; dz++) {
+                for (int dx = -LOOKAHEAD_RADIUS; dx <= LOOKAHEAD_RADIUS && offered < 32; dx++) {
+                    int cx = pcx + dx;
+                    int cz = pcz + dz;
+                    long packed = ChunkPos.asLong(cx, cz);
+                    if (pregenPlanned.contains(packed)
+                            || !MineShellGeometry.inside(cx, cz, radius)
+                            || mine.getChunkSource().hasChunk(cx, cz)) {
+                        continue;
+                    }
+                    pregenPlanned.add(packed);
+                    pregenPriority.offerLast(packed);
+                    offered++;
+                }
+            }
+        }
+    }
+
     /** Drops all outstanding chunk requests: run change, reset, failure,
      * shutdown, and segment completion all funnel here. */
     private void releaseChunkRequests() {
         chunkRequests.clear();
+        resetRegionPregen(manager.data());
         ServerLevel mine = manager.mineLevel();
         if (mine != null) {
             for (Long packed : List.copyOf(heldTickets)) {

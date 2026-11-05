@@ -164,9 +164,14 @@ public final class MineMineshaftPlacer {
                             spec.structureId(), site, data.runId(), e);
                     continue;
                 }
+                int chests = dressChests(mine, box, data);
                 placed++;
                 specPlaced++;
                 data.addPlacedStructure(spec.structureId(), box);
+                if (chests > 0) {
+                    LOGGER.info("[dawnmine] Stocked {} loot chest(s) with area ores inside {} for run {}.",
+                            chests, spec.structureId(), data.runId());
+                }
                 LOGGER.info("[dawnmine] Placed {} for run {} at chunk {} (box {})",
                         spec.structureId(), data.runId(), site, box);
             }
@@ -179,6 +184,115 @@ public final class MineMineshaftPlacer {
             reconcileOreOrigins(mine, data, claimedBoxes);
         }
         return placed;
+    }
+
+    /** Replaces structure loot chests with stacks of the ores that belong
+     * to the chest's depth tier. Stack sizes scale by the ore's catalog
+     * weight: the rarest ore in the tier caps at 16 per chest, the most
+     * common caps at 3 stacks (192); minimum pick is 8. Deterministic per
+     * (run seed, chest pos), so restarts and audits see the same loot. */
+    private static int dressChests(ServerLevel mine, BoundingBox box, MineRunData data) {
+        int dressed = 0;
+        for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++) {
+            for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
+                for (Map.Entry<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> e
+                        : mine.getChunk(cx, cz).getBlockEntities().entrySet()) {
+                    BlockPos pos = e.getKey();
+                    if (!box.isInside(pos)
+                            || !(e.getValue() instanceof net.minecraft.world.Container container)) {
+                        continue;
+                    }
+                    if (fillWithAreaOres(container, pos, data)) {
+                        dressed++;
+                    }
+                }
+            }
+        }
+        // Mineshaft loot lives in chest minecarts - entities, not blocks.
+        net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(
+                box.minX(), box.minY(), box.minZ(),
+                box.maxX() + 1.0, box.maxY() + 1.0, box.maxZ() + 1.0);
+        for (var minecart : mine.getEntitiesOfClass(
+                net.minecraft.world.entity.vehicle.AbstractMinecartContainer.class, area)) {
+            BlockPos pos = minecart.blockPosition();
+            if (fillWithAreaOres(minecart, pos, data)) {
+                dressed++;
+            }
+        }
+        return dressed;
+    }
+
+    private static boolean fillWithAreaOres(net.minecraft.world.Container container,
+                                            BlockPos pos, MineRunData data) {
+        OreCatalog.Tier tier = tierForY(pos.getY());
+        List<OreCatalog.Entry> pool = tier == null ? List.of()
+                : OreCatalog.active().entries(tier);
+        if (pool.isEmpty()) {
+            return false;
+        }
+        int minW = Integer.MAX_VALUE;
+        int maxW = 1;
+        for (OreCatalog.Entry ore : pool) {
+            minW = Math.min(minW, ore.weight());
+            maxW = Math.max(maxW, ore.weight());
+        }
+        RandomSource rng = RandomSource.create(data.seed() ^ pos.asLong() ^ 0xC4E57L);
+        if (container instanceof net.minecraft.world.RandomizableContainer randomizable) {
+            randomizable.setLootTable((net.minecraft.resources.ResourceKey
+                    <net.minecraft.world.level.storage.loot.LootTable>) null);
+        }
+        container.clearContent();
+        int stacks = 2 + rng.nextInt(3);
+        int slot = 0;
+        for (int i = 0; i < stacks && slot < container.getContainerSize(); i++) {
+            OreCatalog.Entry ore = pool.get(rng.nextInt(pool.size()));
+            net.minecraft.world.item.Item item =
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.get(ore.blockId());
+            if (item == net.minecraft.world.item.Items.AIR) {
+                continue;
+            }
+            int remaining = 8 + rng.nextInt(Math.max(1, lootCap(ore, minW, maxW) - 7));
+            while (remaining > 0 && slot < container.getContainerSize()) {
+                int count = Math.min(64, remaining);
+                container.setItem(slot++, new net.minecraft.world.item.ItemStack(item, count));
+                remaining -= count;
+            }
+        }
+        return true;
+    }
+
+    /** Per-chest cap: rarest ore in the tier gets 16, commonest gets 192
+     * (three full stacks), linear in catalog weight. */
+    private static int lootCap(OreCatalog.Entry ore, int minW, int maxW) {
+        if (maxW <= minW) {
+            return 64;
+        }
+        return Math.max(16, Math.min(192,
+                16 + (int) Math.round(176.0 * (ore.weight() - minW) / (double) (maxW - minW))));
+    }
+
+    /** Depth-tier of a position, mirroring the generator's region bands. */
+    private static OreCatalog.Tier tierForY(int y) {
+        String region = null;
+        for (var spec : com.dwurdy.dawnmine.topology.TopologyProfiles.active().regions()) {
+            if (y <= spec.topY() && y >= spec.bottomY()) {
+                region = spec.id();
+                break;
+            }
+        }
+        if (region == null) {
+            region = com.dwurdy.dawnmine.topology.TopologyProfiles.active().regions().stream()
+                    .filter(r -> "chaos".equals(r.id())).findFirst()
+                    .map(com.dwurdy.dawnmine.topology.TopologyProfile.RegionSpec::id).orElse(null);
+        }
+        if (region == null) {
+            return null;
+        }
+        try {
+            return OreCatalog.Tier.parse(region);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Shaft carving runs after ore placement and can hollow planned ore
