@@ -24,6 +24,15 @@ authors="${mod_authors}" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''${mod_description}'''
 
+# Mod icon (512x512 PNG at the jar root)
+logoFile="logo.png" #optional
+logoBlur=false #optional
+
+# Project links shown on the in-game mod list
+displayURL="https://github.com/DurdeuVlad/dawnmine" #optional
+issueTrackerURL="https://github.com/DurdeuVlad/dawnmine/issues" #optional
+credits="Rustic Craft 2 team; generated cave artwork by the Dawnmine art set" #optional
+
 # Server-side-only gameplay: clients never need this mod installed.
 displayTest="IGNORE_SERVER_ONLY" #optional
 
