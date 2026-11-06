@@ -146,3 +146,9 @@ Revisit a decision only when pack evidence, a dedicated-server prototype, compat
 - NeoForge command registration and server permission predicates: https://docs.neoforged.net/docs/misc/commands/
 - Target pack manifest: rustic-craft-2-modpack (sibling private repo)\modpack.json
 - Target pack mod catalog: rustic-craft-2-modpack (sibling private repo)\catalog\mods.json
+
+
+## Dawnmine 0.3
+The 0.3 product/design contract is `docs/Dawnmine-0.3-adventure-contract.md` (Dawnmine identity, whole-run pre-generation, underground hub arrival, lodestone teleporter). It supersedes the exploration/frontier generation approach: the mine is fully prepared before admission, players spawn inside a generated 45x45 underground hub, and travel is by right-clicking a staff-bound surface lodestone. Historical Public Mines reports in `docs/reports/` are legacy 0.2 evidence only.
+
+ADR-0.3-001 (accepted, in implementation): Dawnmine identity (`com.dwurdy.dawnmine`, `dawnmine:mine`, `/dawnmine`, `dawnmine_*` saved data, `dawnmine-server.toml`, `dawnmine-0.3.0.jar`, no `/publicmine` alias); whole-run preparation via persisted plan with entry closed until every expected segment completes; generated underground hub arrival (floor Y41, spawn 0,42,8, gateway east to entrance 28,42,0); staff-bound overworld lodestone teleporter (`dawnmine_teleporter`) replacing the surface pad and exterior connector.

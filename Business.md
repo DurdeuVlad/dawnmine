@@ -63,3 +63,7 @@ The mine uses generated block geometry. The experience may have recognizable reg
 - NeoForge 1.21.1 Java 21 project setup: https://docs.neoforged.net/docs/1.21.1/gettingstarted/
 - NeoForge common tag model: https://docs.neoforged.net/docs/1.21.1/resources/server/tags/
 - Born in Chaos version/platform metadata: https://modrinth.com/mod/borninchaos/versions
+
+
+## Dawnmine 0.3
+The 0.3 product/design contract is `docs/Dawnmine-0.3-adventure-contract.md` (Dawnmine identity, whole-run pre-generation, underground hub arrival, lodestone teleporter). It supersedes the exploration/frontier generation approach: the mine is fully prepared before admission, players spawn inside a generated 45x45 underground hub, and travel is by right-clicking a staff-bound surface lodestone. Historical Public Mines reports in `docs/reports/` are legacy 0.2 evidence only.

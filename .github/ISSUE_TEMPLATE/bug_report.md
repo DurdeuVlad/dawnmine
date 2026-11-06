@@ -4,9 +4,9 @@ about: Something Dawnmine does wrong on the server
 labels: bug
 ---
 
-**Versions:** mod (`publicmines-…`), pack (RC2 …), NeoForge, server host/Java.
+**Versions:** mod (`dawnmine-…`), pack (RC2 …), NeoForge, server host/Java.
 
-**What you ran / saw:** (commands used, e.g. `/publicmine status`, and what happened)
+**What you ran / saw:** (commands used, e.g. `/dawnmine status`, and what happened)
 
 **Expected:** …
 

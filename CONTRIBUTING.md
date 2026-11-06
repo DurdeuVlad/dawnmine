@@ -14,7 +14,7 @@ Thanks for helping make the shared mine better.
 Requires Java 21.
 
 ```bat
-gradlew.bat build            # compiles + runs JUnit tests, produces build/libs/publicmines-<version>.jar
+gradlew.bat build            # compiles + runs JUnit tests, produces build/libs/dawnmines-<version>.jar
 gradlew.bat test             # JUnit only
 gradlew.bat runGameTestServer  # in-game test suite (dimension-dependent tests skip in the flat test world)
 gradlew.bat runServer        # local dedicated dev server
@@ -31,4 +31,4 @@ Full acceptance runs GameTests on the real Rustic Craft 2 2.2.2 pack inside the 
 
 ## Reporting bugs / requesting features
 
-Use the issue templates — include the mod + pack versions (`publicmines-<v>` on RC2 `2.2.2`), what you ran (`/publicmine status`, `setup validate` output helps), expected vs actual, and the relevant `latest.log` excerpt.
+Use the issue templates — include the mod + pack versions (`dawnmine-<v>` on RC2 `2.2.2`), what you ran (`/dawnmine status`, `setup validate` output helps), expected vs actual, and the relevant `latest.log` excerpt.

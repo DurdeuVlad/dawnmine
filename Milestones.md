@@ -165,3 +165,7 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 | M6 Gear progression and expedition economy | [#13](https://github.com/DurdeuVlad/dawnmine/issues/13) |
 | M7 Morning reset | [#10](https://github.com/DurdeuVlad/dawnmine/issues/10) |
 | M8 Playtests and operator readiness | [#11](https://github.com/DurdeuVlad/dawnmine/issues/11) |
+
+
+## Dawnmine 0.3
+The 0.3 product/design contract is `docs/Dawnmine-0.3-adventure-contract.md` (Dawnmine identity, whole-run pre-generation, underground hub arrival, lodestone teleporter). It supersedes the exploration/frontier generation approach: the mine is fully prepared before admission, players spawn inside a generated 45x45 underground hub, and travel is by right-clicking a staff-bound surface lodestone. Historical Public Mines reports in `docs/reports/` are legacy 0.2 evidence only.
