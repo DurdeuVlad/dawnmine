@@ -122,3 +122,34 @@ tasks.withType(ProcessResources).configureEach {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
+
+// CurseForge publishing. Inert until both are set (env or -P):
+//   CURSEFORGE_TOKEN   - API token from console.curseforge.com
+//   curseforge_project_id - the numeric project ID from your CF project page
+// Then:  gradlew curseforge
+if (System.getenv('CURSEFORGE_TOKEN') && findProperty('curseforge_project_id')) {
+    apply plugin: 'com.matthewprenger.cursegradle'
+
+    curseforge {
+        apiKey = System.getenv('CURSEFORGE_TOKEN')
+        project {
+            id = findProperty('curseforge_project_id')
+            releaseType = 'beta'
+            changelogType = 'markdown'
+            changelog = file('docs/curseforge-description.md')
+            addGameVersion '1.21.1'
+            addGameVersion 'NeoForge'
+            addGameVersion 'Java 21'
+            mainArtifact(jar) {
+                displayName = "${mod_id}-${mod_version}.jar"
+            }
+            relations {
+                optionalDependency 'yungs-better-mineshafts-neoforge'
+                optionalDependency 'yungs-better-dungeons-neoforge'
+                optionalDependency 'repurposed-structures'
+                optionalDependency 'yungs-api-neoforge'
+                optionalDependency 'valhelsia-structures'
+            }
+        }
+    }
+}
