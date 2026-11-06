@@ -42,6 +42,9 @@ runs {
         argument '--nogui'
         systemProperty 'neoforge.enableGameTest', 'true'
         systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        // owo-lib enables its handshake in dev environments (Owo.DEBUG = !isProduction), which
+        // registers owo:handshake instead of owo:handshake_off and rejects production clients.
+        systemProperty 'owo.handshake.enabled', 'false'
     }
 
     // This run config launches GameTestServer and runs all registered gametests, then exits.
