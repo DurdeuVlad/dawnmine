@@ -136,7 +136,9 @@ if (System.getenv('CURSEFORGE_TOKEN') && findProperty('curseforge_project_id')) 
             id = findProperty('curseforge_project_id')
             releaseType = 'beta'
             changelogType = 'markdown'
-            changelog = file('docs/curseforge-description.md')
+            // CI writes the GitHub release notes to build/curseforge-changelog.md; fall back to the page description
+            def releaseNotes = file('build/curseforge-changelog.md')
+            changelog = releaseNotes.exists() ? releaseNotes : file('docs/curseforge-description.md')
             addGameVersion '1.21.1'
             addGameVersion 'NeoForge'
             addGameVersion 'Java 21'
