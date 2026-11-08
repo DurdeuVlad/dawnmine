@@ -123,6 +123,7 @@ public final class MineEncounterManager {
             mob.getPersistentData().putString(RUN_TAG, data.runId());
             mob.getPersistentData().putString(SOURCE_TAG, "encounter:" + composition.id() + ":" + node.id());
             mob.getPersistentData().putString(REGION_TAG, node.region());
+            MobLevelScaling.apply(mob, composition.level());
             if (mine.noCollision(mob) && mine.addFreshEntity(mob)) {
                 ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
                 data.registerMineEntity(mob.getUUID(), entityId, mine.dimension(), pos,

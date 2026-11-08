@@ -43,16 +43,73 @@ class MineEncounterCatalogTest {
     }
 
     @Test
+    void bundledProfileCarriesExplicitLevelsThatDeepenByRegion() throws Exception {
+        MineEncounterCatalog.Profile profile = bundled();
+        int previousMinimum = 0;
+        for (String regionId : List.of("upper", "middle", "chaos")) {
+            int regionMinimum = profile.region(regionId).compositions().stream()
+                    .mapToInt(MineEncounterCatalog.Composition::level).min().orElseThrow();
+            assertTrue(regionMinimum > previousMinimum,
+                    "region " + regionId + " does not start deeper than the previous band");
+            previousMinimum = regionMinimum;
+            for (MineEncounterCatalog.Composition composition : profile.region(regionId).compositions()) {
+                assertTrue(composition.level() >= 1 && composition.level() <= 16,
+                        "composition " + composition.id() + " has an out-of-range level");
+            }
+        }
+    }
+
+    @Test
+    void missingAndOutOfRangeLevelAreRejected() {
+        String validComposition = "{\"id\":\"x\",\"weight\":1,\"level\":3,\"threat\":\"t\","
+                + "\"counterplay\":\"c\",\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":1}]}";
+        String profile = "{\"id\":\"standard\",\"totalPopulationCap\":4,\"regions\":["
+                + "{\"id\":\"upper\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
+                + "{\"id\":\"middle\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
+                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + validComposition + "]}]}";
+        assertEquals(3, MineEncounterCatalog.parse(JsonParser.parseString(profile)
+                .getAsJsonObject()).region("upper").compositions().get(0).level());
+        String missingLevel = profile.replace("\"level\":3,", "");
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(missingLevel).getAsJsonObject()));
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(profile.replace("\"level\":3", "\"level\":0"))
+                        .getAsJsonObject()));
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(profile.replace("\"level\":3", "\"level\":17"))
+                        .getAsJsonObject()));
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(profile.replace("\"level\":3", "\"level\":\"high\""))
+                        .getAsJsonObject()));
+    }
+
+    @Test
+    void colonAndUppercaseCompositionIdsAreRejected() {
+        String validComposition = "{\"id\":\"x\",\"weight\":1,\"level\":3,\"threat\":\"t\","
+                + "\"counterplay\":\"c\",\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":1}]}";
+        String profile = "{\"id\":\"standard\",\"totalPopulationCap\":4,\"regions\":["
+                + "{\"id\":\"upper\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
+                + "{\"id\":\"middle\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
+                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + validComposition + "]}]}";
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(profile.replace("\"id\":\"x\"",
+                        "\"id\":\"boss:tier1\"")).getAsJsonObject()));
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(profile.replace("\"id\":\"x\"",
+                        "\"id\":\"Boss\"")).getAsJsonObject()));
+    }
+
+    @Test
     void invalidCompositionAboveCapAndMissingDepthRegionAreRejected() {
         String valid = "{\"id\":\"standard\",\"totalPopulationCap\":4,\"regions\":["
                 + "{\"id\":\"upper\",\"populationCap\":2,\"compositions\":["
-                + "{\"id\":\"x\",\"weight\":1,\"threat\":\"t\",\"counterplay\":\"c\","
+                + "{\"id\":\"x\",\"weight\":1,\"level\":1,\"threat\":\"t\",\"counterplay\":\"c\","
                 + "\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":3}]}]},"
                 + "{\"id\":\"middle\",\"populationCap\":2,\"compositions\":["
-                + "{\"id\":\"x\",\"weight\":1,\"threat\":\"t\",\"counterplay\":\"c\","
+                + "{\"id\":\"x\",\"weight\":1,\"level\":1,\"threat\":\"t\",\"counterplay\":\"c\","
                 + "\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":1}]}]},"
                 + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":["
-                + "{\"id\":\"x\",\"weight\":1,\"threat\":\"t\",\"counterplay\":\"c\","
+                + "{\"id\":\"x\",\"weight\":1,\"level\":1,\"threat\":\"t\",\"counterplay\":\"c\","
                 + "\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":1}]}]}]}";
         assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
                 JsonParser.parseString(valid).getAsJsonObject()));

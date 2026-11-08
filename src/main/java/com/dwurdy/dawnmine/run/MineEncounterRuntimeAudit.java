@@ -86,7 +86,7 @@ public final class MineEncounterRuntimeAudit {
         if (!failures.isEmpty()) return new Result(0, evidence, failures);
 
         var missingEntityComposition = new MineEncounterCatalog.Composition("m4a_missing_entity_audit", 1,
-                "unknown entity fixture", "skip the composition", List.of(
+                "unknown entity fixture", "skip the composition", 1, List.of(
                         new MineEncounterCatalog.EntityCount(ResourceLocation.parse(
                                 "dawnmine:m4a_audit_entity_that_does_not_exist"), 1)));
         if (!MineEncounterManager.canResolveRequests(mine, missingEntityComposition)) {
