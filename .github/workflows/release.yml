@@ -23,6 +23,11 @@ jobs:
       - name: Extract release notes as CurseForge changelog
         run: mkdir -p build && printf '%s' "${{ github.event.release.body }}" > build/curseforge-changelog.md
 
+      # gradlew is committed on Windows without the exec bit; guard so a
+      # plain checkout always runs the wrapper.
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
       - name: Build and publish to CurseForge
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
