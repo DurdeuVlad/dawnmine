@@ -195,6 +195,17 @@ public final class PassageNetwork {
                 continue;
             }
             String chosen = chooseDefinition(topology, node, definitionIds, placed, defs);
+            if (chosen == null) {
+                // Same degrade as the empty-catalog path: a safehouse whose
+                // anchor fits no definition keeps its checkpoint instead of
+                // killing the run - a reserve collision is a content
+                // problem (oversized def, crowded anchor), not a reason to
+                // fail a whole seeded day.
+                LOGGER.warn("[dawnmine] no landmark definition fits safehouse "
+                        + "node '{}' at {} - degrading to a plain checkpoint "
+                        + "node", node.id(), node.pos());
+                continue;
+            }
             anchors.put(node.id(), node.pos());
             assignments.put(node.id(), chosen);
             placed.add(new LandmarkLayout.Placement(node.id(), chosen,
@@ -209,7 +220,8 @@ public final class PassageNetwork {
      * a stable fallback through the sorted catalog when the pick's reserve
      * would cover a foreign node, reach outside owned bounds, touch the
      * protected hub volume, or collide with an already-placed reserve.
-     * Fails closed only when no legal definition exists. */
+     * Null when no legal definition exists - the caller degrades the node
+     * to a plain checkpoint rather than failing the run. */
     private static String chooseDefinition(TopologyPlan topology, TopoNode node,
                                            List<String> definitionIds,
                                            List<LandmarkLayout.Placement> placed,
@@ -225,9 +237,7 @@ public final class PassageNetwork {
                 return id;
             }
         }
-        throw new IllegalStateException("no landmark definition fits safehouse node '"
-                + node.id() + "' at " + node.pos()
-                + " - every catalog reserve collides with the run; report this fixture");
+        return null;
     }
 
     /** A definition fits when its reserve stays inside owned bounds, clear
@@ -542,7 +552,7 @@ public final class PassageNetwork {
 
     /** Every resolved centerline by segment id. */
     public Map<String, List<TopoPos>> paths() {
-        return paths;
+        return java.util.Collections.unmodifiableMap(paths);
     }
 
     /** Resolved centerline for a preparation/geometry segment id. */

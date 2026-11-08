@@ -144,6 +144,13 @@ public final class LandmarkLayout {
                 openings.add(out.offset(0, 1, 0));
                 out = out.offset(step[0], 0, step[1]);
             }
+            // The tunnel mouth - the first cell outside the reserve - is
+            // declared geometry too: it is the splice seam between the
+            // pinned approach and the routed corridor, so merges and
+            // smoothing may never move it either, and fits() must reject
+            // candidates whose mouth lands somewhere forbidden.
+            openings.add(out);
+            openings.add(out.offset(0, 1, 0));
         }
         return openings;
     }

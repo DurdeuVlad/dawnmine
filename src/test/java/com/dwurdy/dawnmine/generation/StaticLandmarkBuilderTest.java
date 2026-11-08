@@ -35,7 +35,7 @@ class StaticLandmarkBuilderTest {
                   "layers": [
                     [ "SSS", "SSS", "SSS" ],
                     [ "STS", "SAA", "SSA" ],
-                    [ "SSS", "SSA", "SSS" ]
+                    [ "SSS", "SAA", "SSS" ]
                   ]
                 }
                 """).getAsJsonObject();

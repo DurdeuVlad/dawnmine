@@ -264,24 +264,41 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
             }
             layers.add(rows);
         }
-        // Every declared door must actually open: the connector cell and
-        // its headroom resolve to air slots in the grid, otherwise the
-        // corridor terminates against a sealed wall.
+        // Every declared door must actually open and lead somewhere: the
+        // connector cell, its headroom, and the interior cell behind the
+        // door resolve to air slots in the grid, otherwise the corridor
+        // terminates against a sealed wall or steps into solid interior.
         for (Connector c : connectors) {
-            for (int dy = 0; dy <= 1; dy++) {
-                char slot = layers.get(c.y() + dy)
-                        .get(c.z() + halfZ).charAt(c.x() + halfX);
-                String value = slots.get(slot);
-                String blockId = value.contains("[")
-                        ? value.substring(0, value.indexOf('[')) : value;
-                String path = blockId.contains(":")
-                        ? blockId.substring(blockId.indexOf(':') + 1) : blockId;
-                if (!path.equals("air") && !path.endsWith("_air")) {
+            int[] inward = switch (c.facing()) {
+                case "east" -> new int[] {-1, 0};
+                case "west" -> new int[] {1, 0};
+                case "south" -> new int[] {0, -1};
+                default -> new int[] {0, 1};
+            };
+            for (int[] cell : new int[][] {{c.x(), c.z()},
+                    {c.x() + inward[0], c.z() + inward[1]}}) {
+                int gx = cell[0] + halfX;
+                int gz = cell[1] + halfZ;
+                if (gx < 0 || gx > 2 * halfX || gz < 0 || gz > 2 * halfZ) {
                     throw new JsonParseException("landmark '" + id
                             + "' connector (" + c.x() + "," + c.y() + "," + c.z()
-                            + ") declares a door over non-air slot '" + slot
-                            + "' (" + value + ") - the corridor would "
-                            + "terminate against a sealed wall");
+                            + ") faces '" + c.facing() + "' but has no interior "
+                            + "cell behind the door - the room is too thin");
+                }
+                for (int dy = 0; dy <= 1; dy++) {
+                    char slot = layers.get(c.y() + dy).get(gz).charAt(gx);
+                    String value = slots.get(slot);
+                    String blockId = value.contains("[")
+                            ? value.substring(0, value.indexOf('[')) : value;
+                    String path = blockId.contains(":")
+                            ? blockId.substring(blockId.indexOf(':') + 1) : blockId;
+                    if (!path.equals("air") && !path.endsWith("_air")) {
+                        throw new JsonParseException("landmark '" + id
+                                + "' connector (" + c.x() + "," + c.y() + "," + c.z()
+                                + ") declares a door over non-air slot '" + slot
+                                + "' (" + value + ") - the corridor would "
+                                + "terminate against a sealed wall");
+                    }
                 }
             }
         }

@@ -78,7 +78,7 @@ public final class MineGenerator {
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v11-opening-ownership";
+    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v12-mouth-anchor";
 
     private static MineGenerator instance;
 
@@ -347,6 +347,18 @@ public final class MineGenerator {
         try {
             TopologyPlan planned = MineTopology.plan(data, mine);
             if (!planned.fingerprint().equals(data.topologyFingerprint())) {
+                return false;
+            }
+            // The readiness path must not pin a catalog epoch the receipt
+            // never authorized: when the saved generation fingerprint has
+            // drifted (datapack reload since the run was receipted),
+            // refreshPlan is the authoritative fail path - refuse to
+            // re-pin here instead of reporting progress under a foreign
+            // epoch for a few hundred ticks.
+            String receipt = data.generationPlanFingerprint();
+            if (!receipt.isEmpty() && !receipt.equals(generationFingerprint(
+                    planned, data.generationNetherrackEnabled(),
+                    data.generationNetherrackInterval()))) {
                 return false;
             }
             topology = planned;
