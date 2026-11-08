@@ -82,12 +82,13 @@ public final class LandmarkLayout {
      * fail-closed upstream.
      */
     public static LandmarkLayout place(Map<String, TopoPos> anchors,
-                                       Map<String, String> assignments) {
+                                       Map<String, String> assignments,
+                                       Map<String, Definition> defs) {
         Map<String, Placement> placed = new LinkedHashMap<>();
         Set<TopoPos> reserved = new java.util.HashSet<>();
         Map<String, Set<TopoPos>> openingsByNode = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : assignments.entrySet()) {
-            Definition definition = LandmarkCatalog.definition(entry.getValue());
+            Definition definition = defs.get(entry.getValue());
             TopoPos feet = anchors.get(entry.getKey());
             if (definition == null || feet == null) {
                 throw new IllegalStateException("landmark placement for node '" + entry.getKey()

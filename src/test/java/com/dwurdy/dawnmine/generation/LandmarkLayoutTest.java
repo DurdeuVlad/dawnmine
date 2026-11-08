@@ -43,8 +43,8 @@ class LandmarkLayoutTest {
                   "slots": { "S": "minecraft:stone_bricks", "A": "minecraft:air" },
                   "layers": [
                     [ "SSSSS", "SSSSS", "SSSSS" ],
-                    [ "SSSSS", "SAAAS", "SSSSA" ],
-                    [ "SSSSS", "SAAAS", "SSSSA" ]
+                    [ "SSSSS", "SAAAA", "SSSSA" ],
+                    [ "SSSSS", "SAAAA", "SSSSA" ]
                   ]
                 }
                 """).getAsJsonObject();
@@ -52,7 +52,8 @@ class LandmarkLayoutTest {
     }
 
     private static LandmarkLayout place() {
-        return LandmarkLayout.place(Map.of("n01", FEET), Map.of("n01", "shelter"));
+        return LandmarkLayout.place(Map.of("n01", FEET), Map.of("n01", "shelter"),
+                LandmarkCatalog.definitions());
     }
 
     @Test
@@ -107,9 +108,11 @@ class LandmarkLayoutTest {
     @Test
     void failsClosedOnMissingDefinitionOrAnchor() {
         assertThrows(IllegalStateException.class,
-                () -> LandmarkLayout.place(Map.of("n01", FEET), Map.of("n01", "ghost")));
+                () -> LandmarkLayout.place(Map.of("n01", FEET), Map.of("n01", "ghost"),
+                        LandmarkCatalog.definitions()));
         assertThrows(IllegalStateException.class,
-                () -> LandmarkLayout.place(Map.of(), Map.of("n01", "shelter")));
+                () -> LandmarkLayout.place(Map.of(), Map.of("n01", "shelter"),
+                        LandmarkCatalog.definitions()));
     }
 
     @Test

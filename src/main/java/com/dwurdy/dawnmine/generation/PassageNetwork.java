@@ -35,31 +35,46 @@ public final class PassageNetwork {
 
     private final TopologyPlan topology;
     private final TopoPos arrival;
+    private final Map<String, LandmarkCatalog.Definition> defs;
+    private final String catalogFingerprint;
     private final LandmarkLayout landmarks;
     private final Map<String, List<TopoPos>> paths = new HashMap<>();
     private final Map<String, TopoPos> centers = new HashMap<>();
 
     /** Resolved geometry for a topology; fails (throws) only when a merge
      * would violate the fixed hub or landmark anchors or the lowering
-     * bound. */
+     * bound. Epoch-sticky: when a network for this topology and arrival is
+     * already resolved, this returns it verbatim even if the live catalog
+     * has since reloaded - a mid-run datapack swap cannot fork a second
+     * geometry epoch underneath the receipted one. Callers that need an
+     * explicit epoch use the three-argument overload. */
     public static synchronized PassageNetwork of(TopologyPlan topology, TopoPos arrival) {
+        String arrivalKey = arrival.x() + "," + arrival.y() + "," + arrival.z();
+        if (cached != null && topology.fingerprint().equals(cachedFingerprint)
+                && arrivalKey.equals(cachedArrival)) {
+            resolving = null;
+            return cached;
+        }
         return of(topology, arrival, LandmarkCatalog.definitions());
     }
 
     /** Resolve against a specific landmark-definition set so a run pins
      * the catalog snapshot it was receipted under: a reload mid-run can
      * never swap room shapes, reserves, or connectors under it. The
-     * snapshot's fingerprint keys the cache alongside the topology. */
+     * snapshot's fingerprint keys the cache alongside the topology; a
+     * reference-identical map (the caller's own pin) skips the rehash. */
     public static synchronized PassageNetwork of(TopologyPlan topology, TopoPos arrival,
                                                  Map<String, LandmarkCatalog.Definition> defs) {
         String arrivalKey = arrival.x() + "," + arrival.y() + "," + arrival.z();
-        String catalogKey = LandmarkCatalog.fingerprint(defs);
         if (cached != null && topology.fingerprint().equals(cachedFingerprint)
                 && arrivalKey.equals(cachedArrival)
-                && catalogKey.equals(cachedCatalogFingerprint)) {
+                && (cached.defs == defs
+                        || LandmarkCatalog.fingerprint(defs)
+                                .equals(cachedCatalogFingerprint))) {
             resolving = null;
             return cached;
         }
+        String catalogKey = LandmarkCatalog.fingerprint(defs);
         try {
             PassageNetwork network = new PassageNetwork(topology, arrival, defs);
             cachedFingerprint = topology.fingerprint();
@@ -70,6 +85,13 @@ public final class PassageNetwork {
         } finally {
             resolving = null;
         }
+    }
+
+    /** The fingerprint of the landmark-definition snapshot this network
+     * was resolved under - lets indexes keyed on resolved geometry
+     * (clearance) detect a catalog-epoch switch. */
+    public String catalogFingerprint() {
+        return catalogFingerprint;
     }
 
     /** The placed static landmarks resolved for this topology: anchors,
@@ -104,7 +126,9 @@ public final class PassageNetwork {
                            Map<String, LandmarkCatalog.Definition> defs) {
         this.topology = topology;
         this.arrival = arrival;
-        this.landmarks = placeLandmarks(topology, defs);
+        this.defs = Map.copyOf(defs);
+        this.catalogFingerprint = LandmarkCatalog.fingerprint(this.defs);
+        this.landmarks = placeLandmarks(topology, this.defs);
         resolving = this.landmarks;
         Map<String, List<TopoPos>> raw = new HashMap<>();
         Map<String, List<TopoPos>> original = new HashMap<>();
@@ -145,8 +169,9 @@ public final class PassageNetwork {
 
     /** Resolve the placed landmarks for this topology: every node flagged
      * {@link NodeFeature#SAFEHOUSE} gets a deterministic definition from
-     * the live catalog, anchored on its authored position (its resolved
-     * centre - no incident edge endpoint ever lands on its column). */
+     * the snapshot passed to {@link #of}, anchored on its authored position
+     * (its resolved centre - no incident edge endpoint ever lands on its
+     * column). */
     private static LandmarkLayout placeLandmarks(TopologyPlan topology,
             Map<String, LandmarkCatalog.Definition> defs) {
         List<String> definitionIds = new ArrayList<>(defs.keySet());
@@ -175,7 +200,7 @@ public final class PassageNetwork {
             placed.add(new LandmarkLayout.Placement(node.id(), chosen,
                     node.pos().offset(0, -1, 0), defs.get(chosen)));
         }
-        LandmarkLayout layout = LandmarkLayout.place(anchors, assignments);
+        LandmarkLayout layout = LandmarkLayout.place(anchors, assignments, defs);
         validatePlacements(topology, layout);
         return layout;
     }

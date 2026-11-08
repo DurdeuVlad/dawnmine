@@ -185,6 +185,13 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
                         + ") opens into the floor slab - doors must sit "
                         + "at y >= 1 so their feet land inside the room");
             }
+            if (cy >= height - 1) {
+                throw new JsonParseException("landmark '" + id
+                        + "' connector (" + cx + "," + cy + "," + cz
+                        + ") leaves no in-grid headroom - doors need y <= "
+                        + (height - 2) + " so the cell above them is still "
+                        + "inside the room");
+            }
             connectors.add(new Connector(cx, cy, cz, facing));
         }
 
@@ -201,9 +208,27 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
                     || (value.endsWith("]")
                             && value.substring(value.indexOf('[') + 1, value.length() - 1)
                                     .matches("[a-z0-9_]+=[a-z0-9_]+(,[a-z0-9_]+=[a-z0-9_]+)*"));
-            if (ResourceLocation.tryParse(blockId) == null || !statesWellFormed) {
+            ResourceLocation loc = ResourceLocation.tryParse(blockId);
+            if (loc == null || !statesWellFormed) {
                 throw new JsonParseException("landmark '" + id
                         + "' slot '" + slot.getKey() + "' has invalid block state '" + value + "'");
+            }
+            // On a real server the block registry is populated and an
+            // unknown id can be rejected at load; in the bare test runtime
+            // it is empty (or the class is absent), so the check is gated.
+            try {
+                if (net.minecraft.core.registries.BuiltInRegistries.BLOCK.size() > 8
+                        && !net.minecraft.core.registries.BuiltInRegistries.BLOCK
+                                .containsKey(loc)) {
+                    throw new JsonParseException("landmark '" + id
+                            + "' slot '" + slot.getKey() + "' references "
+                            + "unregistered block '" + blockId + "' - the run "
+                            + "would fail mid-generation instead of at load");
+                }
+            } catch (JsonParseException e) {
+                throw e;
+            } catch (Throwable ignored) {
+                // Registry not initialized in this runtime - skip the check.
             }
             slots.put(slot.getKey().charAt(0), value);
         }
@@ -238,6 +263,27 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
                 rows.add(row);
             }
             layers.add(rows);
+        }
+        // Every declared door must actually open: the connector cell and
+        // its headroom resolve to air slots in the grid, otherwise the
+        // corridor terminates against a sealed wall.
+        for (Connector c : connectors) {
+            for (int dy = 0; dy <= 1; dy++) {
+                char slot = layers.get(c.y() + dy)
+                        .get(c.z() + halfZ).charAt(c.x() + halfX);
+                String value = slots.get(slot);
+                String blockId = value.contains("[")
+                        ? value.substring(0, value.indexOf('[')) : value;
+                String path = blockId.contains(":")
+                        ? blockId.substring(blockId.indexOf(':') + 1) : blockId;
+                if (!path.equals("air") && !path.endsWith("_air")) {
+                    throw new JsonParseException("landmark '" + id
+                            + "' connector (" + c.x() + "," + c.y() + "," + c.z()
+                            + ") declares a door over non-air slot '" + slot
+                            + "' (" + value + ") - the corridor would "
+                            + "terminate against a sealed wall");
+                }
+            }
         }
         return new Definition(id, halfX, halfZ, height, reserveMargin,
                 connectors, slots, layers);

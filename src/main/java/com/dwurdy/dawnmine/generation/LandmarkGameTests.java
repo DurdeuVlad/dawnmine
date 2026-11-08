@@ -64,15 +64,15 @@ public final class LandmarkGameTests {
         }
         helper.assertTrue(landmarkEdges > 0,
                 "no edges touch a safehouse - placement is unreachable");
-        // The safehouse contract: exactly one doorway, on the +X face,
-        // physically open with its approach tunnel and interior carved.
+        // The safehouse contract: every declared doorway is physically
+        // open with its approach tunnel and interior carved. Direction is
+        // derived from the declared facing so defs with other door walls
+        // stay valid fixtures.
         for (LandmarkLayout.Placement p : layout.placements().values()) {
             List<LandmarkCatalog.Connector> connectors = p.definition().connectors();
-            helper.assertTrue(connectors.size() == 1
-                            && "east".equals(connectors.get(0).facing()),
+            helper.assertTrue(!connectors.isEmpty(),
                     "safehouse " + p.definitionId() + " at " + p.nodeId()
-                            + " declares " + connectors.size()
-                            + " connectors - the shelter contract is one +X door");
+                            + " declares no connectors - unreachable room");
             for (TopoPos door : layout.connectors(p.nodeId())) {
                 helper.assertTrue(mine.getBlockState(
                                 new BlockPos(door.x(), door.y(), door.z())).isAir(),
@@ -80,7 +80,8 @@ public final class LandmarkGameTests {
                 helper.assertTrue(mine.getBlockState(
                                 new BlockPos(door.x(), door.y() + 1, door.z())).isAir(),
                         "connector headroom " + door + " is not open in the world");
-                TopoPos approach = door.offset(1, 0, 0);
+                int[] dir = approachDirection(p.definition(), door, p.anchor());
+                TopoPos approach = door.offset(dir[0], 0, dir[1]);
                 helper.assertTrue(mine.getBlockState(
                                 new BlockPos(approach.x(), approach.y(), approach.z()))
                                 .isAir(),
@@ -93,6 +94,23 @@ public final class LandmarkGameTests {
                     "safehouse " + p.nodeId() + " interior centre is sealed");
         }
         helper.succeed();
+    }
+
+    /** The outward XZ step from a door cell toward its approach tunnel,
+     * derived from the connector's declared facing. */
+    private static int[] approachDirection(LandmarkCatalog.Definition def,
+                                           TopoPos door, TopoPos anchor) {
+        for (LandmarkCatalog.Connector c : def.connectors()) {
+            if (anchor.offset(c.x(), c.y(), c.z()).equals(door)) {
+                return switch (c.facing()) {
+                    case "east" -> new int[] {1, 0};
+                    case "west" -> new int[] {-1, 0};
+                    case "south" -> new int[] {0, 1};
+                    default -> new int[] {0, -1};
+                };
+            }
+        }
+        return new int[] {0, 0};
     }
 
     @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")

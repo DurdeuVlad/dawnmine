@@ -483,7 +483,7 @@ public final class SegmentGeometry {
             addContainedLavaPocket(blocks, center);
         }
         return finish("node:" + node.id(), blocks, bounds, arrival,
-                wholeRunFeetCells(topology, arrival));
+                wholeRunFeetCells(topology, arrival), topology);
     }
 
     static int roomReach(NodeKind kind) {
@@ -621,7 +621,7 @@ public final class SegmentGeometry {
         addPassage(blocks, path, isMineshaft(id, topology.seed(), edge.kind()),
                 topology.seed(), id);
         return finish(id, blocks, bounds, arrival,
-                wholeRunFeetCells(topology, arrival));
+                wholeRunFeetCells(topology, arrival), topology);
     }
 
     /** The centerline a passage will follow (used by the dressing and ore
@@ -982,7 +982,7 @@ public final class SegmentGeometry {
         Map<TopoPos, RankedBlock> blocks = new HashMap<>();
         addPassage(blocks, path, false, topology.seed(), id);
         return finish(id, blocks, bounds, arrival,
-                wholeRunFeetCells(topology, arrival));
+                wholeRunFeetCells(topology, arrival), topology);
     }
 
     /**
@@ -997,8 +997,8 @@ public final class SegmentGeometry {
      * checkpoint pad column. Dressing solids and lamps are filtered against
      * it so supports, beams, and lanterns can never occupy another route's
      * two-high walkable space. Cached by topology fingerprint. */
-    private record Clearance(String fingerprint, TopoPos arrival, Set<TopoPos> all,
-                             Set<TopoPos> feet, Set<TopoPos> heads) {}
+    private record Clearance(String fingerprint, TopoPos arrival, String catalog,
+                             Set<TopoPos> all, Set<TopoPos> feet, Set<TopoPos> heads) {}
     private static Clearance cachedClearance;
 
     public static Set<TopoPos> wholeRunClearance(TopologyPlan topology, TopoPos arrival) {
@@ -1016,9 +1016,13 @@ public final class SegmentGeometry {
     }
 
     private static synchronized Clearance clearance(TopologyPlan topology, TopoPos arrival) {
+        // The resolved centerlines depend on the landmark-definition epoch;
+        // key the index on it so a catalog reload cannot serve a stale set.
+        String catalogKey = PassageNetwork.of(topology, arrival).catalogFingerprint();
         if (cachedClearance != null
                 && cachedClearance.fingerprint().equals(topology.fingerprint())
-                && cachedClearance.arrival().equals(arrival)) {
+                && cachedClearance.arrival().equals(arrival)
+                && cachedClearance.catalog().equals(catalogKey)) {
             return cachedClearance;
         }
         Set<TopoPos> reserved = new HashSet<>();
@@ -1091,7 +1095,7 @@ public final class SegmentGeometry {
                 }
             }
         }
-        cachedClearance = new Clearance(topology.fingerprint(), arrival,
+        cachedClearance = new Clearance(topology.fingerprint(), arrival, catalogKey,
                 Set.copyOf(reserved), Set.copyOf(feet), Set.copyOf(head));
         return cachedClearance;
     }
@@ -1132,7 +1136,8 @@ public final class SegmentGeometry {
         Set<TopoPos> clearance = wholeRunClearance(topology, arrival);
         blocks.entrySet().removeIf(entry ->
                 clearance.contains(entry.getKey()) && isJunctionObstacle(entry.getValue()));
-        return finish("dress:" + structuralId, blocks, bounds, arrival, clearance);
+        return finish("dress:" + structuralId, blocks, bounds, arrival, clearance,
+                topology);
     }
 
     /** Anything that would wall off a shared walk cell: posts, beams,
@@ -1156,21 +1161,25 @@ public final class SegmentGeometry {
                 wholeRunHeadCells(topology, arrival), clearance,
                 wholeRunFeetCells(topology, arrival));
         if (!mineshaft) {
-            addPassageLights(blocks, path, topology.seed(), id, clearance);
+            addPassageLights(blocks, path, topology.seed(), id, clearance,
+                    PassageNetwork.activeLayout());
             return;
         }
         Random rng = new Random(topology.seed() ^ stableHash(id) ^ 0xBF58476D1CE4E5B9L);
         int spacing = 7 + rng.nextInt(3); // frames every 7-9 centerline cells
         int offset = rng.nextInt(spacing);
+        LandmarkLayout landmarks = PassageNetwork.activeLayout();
         for (int i = 0; i < path.size(); i++) {
             TopoPos cell = path.get(i);
             PassageProfile profile = passageProfile(i, path.size(), true, topology.seed(), id);
             if ((i + offset) % spacing == 0 && i > 0 && i < path.size() - 1) {
-                addTimberFrame(blocks, path, i, profile, clearance);
-            } else if (i % 2 == 0) {
+                addTimberFrame(blocks, path, i, profile, clearance, landmarks);
+            } else if (i % 2 == 0 && !landmarks.isReserved(cell)) {
                 // Rails sit on the plank walkway; the apply-side support
                 // check drops any that would float. Rails are walk-through
                 // decoration, so shared junction cells may carry them too.
+                // Landmark reserves are off-limits even where the corridor
+                // carves through an opening - the room owns its doorway.
                 put(blocks, cell, BlockKind.RAIL, 4);
             }
         }
@@ -1181,7 +1190,8 @@ public final class SegmentGeometry {
      * centerline, so players always keep three blocks of clearance. */
     private static void addTimberFrame(Map<TopoPos, RankedBlock> blocks,
                                        List<TopoPos> path, int i,
-                                       PassageProfile profile, Set<TopoPos> clearance) {
+                                       PassageProfile profile, Set<TopoPos> clearance,
+                                       LandmarkLayout landmarks) {
         TopoPos cell = path.get(i);
         TopoPos ahead = path.get(Math.min(i + 1, path.size() - 1));
         TopoPos behind = path.get(Math.max(i - 1, 0));
@@ -1195,8 +1205,10 @@ public final class SegmentGeometry {
         int off = Math.max(1, profile.halfWidth() - 1);
         for (int side = -1; side <= 1; side += 2) {
             TopoPos post = cell.offset(px * off * side, 0, pz * off * side);
-            if (clearance.contains(post) || clearance.contains(post.offset(0, 1, 0))) {
+            if (clearance.contains(post) || clearance.contains(post.offset(0, 1, 0))
+                    || landmarks.isReserved(post)) {
                 continue; // would stand inside another route's walk column
+                          // or inside a landmark reserve
             }
             put(blocks, post.offset(0, -1, 0), BlockKind.ROCK, 4); // sill under the post
             for (int dy = 0; dy <= 2; dy++) {
@@ -1206,7 +1218,7 @@ public final class SegmentGeometry {
         }
         for (int k = -(off - 1); k <= off - 1; k++) {
             TopoPos beam = cell.offset(px * k, 3, pz * k);
-            if (!clearance.contains(beam)) {
+            if (!clearance.contains(beam) && !landmarks.isReserved(beam)) {
                 put(blocks, beam, BlockKind.TIMBER, 4); // beam
             }
         }
@@ -1216,7 +1228,8 @@ public final class SegmentGeometry {
      * side at floor level so the walls and ore stay readable. */
     private static void addPassageLights(Map<TopoPos, RankedBlock> blocks,
                                          List<TopoPos> path, long seed, String id,
-                                         Set<TopoPos> clearance) {
+                                         Set<TopoPos> clearance,
+                                         LandmarkLayout landmarks) {
         Random rng = new Random(seed ^ stableHash(id) ^ 0x94D049BB133111EBL);
         int spacing = 11 + rng.nextInt(6); // every 11-16 cells
         int offset = rng.nextInt(spacing);
@@ -1236,7 +1249,8 @@ public final class SegmentGeometry {
             ddx /= len;
             ddz /= len;
             TopoPos lamp = cell.offset(-ddz * reach * side, 0, ddx * reach * side);
-            if (clearance.contains(lamp) || clearance.contains(lamp.offset(0, 1, 0))) {
+            if (clearance.contains(lamp) || clearance.contains(lamp.offset(0, 1, 0))
+                    || landmarks.isReserved(lamp)) {
                 continue;
             }
             put(blocks, lamp.offset(0, -1, 0), BlockKind.ROCK, 4);
@@ -1248,11 +1262,16 @@ public final class SegmentGeometry {
                                   TopologyPlan topology, TopoNode node, TopoPos arrival) {
         TopoPos resolved = PassageNetwork.of(topology, arrival).center(node.id());
         TopoPos center = resolved != null ? resolved : node.pos();
+        LandmarkLayout landmarks = PassageNetwork.activeLayout();
         if (node.has(NodeFeature.CHECKPOINT)) {
             // Lanterns on the four pad corners light the shared station.
             for (int[] corner : new int[][] {{3, 3}, {3, -3}, {-3, 3}, {-3, -3}}) {
-                put(blocks, center.offset(corner[0], -1, corner[1]), BlockKind.ROCK, 6);
-                put(blocks, center.offset(corner[0], 0, corner[1]), BlockKind.LIGHT, 6);
+                TopoPos sill = center.offset(corner[0], -1, corner[1]);
+                TopoPos lamp = center.offset(corner[0], 0, corner[1]);
+                if (!landmarks.isReserved(sill) && !landmarks.isReserved(lamp)) {
+                    put(blocks, sill, BlockKind.ROCK, 6);
+                    put(blocks, lamp, BlockKind.LIGHT, 6);
+                }
             }
         }
         // A small ring of lamps around the room center marks the junction.
@@ -1264,6 +1283,9 @@ public final class SegmentGeometry {
             TopoPos lamp = center.offset(
                     (int) Math.round(Math.cos(angle) * ring), 0,
                     (int) Math.round(Math.sin(angle) * ring));
+            if (landmarks.isReserved(lamp) || landmarks.isReserved(lamp.offset(0, -1, 0))) {
+                continue;
+            }
             put(blocks, lamp.offset(0, -1, 0), BlockKind.ROCK, 4);
             put(blocks, lamp, BlockKind.LIGHT, 5);
         }
@@ -1558,16 +1580,13 @@ public final class SegmentGeometry {
     }
 
     private static SegmentPlan finish(String id, Map<TopoPos, RankedBlock> blocks,
-                                      TopoBounds bounds, TopoPos arrival) {
-        return finish(id, blocks, bounds, arrival, null);
-    }
-
-    private static SegmentPlan finish(String id, Map<TopoPos, RankedBlock> blocks,
                                       TopoBounds bounds, TopoPos arrival,
-                                      Set<TopoPos> feetCells) {
+                                      Set<TopoPos> feetCells, TopologyPlan topology) {
         if (blocks.size() > MAX_OPERATIONS) {
             throw new IllegalArgumentException("segment " + id + " exceeds " + MAX_OPERATIONS + " operations");
         }
+        LandmarkLayout landmarks = PassageNetwork.activeLayout();
+        Set<TopoPos> ownedOpenings = ownedOpenings(id, topology, landmarks);
         List<TopoPos> positions = new ArrayList<>(blocks.keySet());
         positions.sort(POSITION_ORDER);
         List<BlockOperation> operations = new ArrayList<>(positions.size());
@@ -1580,6 +1599,13 @@ public final class SegmentGeometry {
             if (isArrivalKeepOut(pos, arrival)) {
                 // The hub reserve is a wall, not an error: segments that reach
                 // it are clipped so the generated hub stays sealed.
+                continue;
+            }
+            if (landmarks.isReserved(pos) && !ownedOpenings.contains(pos)) {
+                // Landmark reserves belong to their rooms: only the edge that
+                // terminates at a safehouse may write its connector openings.
+                // Foreign structure, dressing, and node rooms are clipped so
+                // no stray op can seal a doorway or intrude into the reserve.
                 continue;
             }
             if (blocks.get(pos).kind() == BlockKind.OPEN && pos.y() > MAX_CAVE_OPEN_Y) {
@@ -1601,6 +1627,8 @@ public final class SegmentGeometry {
                         && feetCells.contains(op.position())) {
                     TopoPos above = op.position().offset(0, 2, 0);
                     if (bounds.contains(above) && !isArrivalKeepOut(above, arrival)
+                            && (!landmarks.isReserved(above)
+                                    || ownedOpenings.contains(above))
                             && taken.add(above)) {
                         headroom.add(new BlockOperation(above, BlockKind.OPEN));
                     }
@@ -1611,5 +1639,22 @@ public final class SegmentGeometry {
         operations.sort(Comparator.comparingInt(operation ->
                 operation.kind() == BlockKind.HAZARD_SOURCE ? 1 : 0));
         return new SegmentPlan(id, operations);
+    }
+
+    /** Openings a segment legitimately writes: the connector mouth, doors,
+     * and approach tunnel of the safehouses its centerline terminates at.
+     * Everything else - foreign edges, node rooms, dress passes - owns no
+     * landmark opening and is clipped from the reserve entirely. */
+    private static Set<TopoPos> ownedOpenings(String id, TopologyPlan topology,
+                                              LandmarkLayout landmarks) {
+        String structural = id.startsWith("dress:") ? id.substring("dress:".length()) : id;
+        if (!structural.startsWith("edge:")) {
+            return Set.of();
+        }
+        TopoEdge edge = edgeFromSegmentId(topology, structural);
+        if (edge == null) {
+            return Set.of();
+        }
+        return landmarks.openingsFor(edge.a(), edge.b());
     }
 }

@@ -23,7 +23,7 @@ class StaticLandmarkBuilderTest {
         JsonObject json = JsonParser.parseString("""
                 {
                   "id": "shelter",
-                  "footprint": { "halfX": 1, "halfZ": 1, "height": 2, "reserveMargin": 0 },
+                  "footprint": { "halfX": 1, "halfZ": 1, "height": 3, "reserveMargin": 0 },
                   "connectors": [
                     { "x": 1, "y": 1, "z": 0, "facing": "east" }
                   ],
@@ -34,7 +34,8 @@ class StaticLandmarkBuilderTest {
                   },
                   "layers": [
                     [ "SSS", "SSS", "SSS" ],
-                    [ "STS", "SAS", "SSA" ]
+                    [ "STS", "SAA", "SSA" ],
+                    [ "SSS", "SSA", "SSS" ]
                   ]
                 }
                 """).getAsJsonObject();
@@ -52,8 +53,8 @@ class StaticLandmarkBuilderTest {
         SegmentPlan b = StaticLandmarkBuilder.plan(fixture(), bounds());
         assertEquals("landmark:n01", a.id());
         assertEquals(a.operations(), b.operations());
-        // 3x3x2 grid = 18 ops.
-        assertEquals(18, a.operations().size());
+        // 3x3x3 grid = 27 ops.
+        assertEquals(27, a.operations().size());
     }
 
     @Test
@@ -78,8 +79,8 @@ class StaticLandmarkBuilderTest {
 
     @Test
     void clipsOutsideBounds() {
-        // Clips the -x column of the 3x3x2 grid (6 cells) -> 12 ops; the
-        // connector at x=51 stays inside.
+        // Clips the -x column of the 3x3x3 grid and the y=32 roof layer
+        // (27 - 15 = 12 ops); the connector at x=51 stays inside.
         TopoBounds tight = new TopoBounds(50, 29, 19, 51, 31, 21);
         SegmentPlan plan = StaticLandmarkBuilder.plan(fixture(), tight);
         assertTrue(plan.operations().stream()

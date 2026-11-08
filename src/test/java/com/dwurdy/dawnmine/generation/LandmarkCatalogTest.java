@@ -31,8 +31,8 @@ class LandmarkCatalogTest {
                   },
                   "layers": [
                     [ "SSSSS", "SPPPS", "SSSSS" ],
-                    [ "SSSSS", "SAAAS", "SSSSA" ],
-                    [ "SSSSS", "SATAS", "SSSSA" ]
+                    [ "SSSSS", "SAAAA", "SSSSA" ],
+                    [ "SSSSS", "SATAA", "SSSSA" ]
                   ]
                 }
                 """).getAsJsonObject();

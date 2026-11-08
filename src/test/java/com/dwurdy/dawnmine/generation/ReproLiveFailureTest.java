@@ -55,8 +55,8 @@ class ReproLiveFailureTest {
                   "slots": { "S": "minecraft:stone_bricks", "A": "minecraft:air" },
                   "layers": [
                     [ "SSSSS", "SSSSS", "SSSSS" ],
-                    [ "SSSSS", "SAAAS", "SSSSA" ],
-                    [ "SSSSS", "SAAAS", "SSSSA" ]
+                    [ "SSSSS", "SAAAA", "SSSSA" ],
+                    [ "SSSSS", "SAAAA", "SSSSA" ]
                   ]
                 }
                 """).getAsJsonObject());
@@ -65,7 +65,8 @@ class ReproLiveFailureTest {
     @Test
     void avoidLandmarkReserveRoutesOutOfTheSuppliedLayout() {
         LandmarkLayout layout = LandmarkLayout.place(
-                Map.of("n01", SHELTER_FEET), Map.of("n01", "shelter"));
+                Map.of("n01", SHELTER_FEET), Map.of("n01", "shelter"),
+                LandmarkCatalog.definitions());
         // A straight run straight through the shelter's reserve box.
         List<TopoPos> cells = new ArrayList<>();
         for (int x = 392; x <= 408; x++) {
@@ -82,7 +83,8 @@ class ReproLiveFailureTest {
     @Test
     void entranceLandmarkReserveRoutesOutOfTheSuppliedLayout() {
         LandmarkLayout layout = LandmarkLayout.place(
-                Map.of("n01", SHELTER_FEET), Map.of("n01", "shelter"));
+                Map.of("n01", SHELTER_FEET), Map.of("n01", "shelter"),
+                LandmarkCatalog.definitions());
         List<TopoPos> cells = new ArrayList<>();
         for (int x = 392; x <= 408; x++) {
             cells.add(new TopoPos(x, 10, 400));
@@ -153,6 +155,55 @@ class ReproLiveFailureTest {
             }
         } finally {
             LandmarkCatalog.installForTest(Map.of());
+        }
+    }
+
+    @Test
+    void segmentPlansNeverWriteForeignCellsInsideReserves() {
+        // Live-run 2026-11-08-24 regression: a mineshaft dress rail landed on
+        // the connector door cell - openings were exempt from write
+        // protection for ANY writer, not just the corridor that owns them.
+        // Contract: only the edge terminating at a safehouse may write its
+        // openings, and those writes are the approach's air (OPEN). Dress
+        // and node plans may never emit anything inside a landmark reserve.
+        TopologyPlan plan = TopologyPlanner.plan(42, TopologyProfile.builtin(), BOUNDS);
+        PassageNetwork network = PassageNetwork.of(plan, ARRIVAL);
+        LandmarkLayout layout = network.landmarks();
+        assertFalse(layout.placements().isEmpty(),
+                "fixture expects at least one placed safehouse");
+        for (TopoEdge edge : plan.edges()) {
+            String edgeId = SegmentGeometry.edgeSegmentId(edge);
+            Set<TopoPos> ownOpenings = layout.openingsFor(edge.a(), edge.b());
+            for (SegmentGeometry.BlockOperation op
+                    : SegmentGeometry.edge(plan, edge, BOUNDS, ARRIVAL).operations()) {
+                if (layout.isReserved(op.position())) {
+                    assertTrue(ownOpenings.contains(op.position()),
+                            edgeId + " writes into a foreign reserve cell "
+                                    + op.position());
+                    assertTrue(op.kind() == SegmentGeometry.BlockKind.OPEN,
+                            edgeId + " writes non-air " + op.kind()
+                                    + " into its own opening " + op.position());
+                }
+            }
+            SegmentGeometry.SegmentPlan dress =
+                    SegmentGeometry.dress(plan, edgeId, BOUNDS, ARRIVAL);
+            for (SegmentGeometry.BlockOperation op : dress.operations()) {
+                if (layout.isReserved(op.position())) {
+                    assertTrue(ownOpenings.contains(op.position())
+                                    && op.kind() == SegmentGeometry.BlockKind.OPEN,
+                            "dress " + edgeId + " writes " + op.kind()
+                                    + " inside a landmark reserve at "
+                                    + op.position());
+                }
+            }
+        }
+        for (TopoNode node : plan.nodes()) {
+            for (SegmentGeometry.BlockOperation op
+                    : SegmentGeometry.node(plan, node, BOUNDS, ARRIVAL).operations()) {
+                assertFalse(layout.isReserved(op.position()),
+                        "node:" + node.id() + " writes " + op.kind()
+                                + " inside a landmark reserve at " + op.position());
+            }
         }
     }
 
