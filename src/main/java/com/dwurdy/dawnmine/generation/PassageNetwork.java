@@ -1374,6 +1374,20 @@ public final class PassageNetwork {
             List<TopoPos> path = e.getValue();
             for (int i = 0; i < path.size(); i++) {
                 TopoPos c = path.get(i);
+                // The admission gate owns the walk contract too: a raise
+                // the anchor bands refused leaves a |dy|>1 step that a
+                // converge-quiet pass would otherwise receipt - an
+                // impassable corridor shipped as resolved. Nothing
+                // unwalkable freezes.
+                if (i > 0) {
+                    TopoPos prev = path.get(i - 1);
+                    if (Math.abs(c.y() - prev.y()) > 1) {
+                        throw new IllegalStateException("resolved centreline "
+                                + "keeps an unwalkable step " + prev + " -> " + c
+                                + " in segment " + e.getKey() + " at index " + i
+                                + " - report this fixture");
+                    }
+                }
                 // Resolution only moves samples in Y, so a centreline cell
                 // that ended inside the clipped hub volume can only have
                 // been dragged here by a bound-forced raise - admit nothing.

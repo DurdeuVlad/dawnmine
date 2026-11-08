@@ -145,11 +145,22 @@ class ReproLiveFailureTest {
         LandmarkCatalog.installForTest(Map.of(
                 "prospect_shelter", LandmarkCatalog.parse(json)));
         try {
-            for (long seed : new long[] {-2856163543928830103L, -5038305720449563874L,
-                    3707164540949967090L}) {
-                // The run receipts the first draw whose passages resolve -
-                // a base draw may be unsatisfiable, so the contract is on
-                // the deterministic draw sequence, not on draw 0 alone.
+            // Historical live seeds resolved at draw 0 - pinning that keeps
+            // the draw machinery honest: a regression that makes more draws
+            // unsatisfiable cannot hide behind later draws succeeding.
+            for (long seed : new long[] {-2856163543928830103L,
+                    -5038305720449563874L}) {
+                PassageNetwork.clearCache();
+                PassageNetwork network = PassageNetwork.of(TopologyPlanner.plan(
+                        com.dwurdy.dawnmine.topology.MineTopology.drawSeed(seed, 0),
+                        TopologyProfile.builtin(), BOUNDS), ARRIVAL);
+                assertFalse(network.landmarks().placements().isEmpty(),
+                        "live seed " + seed + " expects placed safehouses");
+            }
+            // Run -26's base draw was unsatisfiable (bound-pinned door cell
+            // vs ceiling-capped column) - the contract is on the draw
+            // sequence: at least one draw must resolve.
+            {
                 PassageNetwork network = null;
                 IllegalStateException failure = null;
                 for (int draw = 0; draw < 4 && network == null; draw++) {
@@ -157,7 +168,7 @@ class ReproLiveFailureTest {
                     try {
                         network = PassageNetwork.of(TopologyPlanner.plan(
                                 com.dwurdy.dawnmine.topology.MineTopology
-                                        .drawSeed(seed, draw),
+                                        .drawSeed(3707164540949967090L, draw),
                                 TopologyProfile.builtin(), BOUNDS), ARRIVAL);
                     } catch (IllegalStateException x) {
                         failure = x;
@@ -167,7 +178,7 @@ class ReproLiveFailureTest {
                     throw failure;
                 }
                 assertFalse(network.landmarks().placements().isEmpty(),
-                        "live seed " + seed + " expects placed safehouses");
+                        "live seed 3707164540949967090 expects placed safehouses");
             }
         } finally {
             LandmarkCatalog.installForTest(Map.of());
