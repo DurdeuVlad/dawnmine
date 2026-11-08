@@ -26,6 +26,12 @@ public final class PassageNetwork {
     /** Maximum a sample may be lowered from its original Y. */
     public static final int MAX_LOWERING = 12;
     private static final int MAX_PASSES = 128;
+    /** Deterministic re-draw attempts when a meander set proves
+     * unsatisfiable: each retry perturbs only the winding seeds, so a
+     * resolvable draw is found without touching declared geometry. The
+     * sequence is fixed per topology/seed, keeping runs reproducible. */
+    private static final int MAX_RESOLVE_ATTEMPTS = 4;
+    private static final long REROLL_MIX = 0x9E3779B97F4A7C15L;
 
     private static String cachedFingerprint = "";
     private static String cachedArrival = "";
@@ -40,6 +46,7 @@ public final class PassageNetwork {
     private final LandmarkLayout landmarks;
     private final Map<String, List<TopoPos>> paths = new HashMap<>();
     private final Map<String, TopoPos> centers = new HashMap<>();
+    private int reroll;
 
     /** Resolved geometry for a topology; fails (throws) only when a merge
      * would violate the fixed hub or landmark anchors or the lowering
@@ -130,24 +137,49 @@ public final class PassageNetwork {
         this.catalogFingerprint = LandmarkCatalog.fingerprint(this.defs);
         this.landmarks = placeLandmarks(topology, this.defs);
         resolving = this.landmarks;
-        Map<String, List<TopoPos>> raw = new HashMap<>();
-        Map<String, List<TopoPos>> original = new HashMap<>();
+        // Resolution is a constraint pass over a random draw and some
+        // draws are unsatisfiable - a bound-pinned door cell, a ceiling
+        // capped column, and a shared crossing column can demand a floor
+        // no member may take. Rather than fail the day, the meanders are
+        // deterministically re-drawn (attempt count folds into each
+        // edge's winding seed) and resolution retried; the same inputs
+        // always produce the same attempt sequence, and attempt 0's
+        // draws are unchanged. Landmark placement, connector mouths, and
+        // reserves never re-roll - they are declared geometry.
         TopoNode entrance = topology.node(topology.entranceId());
-        if (entrance != null
-                && entrance.kind() == com.dwurdy.dawnmine.topology.NodeKind.ENTRANCE) {
-            // The arrival corridor never route-avoids landmark reserves:
-            // any reserve reaching its cells would also cover the entrance
-            // node, which fits()'s foreign-node rule already rejects.
-            raw.put("connector:arrival:" + topology.entranceId(),
-                    SegmentGeometry.connectorCenterlineRaw(topology, arrival));
+        IllegalStateException failure = null;
+        Map<String, List<TopoPos>> resolved = null;
+        for (int attempt = 0; attempt < MAX_RESOLVE_ATTEMPTS; attempt++) {
+            this.reroll = attempt;
+            Map<String, List<TopoPos>> raw = new HashMap<>();
+            Map<String, List<TopoPos>> original = new HashMap<>();
+            if (entrance != null
+                    && entrance.kind() == com.dwurdy.dawnmine.topology.NodeKind.ENTRANCE) {
+                // The arrival corridor never route-avoids landmark reserves:
+                // any reserve reaching its cells would also cover the entrance
+                // node, which fits()'s foreign-node rule already rejects.
+                raw.put("connector:arrival:" + topology.entranceId(),
+                        SegmentGeometry.connectorCenterlineRaw(topology, arrival));
+            }
+            for (TopoEdge edge : topology.edges()) {
+                raw.put(SegmentGeometry.edgeSegmentId(edge), rawEdgePath(edge));
+            }
+            for (Map.Entry<String, List<TopoPos>> e : raw.entrySet()) {
+                original.put(e.getKey(), List.copyOf(e.getValue()));
+            }
+            try {
+                resolved = resolve(raw, original);
+                break;
+            } catch (IllegalStateException x) {
+                failure = x;
+                LOGGER.warn("[dawnmine] passage resolution attempt {}/{} failed"
+                        + " - re-drawing meanders ({})",
+                        attempt + 1, MAX_RESOLVE_ATTEMPTS, x.getMessage());
+            }
         }
-        for (TopoEdge edge : topology.edges()) {
-            raw.put(SegmentGeometry.edgeSegmentId(edge), rawEdgePath(edge));
+        if (resolved == null) {
+            throw failure;
         }
-        for (Map.Entry<String, List<TopoPos>> e : raw.entrySet()) {
-            original.put(e.getKey(), List.copyOf(e.getValue()));
-        }
-        Map<String, List<TopoPos>> resolved = resolve(raw, original);
         for (Map.Entry<String, List<TopoPos>> e : resolved.entrySet()) {
             paths.put(e.getKey(), List.copyOf(e.getValue()));
         }
@@ -502,7 +534,8 @@ public final class PassageNetwork {
         List<TopoPos> middle = SegmentGeometry.windingPath(
                 approachA.get(0), approachB.get(0),
                 topology.seed() ^ SegmentGeometry.stableHashPublic(
-                        SegmentGeometry.edgeSegmentId(edge)));
+                        SegmentGeometry.edgeSegmentId(edge))
+                        ^ (reroll * REROLL_MIX));
         // Routes that do not depart the entrance skirt the gateway apron
         // and the hub reserve with the connector row folded in, so the
         // exclusive connector corridor can never be crossed, merged into,
@@ -598,6 +631,10 @@ public final class PassageNetwork {
             List<String> ids = new ArrayList<>(work.keySet());
             ids.sort(String::compareTo);
             Map<String, int[]> bound = rampBounds(work, ids, stair);
+            // Anchor columns are rebuilt per pass like ramp bounds:
+            // endpoints may converge downward, so a cell's merge band
+            // follows the anchor's current height, not its original.
+            Map<Long, List<Integer>> anchors = anchorColumns(work, ids);
             // Group same-XZ samples across all paths.
             Map<Long, List<int[]>> groups = new HashMap<>();
             for (int p = 0; p < ids.size(); p++) {
@@ -686,6 +723,12 @@ public final class PassageNetwork {
                             : sharedFloorAbove(memberCells, floorBound);
                     if (shared != Integer.MAX_VALUE) {
                         floor = shared;
+                    }
+                    floor = snapBelowAnchorBands(anchors, memberCells, floor);
+                    if (floor == Integer.MIN_VALUE) {
+                        throw new IllegalStateException("junction merge "
+                                + "cannot settle below anchor bands, members "
+                                + memberCells + " - report this fixture");
                     }
                     for (int[] r : family) {
                         String segmentId = ids.get(r[0]);
@@ -823,6 +866,17 @@ public final class PassageNetwork {
                                 floor = upFloor;
                             }
                         }
+                        // Never lift a member into the merge band above a
+                        // neighbouring anchor: anchors cannot move, so the
+                        // cluster that later contains both would deadlock.
+                        // Snap the floor below any anchor band it enters.
+                        floor = snapBelowAnchorBands(anchors, memberCells, floor);
+                        if (floor == Integer.MIN_VALUE) {
+                            throw new IllegalStateException("crossing merge "
+                                    + "cannot settle below anchor bands, refs "
+                                    + clusterDebug(ids, refs, start, end, work)
+                                    + " - report this fixture");
+                        }
                         for (int i = start; i <= end; i++) {
                             String segmentId = ids.get(refs.get(i)[0]);
                             int idx = refs.get(i)[1];
@@ -838,16 +892,41 @@ public final class PassageNetwork {
                             }
                             if (c.y() != floor) {
                                 if (floor < c.y()) {
-                                    requireLowerable(segmentId, idx, c, floor,
-                                            original.get(segmentId),
-                                            Math.max(bound.get(segmentId)[idx],
-                                                    stair.get(segmentId)[idx]));
+                                    try {
+                                        requireLowerable(segmentId, idx, c, floor,
+                                                original.get(segmentId),
+                                                Math.max(bound.get(segmentId)[idx],
+                                                        stair.get(segmentId)[idx]));
+                                    } catch (IllegalStateException x) {
+                                        StringBuilder bounds = new StringBuilder("[");
+                                        for (int j = start; j <= end; j++) {
+                                            String s = ids.get(refs.get(j)[0]);
+                                            int q = refs.get(j)[1];
+                                            if (j > start) {
+                                                bounds.append(", ");
+                                            }
+                                            bounds.append(s).append('[').append(q)
+                                                    .append("]b=").append(bound.get(s)[q])
+                                                    .append("s=").append(stair.get(s)[q]);
+                                        }
+                                        throw new IllegalStateException(
+                                                x.getMessage() + " floor " + floor
+                                                + " floorBound " + floorBound
+                                                + " refs " + clusterDebug(ids, refs, start, end, work)
+                                                + " memberBounds " + bounds.append(']')
+                                                + " anchors " + anchorsNear(anchors, c)
+                                                + " moves " + lastChanged);
+                                    }
                                 } else if (isFixedAnchor(segmentId, idx,
                                         path.size(), c)) {
                                     throw new IllegalStateException(
                                             "crossing merge would raise the fixed anchor "
                                                     + c + " in segment " + segmentId
-                                                    + " - report this fixture");
+                                                    + " to floor " + floor
+                                                    + " (floorBound " + floorBound
+                                                    + ", anchorFloor " + anchorFloor
+                                                    + ", refs " + clusterDebug(ids, refs, start, end, work)
+                                                    + ") - report this fixture. Last moves: " + lastChanged);
                                 } else {
                                     stair.get(segmentId)[idx]
                                             = Math.max(stair.get(segmentId)[idx], floor);
@@ -869,7 +948,7 @@ public final class PassageNetwork {
             // low side over the residual gap and bind it there.
             for (String id : ids) {
                 changed |= smooth(work.get(id), id, original.get(id),
-                        bound.get(id), stair.get(id), lastChanged);
+                        bound.get(id), stair.get(id), lastChanged, anchors);
             }
             if (!changed) {
                 return freeze(work);
@@ -878,6 +957,101 @@ public final class PassageNetwork {
         throw new IllegalStateException("passage crossing resolution did not converge in "
                 + MAX_PASSES + " passes - report this fixture; no partial geometry admitted."
                 + " Last moves: " + lastChanged);
+    }
+
+    private static String clusterDebug(List<String> ids, List<int[]> refs,
+                                       int start, int end,
+                                       Map<String, List<TopoPos>> work) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = start; i <= end; i++) {
+            String segmentId = ids.get(refs.get(i)[0]);
+            int idx = refs.get(i)[1];
+            if (i > start) {
+                sb.append(", ");
+            }
+            sb.append(segmentId).append('[').append(idx).append("]=")
+                    .append(work.get(segmentId).get(idx));
+        }
+        return sb.append(']').toString();
+    }
+
+    /** Column key to sorted anchor heights - path endpoints, declared
+     * landmark openings, and hub anchors - the cells a merge may never
+     * lift a neighbour above. Rebuilt per pass alongside ramp bounds
+     * because endpoints converge downward: a cell's merge band follows
+     * the anchor's current height, not its original. */
+    private Map<Long, List<Integer>> anchorColumns(Map<String, List<TopoPos>> work,
+                                                   List<String> ids) {
+        Map<Long, List<Integer>> cols = new HashMap<>();
+        for (String id : ids) {
+            List<TopoPos> path = work.get(id);
+            for (int i = 0; i < path.size(); i++) {
+                TopoPos c = path.get(i);
+                if (isFixedAnchor(id, i, path.size(), c)
+                        || landmarks.isOpeningCell(c)) {
+                    cols.computeIfAbsent(xzKey(c.x(), c.z()),
+                            k -> new ArrayList<>()).add(c.y());
+                }
+            }
+        }
+        for (List<Integer> ys : cols.values()) {
+            ys.sort(Integer::compareTo);
+        }
+        return cols;
+    }
+
+    /** The highest height {@code floor} may take without landing a member
+     * inside the merge band above a neighbouring anchor. Anchors cannot
+     * move, so a member raised into {@code (anchorY, anchorY + 3]} of one -
+     * the shared-column span the clusterer reconciles - only defers the
+     * contradiction to the cluster that later contains both. Snapping is
+     * iterated to a fixed point because dropping below one anchor can
+     * descend into another's band; anchor heights are indexed over the
+     * Chebyshev-1 neighbourhood, which covers every swept-corner column a
+     * diagonal step can touch. {@code Integer.MIN_VALUE} when no stable
+     * floor exists. */
+    /** Diagnostic: anchor heights within a cell's merge-band columns,
+     * for failure reports. */
+    private String anchorsNear(Map<Long, List<Integer>> anchors, TopoPos m) {
+        StringBuilder sb = new StringBuilder("{");
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                List<Integer> ys = anchors.get(xzKey(m.x() + dx, m.z() + dz));
+                if (ys != null) {
+                    sb.append("[").append(m.x() + dx).append(",").append(m.z() + dz)
+                            .append("]=").append(ys);
+                }
+            }
+        }
+        return sb.append('}').toString();
+    }
+
+    private int snapBelowAnchorBands(Map<Long, List<Integer>> anchors,
+                                     List<TopoPos> members, int floor) {
+        for (int iter = 0; iter < 16; iter++) {
+            int next = floor;
+            for (TopoPos m : members) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        List<Integer> ys = anchors.get(
+                                xzKey(m.x() + dx, m.z() + dz));
+                        if (ys == null) {
+                            continue;
+                        }
+                        for (int ay : ys) {
+                            if (next > ay && next <= ay + 3) {
+                                next = ay;
+                            }
+                        }
+                    }
+                }
+            }
+            if (next == floor) {
+                return floor;
+            }
+            floor = next;
+        }
+        return Integer.MIN_VALUE;
     }
 
     /** Per-cell lower bounds: fixed anchors pin their own height and the
@@ -1038,7 +1212,8 @@ public final class PassageNetwork {
     }
 
     private boolean smooth(List<TopoPos> path, String id, List<TopoPos> originalPath,
-                           int[] bound, int[] stair, List<String> log) {
+                           int[] bound, int[] stair, List<String> log,
+                           Map<Long, List<Integer>> anchors) {
         boolean changed = false;
         for (int i = 0; i + 1 < path.size(); i++) {
             TopoPos a = path.get(i);
@@ -1070,10 +1245,17 @@ public final class PassageNetwork {
                                 + a + " toward bound-locked " + b + " in segment " + id
                                 + " - report this fixture");
                     }
-                    int raised = legalFeetYAtOrAbove(a, b.y() - 1);
-                    path.set(i, new TopoPos(a.x(), raised, a.z()));
-                    stair[i] = Math.max(stair[i], raised);
-                    changed = true;
+                    // A smooth raise faces the same rule as a merge floor:
+                    // never lift the cell into the merge band above a
+                    // neighbouring anchor - that only strands the pair in
+                    // a later cluster.
+                    int raised = snapBelowAnchorBands(anchors, List.of(a),
+                            legalFeetYAtOrAbove(a, b.y() - 1));
+                    if (raised != Integer.MIN_VALUE && raised > a.y()) {
+                        path.set(i, new TopoPos(a.x(), raised, a.z()));
+                        stair[i] = Math.max(stair[i], raised);
+                        changed = true;
+                    }
                 }
                 if (log.size() < 12) {
                     log.add(id + "[" + i + "] smooth fwd");
@@ -1107,10 +1289,13 @@ public final class PassageNetwork {
                                 + b + " toward bound-locked " + a + " in segment " + id
                                 + " - report this fixture");
                     }
-                    int raised = legalFeetYAtOrAbove(b, a.y() - 1);
-                    path.set(i + 1, new TopoPos(b.x(), raised, b.z()));
-                    stair[i + 1] = Math.max(stair[i + 1], raised);
-                    changed = true;
+                    int raised = snapBelowAnchorBands(anchors, List.of(b),
+                            legalFeetYAtOrAbove(b, a.y() - 1));
+                    if (raised != Integer.MIN_VALUE && raised > b.y()) {
+                        path.set(i + 1, new TopoPos(b.x(), raised, b.z()));
+                        stair[i + 1] = Math.max(stair[i + 1], raised);
+                        changed = true;
+                    }
                 }
                 if (log.size() < 12) {
                     log.add(id + "[" + i + "] smooth bwd");
