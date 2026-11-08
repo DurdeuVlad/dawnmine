@@ -78,7 +78,7 @@ public final class MineGenerator {
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v5-jackpots";
+    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v8-shared-floor";
 
     private static MineGenerator instance;
 
@@ -404,9 +404,9 @@ public final class MineGenerator {
                             + MineManager.describePos(blockPos));
                     return;
                 }
-                if (!segmentId.equals("hub")
+                if (!ownsReserveCell(segmentId, position)
                         && SegmentGeometry.isArrivalKeepOut(position, ARRIVAL)) {
-                    failSegment(data, "segment " + segmentId + " overlapped the hub reserve at "
+                    failSegment(data, "segment " + segmentId + " overlapped a structure reserve at "
                             + MineManager.describePos(blockPos));
                     return;
                 }
@@ -764,6 +764,22 @@ public final class MineGenerator {
         }
     }
 
+    /** Whether {@code segmentId} owns the reserve cell {@code pos} writes
+     * land on - the hub owns the hub reserve and each {@code landmark:}
+     * segment owns its own placed footprint. Every other segment is a
+     * foreign writer and must respect the keepout. */
+    private boolean ownsReserveCell(String segmentId, TopoPos pos) {
+        if (segmentId.equals("hub")) {
+            return true;
+        }
+        if (segmentId.startsWith(StaticLandmarkBuilder.SEGMENT_PREFIX)) {
+            LandmarkLayout.Placement placement = PassageNetwork.of(topology, ARRIVAL)
+                    .landmarks().placement(StaticLandmarkBuilder.nodeId(segmentId));
+            return placement != null && placement.insideReserve(pos);
+        }
+        return false;
+    }
+
     private SegmentGeometry.SegmentPlan createPlan(String id) {
         if (PreparationPlan.isDressSegment(id)) {
             return SegmentGeometry.dress(topology, PreparationPlan.structuralIdFor(id),
@@ -774,6 +790,15 @@ public final class MineGenerator {
         }
         if (id.equals("hub")) {
             return SegmentGeometry.hub(topology, topology.bounds(), ARRIVAL);
+        }
+        if (id.startsWith(StaticLandmarkBuilder.SEGMENT_PREFIX)) {
+            LandmarkLayout.Placement placement = PassageNetwork.of(topology, ARRIVAL)
+                    .landmarks().placement(StaticLandmarkBuilder.nodeId(id));
+            if (placement == null) {
+                throw new IllegalStateException("landmark segment " + id
+                        + " has no placement in this topology");
+            }
+            return StaticLandmarkBuilder.plan(placement, topology.bounds());
         }
         if (id.startsWith("node:")) {
             String nodeId = id.substring("node:".length());
@@ -814,12 +839,47 @@ public final class MineGenerator {
                 }
             }
         }
+        LandmarkLayout landmarks = PassageNetwork.of(topology, ARRIVAL).landmarks();
         return OrePlacementPlanner.planOreSegment(oreSegmentId, plans, OreCatalog.active(),
                 pos -> OreCatalog.Tier.parse(regionForY(pos.y())),
                 veinTargetFor(structuralId), manager.data().seed(), topology.bounds(),
                 pos -> SegmentGeometry.isArrivalKeepOut(pos, ARRIVAL)
                         || com.dwurdy.dawnmine.topology.HubLayout.isReserved(pos)
+                        || landmarks.isReserved(pos)
                         || pads.contains(pos));
+    }
+
+    /** Test seam: build the structural plan for a segment id without a
+     * live generator instance. Dress and ore segments are not covered -
+     * GameTests that need them call the segment builders directly. */
+    public static SegmentGeometry.SegmentPlan createPlanForTest(TopologyPlan topology,
+                                                              String id, TopoPos arrival) {
+        if (id.equals("hub")) {
+            return SegmentGeometry.hub(topology, topology.bounds(), arrival);
+        }
+        if (id.startsWith(StaticLandmarkBuilder.SEGMENT_PREFIX)) {
+            LandmarkLayout.Placement placement = PassageNetwork.of(topology, arrival)
+                    .landmarks().placement(StaticLandmarkBuilder.nodeId(id));
+            return placement == null ? null
+                    : StaticLandmarkBuilder.plan(placement, topology.bounds());
+        }
+        if (id.startsWith("node:")) {
+            TopoNode node = topology.node(id.substring("node:".length()));
+            return node == null ? null
+                    : SegmentGeometry.node(topology, node, topology.bounds(), arrival);
+        }
+        if (id.startsWith("edge:")) {
+            for (TopoEdge edge : topology.edges()) {
+                if (SegmentGeometry.edgeSegmentId(edge).equals(id)) {
+                    return SegmentGeometry.edge(topology, edge, topology.bounds(), arrival);
+                }
+            }
+            return null;
+        }
+        if (id.equals("connector:arrival:" + topology.entranceId())) {
+            return SegmentGeometry.entryConnector(topology, topology.bounds(), arrival);
+        }
+        return null;
     }
 
     private SegmentGeometry.SegmentPlan createStructuralPlan(String structuralId) {
@@ -973,6 +1033,17 @@ public final class MineGenerator {
             return Blocks.LANTERN.defaultBlockState();
         }
         if (kind == SegmentGeometry.BlockKind.MARKER) {
+            if (operation.blockId().contains("[")) {
+                try {
+                    return net.minecraft.commands.arguments.blocks.BlockStateParser
+                            .parseForBlock(
+                                    net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(),
+                                    operation.blockId(), false).blockState();
+                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+                    throw new IllegalStateException("invalid marker block state "
+                            + operation.blockId(), e);
+                }
+            }
             ResourceLocation blockId = ResourceLocation.parse(operation.blockId());
             Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(blockId);
             if (block == null || block == Blocks.AIR && !"minecraft:air".equals(operation.blockId())) {
@@ -1137,7 +1208,8 @@ public final class MineGenerator {
                                         int netherrackInterval) {
         String input = GEOMETRY_VERSION + "\n" + plan.fingerprint() + "\n"
                 + "netherrack=" + netherrackEnabled + ":" + netherrackInterval + "\n"
-                + "ore-catalog=" + OreCatalog.active().fingerprint();
+                + "ore-catalog=" + OreCatalog.active().fingerprint() + "\n"
+                + "landmark-catalog=" + LandmarkCatalog.fingerprint();
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256")
                     .digest(input.getBytes(StandardCharsets.UTF_8));

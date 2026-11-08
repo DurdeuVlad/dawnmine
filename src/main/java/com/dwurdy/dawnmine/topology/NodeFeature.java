@@ -6,6 +6,12 @@ public enum NodeFeature {
     CHECKPOINT,
     /** Recognizable algorithmic landmark for M2b shaping. */
     LANDMARK,
+    /**
+     * Static safehouse room: a fixed, literal-grid landmark shelter
+     * anchored at this node, entered through declared connector cells.
+     * Selected on checkpoint nodes so the rest point and the shelter
+     * coincide. */
+    SAFEHOUSE,
     /** Bounded resource-field location for the M3 ore ecology. */
     RESOURCE_FIELD,
     /**

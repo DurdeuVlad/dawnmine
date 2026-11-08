@@ -40,6 +40,16 @@ public final class MineTraversal {
             apply(world, structural(topology, id, edges, bounds, arrival));
         }
         apply(world, SegmentGeometry.hub(topology, bounds, arrival));
+        PassageNetwork network = PassageNetwork.of(topology, arrival);
+        for (com.dwurdy.dawnmine.topology.TopoNode node : topology.nodes()) {
+            if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE)) {
+                LandmarkLayout.Placement placement =
+                        network.landmarks().placement(node.id());
+                if (placement != null) {
+                    apply(world, StaticLandmarkBuilder.plan(placement, bounds));
+                }
+            }
+        }
         for (String id : ids) {
             apply(world, SegmentGeometry.dress(topology, id, bounds, arrival));
         }

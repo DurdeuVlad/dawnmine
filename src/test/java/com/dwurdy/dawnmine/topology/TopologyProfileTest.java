@@ -82,7 +82,7 @@ class TopologyProfileTest {
                         ? new TopologyProfile.RegionSpec(region.id(), region.name(), 8, 1,
                                 region.mainRouteNodes(), region.caverns(), region.branches(),
                                 region.loops(), region.pockets(), region.resourceFields(),
-                                region.landmarks(), region.checkpoints())
+                                region.landmarks(), region.checkpoints(), 0)
                         : region)
                 .toList();
         assertTrue(withRegions(nonNegativeChaos).validate().stream()
@@ -92,11 +92,11 @@ class TopologyProfileTest {
     @Test
     void requiredDepthTiersMustRemainInShallowToDeepOrder() {
         TopologyProfile.RegionSpec upper = new TopologyProfile.RegionSpec(
-                "upper", "Upper", 56, -16, 12, 2, 4, 1, 5, 5, 2, 1);
+                "upper", "Upper", 56, -16, 12, 2, 4, 1, 5, 5, 2, 1, 0);
         TopologyProfile.RegionSpec chaos = new TopologyProfile.RegionSpec(
-                "chaos", "Chaos", -17, -40, 14, 3, 5, 2, 6, 7, 2, 1);
+                "chaos", "Chaos", -17, -40, 14, 3, 5, 2, 6, 7, 2, 1, 0);
         TopologyProfile.RegionSpec middle = new TopologyProfile.RegionSpec(
-                "middle", "Middle", -41, -56, 12, 3, 4, 2, 6, 7, 3, 1);
+                "middle", "Middle", -41, -56, 12, 3, 4, 2, 6, 7, 3, 1, 0);
 
         TopologyProfile wrongOrder = withRegions(List.of(upper, chaos, middle));
         assertTrue(wrongOrder.validate().stream()
@@ -104,13 +104,13 @@ class TopologyProfileTest {
                 "profile with valid non-overlapping bands but wrong semantic tier order was accepted");
 
         TopologyProfile.RegionSpec shallowUpper = new TopologyProfile.RegionSpec(
-                "upper", "Upper", 56, 24, 12, 2, 4, 1, 5, 5, 2, 1);
+                "upper", "Upper", 56, 24, 12, 2, 4, 1, 5, 5, 2, 1, 0);
         TopologyProfile.RegionSpec interstitial = new TopologyProfile.RegionSpec(
-                "transition", "Transition", 23, 16, 1, 0, 0, 0, 0, 0, 0, 0);
+                "transition", "Transition", 23, 16, 1, 0, 0, 0, 0, 0, 0, 0, 0);
         TopologyProfile.RegionSpec lowerMiddle = new TopologyProfile.RegionSpec(
-                "middle", "Middle", 15, -16, 14, 3, 5, 2, 6, 7, 2, 1);
+                "middle", "Middle", 15, -16, 14, 3, 5, 2, 6, 7, 2, 1, 0);
         TopologyProfile.RegionSpec lowerChaos = new TopologyProfile.RegionSpec(
-                "chaos", "Chaos", -17, -56, 12, 3, 4, 2, 6, 7, 3, 1);
+                "chaos", "Chaos", -17, -56, 12, 3, 4, 2, 6, 7, 3, 1, 0);
         TopologyProfile withExtraRegion = withRegions(
                 List.of(shallowUpper, interstitial, lowerMiddle, lowerChaos));
         assertTrue(withExtraRegion.validate().isEmpty(),
@@ -118,7 +118,7 @@ class TopologyProfileTest {
                         + withExtraRegion.validate());
 
         TopologyProfile.RegionSpec deeperThanChaos = new TopologyProfile.RegionSpec(
-                "abyss", "Abyss", -57, -72, 1, 0, 0, 0, 0, 0, 0, 0);
+                "abyss", "Abyss", -57, -72, 1, 0, 0, 0, 0, 0, 0, 0, 0);
         TopologyProfile chaosNotDeepest = withRegions(
                 List.of(shallowUpper, lowerMiddle, lowerChaos, deeperThanChaos));
         assertTrue(chaosNotDeepest.validate().stream()
@@ -149,11 +149,11 @@ class TopologyProfileTest {
                 160, Integer.MAX_VALUE, Integer.MAX_VALUE, 3,
                 List.of(
                         new TopologyProfile.RegionSpec("upper", "U", 56, 24,
-                                Integer.MAX_VALUE, 0, 0, 0, 0, 0, 0, 0),
+                                Integer.MAX_VALUE, 0, 0, 0, 0, 0, 0, 0, 0),
                         new TopologyProfile.RegionSpec("middle", "M", 23, -16,
-                                Integer.MAX_VALUE, 0, 0, 0, 0, 0, 0, 0),
+                                Integer.MAX_VALUE, 0, 0, 0, 0, 0, 0, 0, 0),
                         new TopologyProfile.RegionSpec("chaos", "C", -17, -56,
-                                1, 0, 0, 0, 0, 0, 0, 0)));
+                                1, 0, 0, 0, 0, 0, 0, 0, 0)));
 
         assertTrue(huge.validate().stream().anyMatch(problem -> problem.contains("maxNodes")));
     }

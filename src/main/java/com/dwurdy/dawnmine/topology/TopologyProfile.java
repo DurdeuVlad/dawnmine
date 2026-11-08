@@ -50,7 +50,8 @@ public record TopologyProfile(
             int pockets,
             int resourceFields,
             int landmarks,
-            int checkpoints) {}
+            int checkpoints,
+            int safehouses) {}
 
     public long totalMainNodes() {
         long total = 0;
@@ -104,7 +105,8 @@ public record TopologyProfile(
                 problems.add("region '" + r.id() + "' needs at least 1 main route node");
             }
             if (r.caverns() < 0 || r.branches() < 0 || r.loops() < 0 || r.pockets() < 0
-                    || r.resourceFields() < 0 || r.landmarks() < 0 || r.checkpoints() < 0) {
+                    || r.resourceFields() < 0 || r.landmarks() < 0 || r.checkpoints() < 0
+                    || r.safehouses() < 0) {
                 problems.add("region '" + r.id() + "' has a negative count");
             }
         }
@@ -237,7 +239,8 @@ public record TopologyProfile(
                     r.get("pockets").getAsInt(),
                     r.get("resourceFields").getAsInt(),
                     r.get("landmarks").getAsInt(),
-                    r.get("checkpoints").getAsInt()));
+                    r.get("checkpoints").getAsInt(),
+                    r.has("safehouses") ? r.get("safehouses").getAsInt() : 0));
         }
         TopologyProfile profile = new TopologyProfile(
                 id,
@@ -267,10 +270,10 @@ public record TopologyProfile(
                 36, 6, 26, 56, 75, 160, 400, 80000, 5,
                 List.of(
                         new RegionSpec("upper", "Upper Galleries", 56, 24,
-                                26, 4, 12, 10, 9, 9, 3, 1),
+                                26, 4, 12, 10, 9, 9, 3, 1, 1),
                         new RegionSpec("middle", "Middle Descent", 24, -16,
-                                30, 5, 14, 12, 11, 11, 3, 1),
+                                30, 5, 14, 12, 11, 11, 3, 1, 1),
                         new RegionSpec("chaos", "Chaos Depths", -16, -56,
-                                28, 5, 14, 14, 13, 13, 4, 1)));
+                                28, 5, 14, 14, 13, 13, 4, 1, 1)));
     }
 }

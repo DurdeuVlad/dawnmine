@@ -32,7 +32,7 @@ import java.util.Set;
  * byte-identical.
  */
 public final class SegmentGeometry {
-    private static final int MAX_CENTERLINE_STEPS = 8192;
+    static final int MAX_CENTERLINE_STEPS = 8192;
     private static final int MAX_OPERATIONS = 250_000;
     /** Leave two untouched rock layers below the flat world's stone top (Y62). */
     private static final int MAX_CAVE_OPEN_Y = 60;
@@ -225,7 +225,10 @@ public final class SegmentGeometry {
                     continue;
                 }
                 TopoPos cand = cur.offset(m[0], m[1], m[2]);
-                if (!blocked.test(cand)) {
+                // A seen cell's frontier only shrank since it was walked -
+                // re-entering it can never reach anywhere new, so progress
+                // steps must skip it or the walk oscillates into dead ends.
+                if (!blocked.test(cand) && !seen.contains(cand)) {
                     next = cand;
                     break;
                 }
@@ -233,12 +236,13 @@ public final class SegmentGeometry {
             if (next == null) {
                 // Every progress move is walled off (e.g. a straight chord
                 // through the apron): detour. Among all six unit steps pick
-                // the legal one that least increases the remaining distance,
-                // preferring outward travel - the forbidden zones are
-                // hub-centred boxes, so outward always escapes eventually.
-                int curDist = Math.max(Math.abs(to.x() - cur.x()),
-                        Math.max(Math.abs(to.y() - cur.y()),
-                                Math.abs(to.z() - cur.z())));
+                // the legal one that least increases the remaining distance.
+                // There is deliberately no distance window: the retreat scan
+                // below uses the same legality predicate as this move, so a
+                // bounded acceptance would let the walk abandon cells whose
+                // only exits lay outside the window - an artificial dead end
+                // where a legal route exists. Permanent {@code seen} plus the
+                // outer guard still bound the search.
                 int bestDist = Integer.MAX_VALUE;
                 int bestOut = Integer.MIN_VALUE;
                 for (int[] m : new int[][] {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0},
@@ -251,18 +255,43 @@ public final class SegmentGeometry {
                             Math.max(Math.abs(to.y() - cand.y()),
                                     Math.abs(to.z() - cand.z())));
                     int out = Math.abs(cand.x()) + Math.abs(cand.z());
-                    if (dist <= curDist + 1 && (dist < bestDist
-                            || (dist == bestDist && out > bestOut))) {
+                    if (dist < bestDist || (dist == bestDist && out > bestOut)) {
                         next = cand;
                         bestDist = dist;
                         bestOut = out;
                     }
                 }
                 if (next == null) {
-                    throw new IllegalStateException(
-                            "protected-space interpolation is surrounded "
-                                    + from + " -> " + to + " stuck at " + cur
-                                    + " - report this fixture");
+                    // Dead end: backtrack to the deepest walked cell that
+                    // still has an unexplored legal neighbour and resume
+                    // from there. Permanent {@code seen} means a greedy
+                    // detour can paint itself into a reserve-face corner;
+                    // a stack walk always finds the pocket's exit when one
+                    // exists, and still fails closed when none does.
+                    boolean retreated = false;
+                    while (path.size() > 1) {
+                        path.remove(path.size() - 1);
+                        TopoPos top = path.get(path.size() - 1);
+                        for (int[] m : new int[][] {{1, 0, 0}, {-1, 0, 0},
+                                {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}}) {
+                            TopoPos cand = top.offset(m[0], m[1], m[2]);
+                            if (!blocked.test(cand) && !seen.contains(cand)) {
+                                retreated = true;
+                                break;
+                            }
+                        }
+                        if (retreated) {
+                            cur = top;
+                            break;
+                        }
+                    }
+                    if (!retreated) {
+                        throw new IllegalStateException(
+                                "protected-space interpolation is surrounded "
+                                        + from + " -> " + to + " stuck at " + cur
+                                        + " - report this fixture");
+                    }
+                    continue;
                 }
             }
             cur = next;
@@ -625,12 +654,55 @@ public final class SegmentGeometry {
      * (it only knows its own zone), then the hub reserve with the connector
      * row and apron folded into the forbidden set - without the apron term,
      * a footprint deflection could exit through the east face straight into
-     * apron columns whose carves would open the exclusive corridor. */
-    static List<TopoPos> avoidForeignReserve(List<TopoPos> cells) {
+     * apron columns whose carves would open the exclusive corridor. Every
+     * placed landmark reserve is folded in whole: foreign routes have no
+     * business at a safehouse wall, doorway included. */
+    static List<TopoPos> avoidForeignReserve(List<TopoPos> cells,
+                                             LandmarkLayout landmarks) {
         cells = avoidGatewayApron(cells);
         return routeProtected(cells,
                 p -> inHubFootprintStrict(p) || onGatewayRow(p)
-                        || inGatewayApron(p));
+                        || inGatewayApron(p) || landmarks.isReserved(p));
+    }
+
+    /** An edge ending at a landmark keeps only its own endpoints' connector
+     * openings - it may approach the doorway but every other cell of every
+     * reserve stays forbidden, and the hub rules apply unchanged. The layout
+     * is threaded in, never read from the network cache: this runs inside
+     * the PassageNetwork constructor, before any network could be cached. */
+    static List<TopoPos> avoidLandmarkReserve(List<TopoPos> cells,
+                                              java.util.Set<TopoPos> ownOpenings,
+                                              LandmarkLayout landmarks) {
+        cells = avoidGatewayApron(cells);
+        return routeProtected(cells,
+                p -> inHubFootprintStrict(p) || onGatewayRow(p)
+                        || inGatewayApron(p)
+                        || (landmarks.isReserved(p) && !feetOpening(p, ownOpenings)));
+    }
+
+    /** A centreline cell is a walkable approach only when it and its
+     * headroom are both sanctioned openings - a tunnel headroom cell is
+     * open air for the corridor below but can never host a feet sample,
+     * because its own headroom is reserve interior. */
+    private static boolean feetOpening(TopoPos p, java.util.Set<TopoPos> ownOpenings) {
+        return ownOpenings.contains(p) && ownOpenings.contains(p.offset(0, 1, 0));
+    }
+
+    /** An entrance-touching edge that ends at a landmark keeps the hub's
+     * band-exempt treatment - it leaves through the level junction at the
+     * floor - but still honours every landmark reserve except its own
+     * connector openings. The second pass must keep the hub predicate in
+     * its forbidden set: {@code clampYSteps}'s lateral jogs could
+     * otherwise slide a sample into the clipped hub volume that the
+     * landmark-only predicate cannot see, where {@code freeze} would then
+     * refuse the resolved centreline. */
+    static List<TopoPos> avoidEntranceLandmarkReserve(List<TopoPos> cells,
+                                                      java.util.Set<TopoPos> ownOpenings,
+                                                      LandmarkLayout landmarks) {
+        cells = avoidHubReserve(cells);
+        return routeProtected(cells,
+                p -> inHubFootprint(p)
+                        || (landmarks.isReserved(p) && !feetOpening(p, ownOpenings)));
     }
 
     /** The reserve footprint without the gateway-band exemption: foreign
@@ -639,7 +711,7 @@ public final class SegmentGeometry {
      * it is a sealed pocket whose every approach column is reserve- or
      * apron-blocked. Cells below the reserve floor stay exempt so
      * legitimate under-hub corridors still pass. */
-    private static boolean inHubFootprintStrict(TopoPos p) {
+    static boolean inHubFootprintStrict(TopoPos p) {
         return Math.abs(p.x()) <= HubLayout.RESERVE_HALF
                 && Math.abs(p.z()) <= HubLayout.RESERVE_HALF
                 && p.y() >= HubLayout.INTERIOR_MIN_Y - 2;
@@ -671,8 +743,8 @@ public final class SegmentGeometry {
                 for (int j = Math.max(0, i - 4); j < Math.min(cells.size(), i + 5); j++) {
                     dump.append(j == i ? " >>" : "   ").append(cells.get(j)).append('\n');
                 }
-                throw new IllegalStateException("path could not be routed out of the hub "
-                        + "reserve footprint; still inside after deflection: " + c
+                throw new IllegalStateException("path could not be routed out of the "
+                        + "protected reserve footprint; still inside after deflection: " + c
                         + " - report this fixture\n" + dump);
             }
         }
@@ -869,7 +941,7 @@ public final class SegmentGeometry {
 
     /** The connector's own column row: only cells sharing the band's z == 0
      * columns inside its x span can cluster against the fixed anchor. */
-    private static boolean onGatewayRow(TopoPos p) {
+    static boolean onGatewayRow(TopoPos p) {
         return p.z() == 0 && p.x() >= HubLayout.EAST_EXIT.x()
                 && p.x() <= HubLayout.ENTRANCE.x() + 2
                 && p.y() >= HubLayout.FEET_Y - 9 && p.y() <= HubLayout.FEET_Y + 9;
@@ -890,7 +962,7 @@ public final class SegmentGeometry {
     /** A cell whose carved volume could meet the gateway corridor: the
      * connector band plus its side walls and enough vertical window that a
      * tall foreign carve cannot open into its floor or ceiling. */
-    private static boolean inGatewayApron(TopoPos p) {
+    static boolean inGatewayApron(TopoPos p) {
         return p.x() >= HubLayout.EAST_EXIT.x() && p.x() <= HubLayout.ENTRANCE.x() + 2
                 && Math.abs(p.z()) <= 8
                 && p.y() >= HubLayout.FEET_Y - 9 && p.y() <= HubLayout.FEET_Y + 9;
@@ -1380,12 +1452,16 @@ public final class SegmentGeometry {
     // Shared helpers (kept from the previous geometry iteration)
     // ------------------------------------------------------------------
 
-    /** True for the generated-hub reserve that no other segment may touch.
-     * The hub is always centred on world (0,0); the arrival anchor argument
-     * is retained only for call-site compatibility. The east gateway band
-     * is the single allowed opening through the reserve. */
+    /** True for generated-structure reserves that foreign segments may not
+     * touch: the hub reserve (always centred on world (0,0); the arrival
+     * anchor argument is retained only for call-site compatibility; the
+     * east gateway band is the single allowed opening) plus every placed
+     * landmark's write-protected box minus its sanctioned connector
+     * openings. Landmark segments never pass through this filter - they
+     * build their plans directly like the hub does. */
     public static boolean isArrivalKeepOut(TopoPos pos, TopoPos arrival) {
-        return HubLayout.isProtected(pos);
+        return HubLayout.isProtected(pos)
+                || PassageNetwork.activeLayout().isWriteProtected(pos);
     }
 
     private static void addCheckpointPad(Map<TopoPos, RankedBlock> blocks, TopoPos feet,

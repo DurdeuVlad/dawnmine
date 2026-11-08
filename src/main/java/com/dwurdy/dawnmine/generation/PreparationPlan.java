@@ -36,6 +36,14 @@ public final class PreparationPlan {
         // The generated hub build runs after all cave carving and before any
         // dressing or ore pass, as its own required preparation segment.
         expected.add("hub");
+        // Static landmark safehouses are fixed-structure segments too: they
+        // write after carving so their literal grids land in opened rooms,
+        // and before dress/ore so those passes respect the placed reserve.
+        for (TopoNode node : topology.nodes()) {
+            if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE)) {
+                expected.add(StaticLandmarkBuilder.segmentId(node.id()));
+            }
+        }
         for (String id : structural) {
             expected.add(dressSegmentId(id));
         }

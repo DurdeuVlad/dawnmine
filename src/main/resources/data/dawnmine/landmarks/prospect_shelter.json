@@ -1,0 +1,70 @@
+{
+  "id": "prospect_shelter",
+  "footprint": {
+    "halfX": 4,
+    "halfZ": 3,
+    "height": 5,
+    "reserveMargin": 1
+  },
+  "connectors": [
+    { "x": 4, "y": 1, "z": 0, "facing": "east" }
+  ],
+  "slots": {
+    "S": "minecraft:stone_bricks",
+    "P": "minecraft:oak_planks",
+    "L": "minecraft:oak_log",
+    "A": "minecraft:air",
+    "D": "minecraft:air",
+    "T": "minecraft:wall_torch[facing=south]",
+    "t": "minecraft:wall_torch[facing=north]",
+    "B": "minecraft:barrel[facing=up]",
+    "F": "minecraft:lantern[hanging=true]"
+  },
+  "layers": [
+    [
+      "LPPPPPPPL",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "LPPPPPPPL"
+    ],
+    [
+      "LSSSSSSSL",
+      "SBAAAAAAS",
+      "SAAAAAAAS",
+      "SAAAAAAAD",
+      "SAAAAAAAS",
+      "SAAAAAAAS",
+      "LSSSSSSSL"
+    ],
+    [
+      "LPPPPPPPL",
+      "PAAATAAAP",
+      "PAAAAAAAP",
+      "PAAAAAAAD",
+      "PAAAAAAAP",
+      "PAAAtAAAP",
+      "LPPPPPPPL"
+    ],
+    [
+      "LPPPPPPPL",
+      "PAAAAAAAP",
+      "PAAAAAAAP",
+      "PAAAFAAAP",
+      "PAAAAAAAP",
+      "PAAAAAAAP",
+      "LPPPPPPPL"
+    ],
+    [
+      "LPPPPPPPL",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "PPPPPPPPP",
+      "LPPPPPPPL"
+    ]
+  ]
+}
