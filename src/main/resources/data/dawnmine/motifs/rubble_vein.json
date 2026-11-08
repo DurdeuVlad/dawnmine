@@ -1,0 +1,33 @@
+{
+  "motif": "rubble_vein",
+  "appliesTo": ["edge", "node"],
+  "regions": ["upper", "middle", "chaos"],
+  "spacing": [30, 50],
+  "chance": 0.5,
+  "elements": [
+    {
+      "type": "vein",
+      "blockSlot": "ore_slot",
+      "countRange": [1, 3],
+      "offsetRule": "wall",
+      "radius": 3,
+      "chance": 0.85
+    },
+    {
+      "type": "scatter",
+      "blockSlot": "rubble",
+      "countRange": [4, 8],
+      "offsetRule": "floor",
+      "radius": 2,
+      "chance": 1.0
+    },
+    {
+      "type": "pillar",
+      "blockSlot": "support",
+      "countRange": [1, 2],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.3
+    }
+  ]
+}

@@ -94,6 +94,7 @@ public final class MineGenerator {
      * fingerprint was receipted under - a datapack reload mid-carve can
      * never interleave foreign blocks between refresh checks. */
     private OreCatalog.OreCatalogSnapshot pinnedOres;
+    private Map<String, MotifCatalog.Motif> pinnedMotifs = Map.of();
     private Map<String, LandmarkCatalog.Definition> pinnedLandmarks = Map.of();
     private long lastPlanCheck = Long.MIN_VALUE;
     private long lastEncounterScan = Long.MIN_VALUE;
@@ -272,6 +273,7 @@ public final class MineGenerator {
                 nodesByChunk = indexNodes(planned);
                 ownedVolumes = List.copyOf(data.ownedVolumes());
                 pinnedOres = OreCatalog.active();
+                pinnedMotifs = MotifCatalog.active();
                 pinnedLandmarks = LandmarkCatalog.definitions();
                 placedLandmarkNodeIds = Set.copyOf(
                         PassageNetwork.of(planned, ARRIVAL, pinnedLandmarks).landmarks()
@@ -369,6 +371,7 @@ public final class MineGenerator {
             nodesByChunk = indexNodes(planned);
             ownedVolumes = List.copyOf(data.ownedVolumes());
             pinnedOres = OreCatalog.active();
+            pinnedMotifs = MotifCatalog.active();
             pinnedLandmarks = LandmarkCatalog.definitions();
             placedLandmarkNodeIds = Set.copyOf(
                     PassageNetwork.of(planned, ARRIVAL, pinnedLandmarks).landmarks()
@@ -816,6 +819,9 @@ public final class MineGenerator {
             return SegmentGeometry.dress(topology, PreparationPlan.structuralIdFor(id),
                     topology.bounds(), ARRIVAL);
         }
+        if (PreparationPlan.isMotifSegment(id)) {
+            return createMotifPlan(id);
+        }
         if (PreparationPlan.isOreSegment(id)) {
             return createOrePlan(id);
         }
@@ -857,6 +863,10 @@ public final class MineGenerator {
         List<SegmentGeometry.SegmentPlan> plans = new ArrayList<>(2);
         plans.add(structural);
         plans.add(SegmentGeometry.dress(topology, structuralId, topology.bounds(), ARRIVAL));
+        // The motif pass may have embedded blocks (including ore_slot
+        // veins) into candidate wall rock; treat them as occupied so a
+        // catalog vein never overwrites a motif cell.
+        plans.add(createMotifPlan(PreparationPlan.motifSegmentId(structuralId)));
         PassageNetwork network = PassageNetwork.of(topology, ARRIVAL, pinnedLandmarks);
         Set<TopoPos> pads = new HashSet<>();
         for (TopoNode node : topology.nodes()) {
@@ -882,6 +892,14 @@ public final class MineGenerator {
                         || com.dwurdy.dawnmine.topology.HubLayout.isReserved(pos)
                         || landmarks.isReserved(pos)
                         || pads.contains(pos));
+    }
+
+    /** Motif pass: deterministic parametric decorations planned off the
+     * structural + dress plans, reusing the ore pass's protection rules. */
+    private SegmentGeometry.SegmentPlan createMotifPlan(String motifSegmentId) {
+        return MotifPlanner.planSegment(topology,
+                PreparationPlan.structuralIdFor(motifSegmentId), ARRIVAL,
+                pinnedMotifs.values(), pinnedOres, pinnedLandmarks);
     }
 
     /** Test seam: build the structural plan for a segment id without a
@@ -1252,7 +1270,8 @@ public final class MineGenerator {
         String input = GEOMETRY_VERSION + "\n" + plan.fingerprint() + "\n"
                 + "netherrack=" + netherrackEnabled + ":" + netherrackInterval + "\n"
                 + "ore-catalog=" + OreCatalog.active().fingerprint() + "\n"
-                + "landmark-catalog=" + LandmarkCatalog.fingerprint();
+                + "landmark-catalog=" + LandmarkCatalog.fingerprint() + "\n"
+                + "motif-catalog=" + MotifCatalog.fingerprint();
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256")
                     .digest(input.getBytes(StandardCharsets.UTF_8));

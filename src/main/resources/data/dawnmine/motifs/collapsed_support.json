@@ -1,0 +1,33 @@
+{
+  "motif": "collapsed_support",
+  "appliesTo": ["mineshaft"],
+  "regions": ["upper", "middle", "chaos"],
+  "spacing": [26, 44],
+  "chance": 0.55,
+  "elements": [
+    {
+      "type": "pillar",
+      "blockSlot": "support",
+      "countRange": [1, 3],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.9
+    },
+    {
+      "type": "scatter",
+      "blockSlot": "rubble",
+      "countRange": [3, 7],
+      "offsetRule": "floor",
+      "radius": 2,
+      "chance": 1.0
+    },
+    {
+      "type": "lamp",
+      "blockSlot": "light",
+      "countRange": [1, 1],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.4
+    }
+  ]
+}

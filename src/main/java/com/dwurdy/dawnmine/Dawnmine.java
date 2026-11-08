@@ -104,6 +104,7 @@ public class Dawnmine {
         event.addListener(new MineEncounterCatalog());
         event.addListener(new MineRewardCatalog());
         event.addListener(new com.dwurdy.dawnmine.generation.LandmarkCatalog());
+        event.addListener(new com.dwurdy.dawnmine.generation.MotifCatalog());
         event.addListener(OreCatalog.createReloadListener());
         event.addListener(ProgressionGraph.createReloadListener());
     }
