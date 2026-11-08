@@ -1372,22 +1372,9 @@ public final class PassageNetwork {
         Map<String, List<TopoPos>> out = new HashMap<>();
         for (Map.Entry<String, List<TopoPos>> e : work.entrySet()) {
             List<TopoPos> path = e.getValue();
+            assertWalkable(e.getKey(), path);
             for (int i = 0; i < path.size(); i++) {
                 TopoPos c = path.get(i);
-                // The admission gate owns the walk contract too: a raise
-                // the anchor bands refused leaves a |dy|>1 step that a
-                // converge-quiet pass would otherwise receipt - an
-                // impassable corridor shipped as resolved. Nothing
-                // unwalkable freezes.
-                if (i > 0) {
-                    TopoPos prev = path.get(i - 1);
-                    if (Math.abs(c.y() - prev.y()) > 1) {
-                        throw new IllegalStateException("resolved centreline "
-                                + "keeps an unwalkable step " + prev + " -> " + c
-                                + " in segment " + e.getKey() + " at index " + i
-                                + " - report this fixture");
-                    }
-                }
                 // Resolution only moves samples in Y, so a centreline cell
                 // that ended inside the clipped hub volume can only have
                 // been dragged here by a bound-forced raise - admit nothing.
@@ -1407,6 +1394,24 @@ public final class PassageNetwork {
             out.put(e.getKey(), List.copyOf(e.getValue()));
         }
         return out;
+    }
+
+    // The admission gate owns the walk contract too: a raise the anchor
+    // bands refused leaves a |dy|>1 step that a converge-quiet pass would
+    // otherwise receipt - an impassable corridor shipped as resolved.
+    // Nothing unwalkable freezes. Package-private so tests can pin the
+    // gate directly without constructing a full unrepairable draw.
+    static void assertWalkable(String segmentId, List<TopoPos> path) {
+        for (int i = 1; i < path.size(); i++) {
+            TopoPos prev = path.get(i - 1);
+            TopoPos c = path.get(i);
+            if (Math.abs(c.y() - prev.y()) > 1) {
+                throw new IllegalStateException("resolved centreline "
+                        + "keeps an unwalkable step " + prev + " -> " + c
+                        + " in segment " + segmentId + " at index " + i
+                        + " - report this fixture");
+            }
+        }
     }
 
     private static long xzKey(int x, int z) {

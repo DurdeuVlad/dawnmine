@@ -52,7 +52,7 @@ public class MineManager {
     private static final int PAD_HALF = 2; // 5x5 pad
     /** Deterministic topology draws tried at run start: a draw whose
      * passages cannot resolve is skipped, not receipted. */
-    private static final int MAX_TOPOLOGY_DRAWS = 4;
+    private static final int MAX_TOPOLOGY_DRAWS = MineTopology.MAX_TOPOLOGY_DRAWS;
     private static final int PAD_Y = 41;
     private static final int CLEAR_Y_TO = 46;
 

@@ -1,6 +1,7 @@
 package com.dwurdy.dawnmine.generation;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonParser;
@@ -163,7 +164,9 @@ class ReproLiveFailureTest {
             {
                 PassageNetwork network = null;
                 IllegalStateException failure = null;
-                for (int draw = 0; draw < 4 && network == null; draw++) {
+                for (int draw = 0;
+                        draw < com.dwurdy.dawnmine.topology.MineTopology
+                                .MAX_TOPOLOGY_DRAWS && network == null; draw++) {
                     PassageNetwork.clearCache();
                     try {
                         network = PassageNetwork.of(TopologyPlanner.plan(
@@ -248,5 +251,21 @@ class ReproLiveFailureTest {
                 }
             }
         }
+    }
+
+    @Test
+    void freezeGateRejectsAnUnwalkableStep() {
+        // The admission gate must throw on any residual |dy|>1 pair: the
+        // exact hole a refused anchor-band raise used to ship through.
+        List<TopoPos> broken = List.of(
+                new TopoPos(0, 10, 0), new TopoPos(1, 10, 0),
+                new TopoPos(2, 12, 0), new TopoPos(3, 12, 0));
+        assertThrows(IllegalStateException.class,
+                () -> PassageNetwork.assertWalkable("edge:t", broken));
+        // The boundary is exactly +/-1: both extremes must stay admissible.
+        List<TopoPos> legal = List.of(
+                new TopoPos(0, 10, 0), new TopoPos(1, 9, 0),
+                new TopoPos(2, 10, 0));
+        PassageNetwork.assertWalkable("edge:t", legal);
     }
 }

@@ -30,6 +30,11 @@ public final class MineTopology {
      * space rather than a small perturbation of the failed one. */
     private static final long DRAW_SEED_MIX = 0x9E3779B97F4A7C15L;
 
+    /** Bounded number of topology draws {@code MineManager} probes before
+     * failing the run closed. Public so tests replay the same sequence
+     * the planner walks. */
+    public static final int MAX_TOPOLOGY_DRAWS = 4;
+
     /** The seed a given topology draw plans with; exposed for tests that
      * replay the draw sequence without a run record. */
     public static long drawSeed(long seed, int draw) {

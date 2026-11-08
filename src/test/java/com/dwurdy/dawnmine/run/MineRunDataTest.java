@@ -68,9 +68,11 @@ class MineRunDataTest {
         MineRunData restored = MineRunData.load(saved, null);
 
         assertEquals(3, restored.topologySeedOffset());
-        // Legacy records (no tag) load as draw 0 - identical to pre-draw
-        // semantics.
-        assertEquals(0, new MineRunData().topologySeedOffset());
+        // A record serialised before the field existed carries no tag and
+        // must load as draw 0 - identical to pre-draw semantics.
+        CompoundTag legacy = original.save(new CompoundTag(), null);
+        legacy.remove("topologySeedOffset");
+        assertEquals(0, MineRunData.load(legacy, null).topologySeedOffset());
     }
 
     @Test
