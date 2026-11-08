@@ -54,6 +54,28 @@ class MineRunDataTest {
     }
 
     @Test
+    void topologySeedOffsetSurvivesSaveAndLoad() {
+        // A run receipted at draw N must replay draw N forever after -
+        // losing the offset would silently replan draw 0 and fork the
+        // saved topology fingerprint.
+        MineRunData original = new MineRunData();
+        original.beginNewRun("2026-11-02-1", 1, 42L, "2026-11-02");
+        original.setBounds(-16, -16, 15, 15);
+        original.setTopology("standard", "a".repeat(64), 42, 41, 3);
+        original.markStatus(RunStatus.READY);
+
+        CompoundTag saved = original.save(new CompoundTag(), null);
+        MineRunData restored = MineRunData.load(saved, null);
+
+        assertEquals(3, restored.topologySeedOffset());
+        // A record serialised before the field existed carries no tag and
+        // must load as draw 0 - identical to pre-draw semantics.
+        CompoundTag legacy = original.save(new CompoundTag(), null);
+        legacy.remove("topologySeedOffset");
+        assertEquals(0, MineRunData.load(legacy, null).topologySeedOffset());
+    }
+
+    @Test
     void mineRewardClaimIsTrackedOncePersistsAndClearsWithRun() {
         MineRunData data = readyRun();
         OwnedVolume owned = ownedVolume("reward_region", -16, -64, -16, 255, 320, 255);

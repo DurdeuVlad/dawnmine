@@ -216,7 +216,7 @@ class TopologyPlannerTest {
         TopologyProfile inverted = new TopologyProfile("bad", 24, 3, 18, 44, 75,
                 160, 260, 40000, 3,
                 List.of(new TopologyProfile.RegionSpec("up", "Up", -40, 24,
-                        8, 1, 1, 0, 1, 1, 0, 1)));
+                        8, 1, 1, 0, 1, 1, 0, 1, 0)));
         assertThrows(TopologyException.class,
                 () -> TopologyPlanner.plan(1L, inverted, bounds(64)));
     }
@@ -229,7 +229,7 @@ class TopologyPlannerTest {
                         ? new TopologyProfile.RegionSpec(region.id(), region.name(),
                                 region.topY(), region.bottomY(), region.mainRouteNodes(),
                                 region.caverns(), region.branches(), region.loops(),
-                                region.pockets(), 5000, region.landmarks(), region.checkpoints())
+                                region.pockets(), 5000, region.landmarks(), region.checkpoints(), 0)
                         : region)
                 .toList();
         TopologyProfile overBudget = new TopologyProfile(standard.id(),
@@ -254,7 +254,7 @@ class TopologyPlannerTest {
                         ? new TopologyProfile.RegionSpec(region.id(), region.name(),
                                 region.topY(), region.bottomY(), region.mainRouteNodes(),
                                 region.caverns(), region.branches(), 257, region.pockets(),
-                                region.resourceFields(), region.landmarks(), region.checkpoints())
+                                region.resourceFields(), region.landmarks(), region.checkpoints(), 0)
                         : region)
                 .toList();
         TopologyProfile tooManyLoops = new TopologyProfile(standard.id(),

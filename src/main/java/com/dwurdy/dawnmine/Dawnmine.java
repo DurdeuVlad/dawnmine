@@ -103,6 +103,7 @@ public class Dawnmine {
         event.addListener(new TopologyProfiles());
         event.addListener(new MineEncounterCatalog());
         event.addListener(new MineRewardCatalog());
+        event.addListener(new com.dwurdy.dawnmine.generation.LandmarkCatalog());
         event.addListener(OreCatalog.createReloadListener());
         event.addListener(ProgressionGraph.createReloadListener());
     }

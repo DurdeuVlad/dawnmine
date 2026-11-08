@@ -1,6 +1,7 @@
 package com.dwurdy.dawnmine.topology;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +66,7 @@ public final class TopologyPlanner {
         Builder b = new Builder(profile, bounds, inner, new Random(seed));
         b.mainRoute();
         b.checkpoints();
+        b.safehouses();
         b.caverns();
         b.branches();
         b.loops();
@@ -271,6 +273,45 @@ public final class TopologyPlanner {
                     if (!node.has(NodeFeature.CHECKPOINT)) {
                         replaceNode(index, node.withFeature(NodeFeature.CHECKPOINT));
                     }
+                }
+            }
+        }
+
+        /** Safehouses anchor the fixed landmark shelters. They prefer the
+         * region's checkpoint nodes so the rest point and the protected
+         * room coincide; shortfalls fall back to ordinary main-route nodes
+         * so the configured count is still honoured deterministically. */
+        private void safehouses() {
+            for (int r = 0; r < regionMain.size(); r++) {
+                List<Integer> main = regionMain.get(r);
+                TopologyProfile.RegionSpec spec = profile.regions().get(r);
+                int wanted = spec.safehouses();
+                if (wanted <= 0) {
+                    continue;
+                }
+                List<Integer> candidates = new ArrayList<>(main);
+                // Stable seeded shuffle: checkpoint nodes first, then the
+                // rest, each group in deterministic seeded order.
+                Map<Integer, Integer> order = new HashMap<>();
+                for (int i : candidates) {
+                    order.put(i, rng.nextInt());
+                }
+                candidates.sort(Comparator
+                        .comparingInt((Integer i) -> nodes.get(i)
+                                .has(NodeFeature.CHECKPOINT) ? 0 : 1)
+                        .thenComparingInt(order::get));
+                int assigned = 0;
+                for (int index : candidates) {
+                    if (assigned >= wanted) {
+                        break;
+                    }
+                    TopoNode node = nodes.get(index);
+                    if (node.kind() == NodeKind.ENTRANCE
+                            || node.has(NodeFeature.SAFEHOUSE)) {
+                        continue;
+                    }
+                    replaceNode(index, node.withFeature(NodeFeature.SAFEHOUSE));
+                    assigned++;
                 }
             }
         }

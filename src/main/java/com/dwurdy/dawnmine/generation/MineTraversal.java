@@ -40,6 +40,16 @@ public final class MineTraversal {
             apply(world, structural(topology, id, edges, bounds, arrival));
         }
         apply(world, SegmentGeometry.hub(topology, bounds, arrival));
+        PassageNetwork network = PassageNetwork.of(topology, arrival);
+        for (com.dwurdy.dawnmine.topology.TopoNode node : topology.nodes()) {
+            if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE)) {
+                LandmarkLayout.Placement placement =
+                        network.landmarks().placement(node.id());
+                if (placement != null) {
+                    apply(world, StaticLandmarkBuilder.plan(placement, bounds));
+                }
+            }
+        }
         for (String id : ids) {
             apply(world, SegmentGeometry.dress(topology, id, bounds, arrival));
         }
@@ -132,10 +142,12 @@ public final class MineTraversal {
 
     /** Every destination a prepared run must reach on foot: each topology
      * node's resolved centre (route, branch, pocket, resource field,
-     * cavern, landmark, dead end) plus the hub consoles. */
-    public static List<TopoPos> requiredTargets(TopologyPlan topology) {
+     * cavern, landmark, dead end) plus the hub consoles. Resolved against
+     * the caller's arrival, not a hard-coded landing, so a non-standard
+     * hub placement still verifies against its own geometry. */
+    public static List<TopoPos> requiredTargets(TopologyPlan topology, TopoPos arrival) {
         List<TopoPos> targets = new ArrayList<>();
-        PassageNetwork network = PassageNetwork.of(topology, HubLayout.LANDING);
+        PassageNetwork network = PassageNetwork.of(topology, arrival);
         for (TopoNode node : topology.nodes()) {
             targets.add(network.center(node.id()));
         }

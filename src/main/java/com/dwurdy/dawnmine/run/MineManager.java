@@ -50,6 +50,9 @@ public class MineManager {
     public static final BlockPos ARRIVAL = new BlockPos(HubLayout.LANDING.x(),
             HubLayout.LANDING.y(), HubLayout.LANDING.z());
     private static final int PAD_HALF = 2; // 5x5 pad
+    /** Deterministic topology draws tried at run start: a draw whose
+     * passages cannot resolve is skipped, not receipted. */
+    private static final int MAX_TOPOLOGY_DRAWS = MineTopology.MAX_TOPOLOGY_DRAWS;
     private static final int PAD_Y = 41;
     private static final int CLEAR_Y_TO = 46;
 
@@ -347,24 +350,51 @@ public class MineManager {
     // Topology (M2a): deterministic plan, validated before any block work
     // ------------------------------------------------------------------
 
-    /** Plans the run topology from the recorded seed and bounds and validates
-     * it. Nothing is placed: the only state written is the topology receipt
-     * (profile, fingerprint, counts) in the run record. */
+    /** Plans the run topology from the recorded seed and bounds, validates
+     * it, and proves its passages resolve before receipting. Resolution is
+     * a constraint pass over a random draw and some draws are
+     * unsatisfiable - bound-pinned connector doors against ceiling-capped
+     * columns in one merge cluster - so the step walks a deterministic
+     * draw sequence and receipts the first plan that resolves. Draw 0 is
+     * the base seed; every later replan reads the recorded offset back, so
+     * a run always reproduces the topology it was verified with. Nothing
+     * is placed: the only state written is the topology receipt (profile,
+     * fingerprint, counts, draw offset) in the run record. */
     private Step planTopology(ServerLevel mine) {
-        try {
-            TopologyPlan plan = MineTopology.plan(data, mine);
+        com.dwurdy.dawnmine.topology.TopoPos arrival = new com.dwurdy.dawnmine.topology.TopoPos(
+                ARRIVAL.getX(), ARRIVAL.getY(), ARRIVAL.getZ());
+        IllegalStateException failure = null;
+        for (int draw = 0; draw < MAX_TOPOLOGY_DRAWS; draw++) {
+            TopologyPlan plan;
+            try {
+                plan = MineTopology.plan(data, mine, draw);
+            } catch (TopologyException e) {
+                return Step.fail("topology", e.getMessage());
+            }
             TopologyReport report = MineTopology.validate(plan);
             if (!report.ok()) {
                 return Step.fail("topology", "planned topology failed validation: "
                         + report.describe() + "; fix the profile data or bounds, then retry");
             }
+            try {
+                com.dwurdy.dawnmine.generation.PassageNetwork.of(plan, arrival,
+                        com.dwurdy.dawnmine.generation.LandmarkCatalog.definitions());
+            } catch (IllegalStateException x) {
+                failure = x;
+                LOGGER.warn("[dawnmine] topology draw {}/{} cannot resolve "
+                        + "passages - re-drawing ({})",
+                        draw + 1, MAX_TOPOLOGY_DRAWS, x.getMessage());
+                continue;
+            }
             data.setTopology(plan.profileId(), plan.fingerprint(),
-                    plan.nodes().size(), plan.edges().size());
+                    plan.nodes().size(), plan.edges().size(), draw);
             return Step.ok("topology", "planned " + plan.summary()
+                    + (draw > 0 ? " (draw " + draw + ")" : "")
                     + "; no blocks placed (generation is M2b)");
-        } catch (TopologyException e) {
-            return Step.fail("topology", e.getMessage());
         }
+        return Step.fail("topology", "no topology draw produced resolvable "
+                + "passages after " + MAX_TOPOLOGY_DRAWS + " attempts: "
+                + failure.getMessage());
     }
 
     /** Replans deterministically and compares against the persisted receipt,

@@ -73,6 +73,10 @@ public class MineRunData extends SavedData {
     private String topologyFingerprint = "";
     private int topologyNodes = 0;
     private int topologyEdges = 0;
+    /** Deterministic draw index folded into the topology seed: draw 0 is
+     * the base seed; a failed passage resolution re-draws the topology so
+     * the run receipts the first satisfiable plan rather than the first. */
+    private int topologySeedOffset = 0;
     /** Fingerprint of the topology + geometry algorithm that owns progress. */
     private String generationPlanFingerprint = "";
     /** Run-pinned generation settings; config edits apply to the next run. */
@@ -174,6 +178,7 @@ public class MineRunData extends SavedData {
         tag.putString("topologyProfile", topologyProfile);
         tag.putString("topologyFingerprint", topologyFingerprint);
         tag.putInt("topologyNodes", topologyNodes);
+        tag.putInt("topologySeedOffset", topologySeedOffset);
         tag.putInt("topologyEdges", topologyEdges);
         tag.putString("generationPlanFingerprint", generationPlanFingerprint);
         tag.putBoolean("generationNetherrackEnabled", generationNetherrackEnabled);
@@ -296,6 +301,7 @@ public class MineRunData extends SavedData {
         topologyFingerprint = restored.topologyFingerprint;
         topologyNodes = restored.topologyNodes;
         topologyEdges = restored.topologyEdges;
+        topologySeedOffset = restored.topologySeedOffset;
         generationPlanFingerprint = restored.generationPlanFingerprint;
         generationNetherrackEnabled = restored.generationNetherrackEnabled;
         generationNetherrackInterval = restored.generationNetherrackInterval;
@@ -371,6 +377,7 @@ public class MineRunData extends SavedData {
         data.topologyFingerprint = tag.getString("topologyFingerprint");
         data.topologyNodes = tag.getInt("topologyNodes");
         data.topologyEdges = tag.getInt("topologyEdges");
+        data.topologySeedOffset = tag.getInt("topologySeedOffset");
         if (!data.topologyFingerprint.isEmpty() && !isValidTopologyFingerprint(data.topologyFingerprint)) {
             data.markFailed("saved topology fingerprint is malformed; run '/dawnmine recover repair'");
         }
@@ -819,6 +826,9 @@ public class MineRunData extends SavedData {
     }
     public int topologyNodes() { return topologyNodes; }
     public int topologyEdges() { return topologyEdges; }
+    /** Draw index folded into the topology seed for this run; 0 when the
+     * base draw resolved without re-rolling. */
+    public int topologySeedOffset() { return topologySeedOffset; }
     public List<OwnedVolume> ownedVolumes() { return List.copyOf(ownedVolumes); }
     public List<SafeZone> safeZones() { return List.copyOf(safeZones.values()); }
 
@@ -883,6 +893,7 @@ public class MineRunData extends SavedData {
         this.topologyFingerprint = "";
         this.topologyNodes = 0;
         this.topologyEdges = 0;
+        this.topologySeedOffset = 0;
         clearGenerationProgress();
         this.ownedVolumes.clear();
         this.safeZones.clear();
@@ -1237,10 +1248,18 @@ public class MineRunData extends SavedData {
 
     /** Records the validated topology receipt for the active run. */
     void setTopology(String profile, String fingerprint, int nodes, int edges) {
+        setTopology(profile, fingerprint, nodes, edges, 0);
+    }
+
+    /** Records the validated topology receipt plus the draw index the
+     * topology seed was mixed with, so replanning reproduces this plan. */
+    void setTopology(String profile, String fingerprint, int nodes, int edges,
+                     int seedOffset) {
         this.topologyProfile = profile;
         this.topologyFingerprint = fingerprint;
         this.topologyNodes = nodes;
         this.topologyEdges = edges;
+        this.topologySeedOffset = seedOffset;
         setDirty();
     }
 

@@ -172,7 +172,7 @@ class TopologyValidatorTest {
         TopologyProfile tiny = new TopologyProfile("tiny", 24, 3, 18, 44, 75,
                 160, 2, 40000, 3,
                 List.of(new TopologyProfile.RegionSpec("upper", "U", 56, 24, 1,
-                        0, 0, 0, 0, 0, 0, 0)));
+                        0, 0, 0, 0, 0, 0, 0, 0)));
         TopologyReport report = TopologyValidator.validate(minimalValidPlan(), tiny);
         assertFalse(report.ok(), "over-budget plan accepted");
         assertTrue(hasProblem(report, "budget"), report.describe());
@@ -183,7 +183,7 @@ class TopologyValidatorTest {
         TopologyProfile incomplete = new TopologyProfile("incomplete", 24, 3, 18, 44, 75,
                 160, 260, 40000, 3,
                 List.of(new TopologyProfile.RegionSpec("upper", "Upper", 56, 24, 1,
-                        0, 0, 0, 0, 0, 0, 0)));
+                        0, 0, 0, 0, 0, 0, 0, 0)));
 
         TopologyReport report = TopologyValidator.validate(minimalValidPlan(), incomplete);
 

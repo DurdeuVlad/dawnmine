@@ -61,7 +61,10 @@ public final class JackpotOreGameTests {
         // Exact attribution: replay each cavern's own ore plan with the same
         // arguments the generator used, then verify the planned blocks exist
         // in the world. No positional guessing between adjacent caverns.
-        Set<TopoPos> protectedCells = checkpointPads(topology);
+        PassageNetwork network = PassageNetwork.of(
+                topology, ARRIVAL, LandmarkCatalog.definitions());
+        LandmarkLayout landmarks = network.landmarks();
+        Set<TopoPos> protectedCells = checkpointPads(topology, network);
         Map<String, Integer> verifiedCounts = new HashMap<>();
         for (TopoNode cavern : caverns) {
             String segId = "node:" + cavern.id();
@@ -77,7 +80,9 @@ public final class JackpotOreGameTests {
                     pos -> OreCatalog.Tier.parse(regionForY(pos.y())), target,
                     data.seed(), topology.bounds(),
                     pos -> SegmentGeometry.isArrivalKeepOut(pos, ARRIVAL)
-                            || HubLayout.isReserved(pos) || protectedCells.contains(pos));
+                            || HubLayout.isReserved(pos)
+                            || landmarks.isReserved(pos)
+                            || protectedCells.contains(pos));
             int verified = 0;
             for (var op : ores.operations()) {
                 BlockPos pos = new BlockPos(op.position().x(), op.position().y(), op.position().z());
@@ -110,12 +115,15 @@ public final class JackpotOreGameTests {
         helper.succeed();
     }
 
-    private static Set<TopoPos> checkpointPads(TopologyPlan topology) {
+    private static Set<TopoPos> checkpointPads(TopologyPlan topology,
+                                               PassageNetwork network) {
         Set<TopoPos> pads = new HashSet<>();
-        PassageNetwork network = PassageNetwork.of(topology, ARRIVAL);
         for (TopoNode node : topology.nodes()) {
             if (node.has(NodeFeature.CHECKPOINT)) {
                 TopoPos center = network.center(node.id());
+                if (center == null) {
+                    continue;
+                }
                 for (int dz = -2; dz <= 2; dz++) {
                     for (int dx = -2; dx <= 2; dx++) {
                         for (int dy = -1; dy <= 2; dy++) {
@@ -130,9 +138,14 @@ public final class JackpotOreGameTests {
 
     private static String regionForY(int y) {
         String found = "upper";
+        String lastKnownTier = "upper";
         for (var region : TopologyProfiles.active().regions()) {
+            if (OreCatalog.Tier.isKnown(region.id())) {
+                lastKnownTier = region.id();
+            }
             if (y <= region.topY() && y >= region.bottomY()) {
-                found = region.id();
+                found = OreCatalog.Tier.isKnown(region.id())
+                        ? region.id() : lastKnownTier;
             }
         }
         return found;

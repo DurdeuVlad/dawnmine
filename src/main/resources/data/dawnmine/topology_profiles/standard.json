@@ -22,7 +22,8 @@
       "pockets": 9,
       "resourceFields": 9,
       "landmarks": 3,
-      "checkpoints": 1
+      "checkpoints": 1,
+      "safehouses": 1
     },
     {
       "id": "middle",
@@ -36,7 +37,8 @@
       "pockets": 11,
       "resourceFields": 11,
       "landmarks": 3,
-      "checkpoints": 1
+      "checkpoints": 1,
+      "safehouses": 1
     },
     {
       "id": "chaos",
@@ -50,7 +52,8 @@
       "pockets": 13,
       "resourceFields": 13,
       "landmarks": 4,
-      "checkpoints": 1
+      "checkpoints": 1,
+      "safehouses": 1
     }
   ]
 }

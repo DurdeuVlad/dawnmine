@@ -25,18 +25,45 @@ public final class MineTopology {
         return new TopoBounds(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
-    /** Plans the run's topology from its persisted seed and recorded bounds.
+    /** Golden-ratio mix folded into the run seed per topology draw, so a
+     * re-drawn plan is an independent deterministic sample of the same
+     * space rather than a small perturbation of the failed one. */
+    private static final long DRAW_SEED_MIX = 0x9E3779B97F4A7C15L;
+
+    /** Bounded number of topology draws {@code MineManager} probes before
+     * failing the run closed. Public so tests replay the same sequence
+     * the planner walks. */
+    public static final int MAX_TOPOLOGY_DRAWS = 4;
+
+    /** The seed a given topology draw plans with; exposed for tests that
+     * replay the draw sequence without a run record. */
+    public static long drawSeed(long seed, int draw) {
+        return seed ^ draw * DRAW_SEED_MIX;
+    }
+
+    /** Plans the run's topology from its persisted seed + recorded draw
+     * and recorded bounds. Replays the receipted draw index, so a saved
+     * run always reproduces the topology it was planned with. */
+    public static TopologyPlan plan(MineRunData data, ServerLevel mine) {
+        return plan(data, mine, data.topologySeedOffset());
+    }
+
+    /** Plans topology draw {@code draw}: {@code draw = 0} is the run's
+     * base seed, larger values mix in {@link #DRAW_SEED_MIX} so the draw
+     * sequence is a deterministic walk of independent candidates. The
+     * first draw that resolves is receipted via
+     * {@link MineRunData#setTopology}; later replans read it back.
      *
      * @throws TopologyException when the bounds are unusable or no valid
      *         profile is loaded. Callers surface this as a clean failure.
      */
-    public static TopologyPlan plan(MineRunData data, ServerLevel mine) {
+    public static TopologyPlan plan(MineRunData data, ServerLevel mine, int draw) {
         if (data.boundMaxChunkX() < data.boundMinChunkX()
                 || data.boundMaxChunkZ() < data.boundMinChunkZ()) {
             throw new TopologyException("run record has no bounds to plan within");
         }
-        return TopologyPlanner.plan(data.seed(), TopologyProfiles.active(),
-                boundsFor(data, mine));
+        return TopologyPlanner.plan(data.seed() ^ draw * DRAW_SEED_MIX,
+                TopologyProfiles.active(), boundsFor(data, mine));
     }
 
     /** Validates a plan against the recorded bounds and the active profile. */

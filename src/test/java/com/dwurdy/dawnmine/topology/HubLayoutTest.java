@@ -23,7 +23,7 @@ class HubLayoutTest {
         var first = regions.getFirst();
         regions.set(0, new TopologyProfile.RegionSpec(first.id(), first.name(), 40, first.bottomY(),
                 first.mainRouteNodes(), first.caverns(), first.branches(), first.loops(),
-                first.pockets(), first.resourceFields(), first.landmarks(), first.checkpoints()));
+                first.pockets(), first.resourceFields(), first.landmarks(), first.checkpoints(), 0));
         var incompatible = new TopologyProfile(profile.id(), profile.boundsMargin(),
                 profile.corridorHalfWidth(), profile.minStep(), profile.maxStep(),
                 profile.maxTurnDeg(), profile.loopMaxDistance(), profile.maxNodes(),

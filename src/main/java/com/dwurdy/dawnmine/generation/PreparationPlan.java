@@ -28,14 +28,27 @@ public final class PreparationPlan {
 
     /** Full ordered preparation list for a run: connector first so the
      * arrival always exists, then all structural nodes/edges, then all
-     * dressing passes, then all ore passes. */
-    public static List<String> expectedSegments(TopologyPlan topology) {
+     * dressing passes, then all ore passes. {@code placedLandmarkNodeIds}
+     * names the safehouse nodes that actually anchored a landmark - a node
+     * whose catalog entry degraded away expects no segment, so the run can
+     * never be asked to build a landmark that was never placed. */
+    public static List<String> expectedSegments(TopologyPlan topology,
+                                                Set<String> placedLandmarkNodeIds) {
         List<String> structural = structuralSegments(topology);
         List<String> expected = new ArrayList<>(structural.size() * 3 + 1);
         expected.addAll(structural);
         // The generated hub build runs after all cave carving and before any
         // dressing or ore pass, as its own required preparation segment.
         expected.add("hub");
+        // Static landmark safehouses are fixed-structure segments too: they
+        // write after carving so their literal grids land in opened rooms,
+        // and before dress/ore so those passes respect the placed reserve.
+        for (TopoNode node : topology.nodes()) {
+            if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE)
+                    && placedLandmarkNodeIds.contains(node.id())) {
+                expected.add(StaticLandmarkBuilder.segmentId(node.id()));
+            }
+        }
         for (String id : structural) {
             expected.add(dressSegmentId(id));
         }
@@ -103,9 +116,12 @@ public final class PreparationPlan {
     /** Derives progress from the expected set and the persisted completed
      * receipts: completion means every expected segment is complete, not just
      * that the run record says READY. */
-    public static Progress progress(TopologyPlan topology, Set<String> completed,
+    public static Progress progress(TopologyPlan topology,
+                                    Set<String> placedLandmarkNodeIds,
+                                    Set<String> completed,
                                     int pendingCount, String activeId) {
-        Set<String> expected = new LinkedHashSet<>(expectedSegments(topology));
+        Set<String> expected = new LinkedHashSet<>(
+                expectedSegments(topology, placedLandmarkNodeIds));
         int done = 0;
         for (String id : expected) {
             if (completed.contains(id)) {

@@ -57,6 +57,16 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
             };
         }
 
+        /** Whether a region/tier id resolves - topology profiles are
+         * validated against this so a custom region name fails at profile
+         * load, not mid-generation inside the ore or motif pass. */
+        public static boolean isKnown(String value) {
+            return switch (value.toLowerCase(Locale.ROOT)) {
+                case "upper", "middle", "chaos" -> true;
+                default -> false;
+            };
+        }
+
         public String id() {
             return name().toLowerCase(Locale.ROOT);
         }
