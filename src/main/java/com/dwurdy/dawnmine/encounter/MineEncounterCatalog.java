@@ -25,7 +25,7 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
 
     public record EntityCount(ResourceLocation entityId, int count) { }
     public record Composition(String id, int weight, String threat, String counterplay,
-                              List<EntityCount> entities) {
+                              int level, List<EntityCount> entities) {
         public Composition {
             entities = List.copyOf(entities);
         }
@@ -92,7 +92,12 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
             for (JsonElement compositionElement : compositionArray) {
                 JsonObject compositionJson = compositionElement.getAsJsonObject();
                 String compositionId = requiredString(compositionJson, "id");
+                if (!compositionId.matches("[a-z0-9_-]+")) {
+                    throw new JsonParseException("composition id '" + compositionId
+                            + "' must match [a-z0-9_-]+; ':' would corrupt the encounter provenance format");
+                }
                 int weight = integer(compositionJson, "weight", 1, 1000);
+                int level = integer(compositionJson, "level", 1, 16);
                 String threat = requiredString(compositionJson, "threat");
                 String counterplay = requiredString(compositionJson, "counterplay");
                 JsonArray entityArray = requiredArray(compositionJson, "entities");
@@ -118,7 +123,8 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
                     throw new JsonParseException("composition '" + compositionId
                             + "' exceeds region population cap " + regionCap);
                 }
-                compositions.add(new Composition(compositionId, weight, threat, counterplay, entities));
+                compositions.add(new Composition(compositionId, weight, threat, counterplay,
+                        level, entities));
             }
             if (regions.putIfAbsent(regionId, new Region(regionId, regionCap, compositions)) != null) {
                 throw new JsonParseException("duplicate region id '" + regionId + "'");
