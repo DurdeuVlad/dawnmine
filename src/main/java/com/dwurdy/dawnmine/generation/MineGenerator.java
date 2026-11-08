@@ -78,7 +78,7 @@ public final class MineGenerator {
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v4-hub-junctions";
+    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v5-jackpots";
 
     private static MineGenerator instance;
 
@@ -91,6 +91,7 @@ public final class MineGenerator {
     private long lastPlanCheck = Long.MIN_VALUE;
     private long lastEncounterScan = Long.MIN_VALUE;
     private Map<String, TopoEdge> edgesBySegmentId = Map.of();
+    private Set<String> jackpotNodeIds = null;
     private Map<Long, List<TopoNode>> nodesByChunk = Map.of();
     private List<OwnedVolume> ownedVolumes = List.of();
     /** Outstanding chunk futures, keyed by packed chunk coordinate. */
@@ -144,6 +145,7 @@ public final class MineGenerator {
     /** Called once the saved run has been loaded by the server. */
     public synchronized void onServerStarted() {
         topology = null;
+        jackpotNodeIds = null;
         activePlan = null;
         chunkRequests.clear();
         prepStartedNanos = System.nanoTime();
@@ -255,6 +257,7 @@ public final class MineGenerator {
             }
             if (!loadedTopologyFingerprint.equals(planned.fingerprint()) || !loadedRunId.equals(data.runId())) {
                 topology = planned;
+                jackpotNodeIds = null;
                 loadedRunId = data.runId();
                 loadedTopologyFingerprint = planned.fingerprint();
                 activePlan = null;
@@ -334,6 +337,7 @@ public final class MineGenerator {
                 return false;
             }
             topology = planned;
+            jackpotNodeIds = null;
             loadedRunId = data.runId();
             loadedTopologyFingerprint = planned.fingerprint();
             edgesBySegmentId = indexEdges(planned);
@@ -842,6 +846,10 @@ public final class MineGenerator {
     private int veinTargetFor(String structuralId) {
         if (structuralId.startsWith("node:")) {
             TopoNode node = topology.node(structuralId.substring("node:".length()));
+            if (node != null && jackpotNodeIds().contains(node.id())) {
+                return OrePlacementPlanner.jackpotVeinTarget(
+                        OrePlacementPlanner.RESOURCE_FIELD_VEINS);
+            }
             if (node != null && node.has(com.dwurdy.dawnmine.topology.NodeFeature.RESOURCE_FIELD)) {
                 return OrePlacementPlanner.RESOURCE_FIELD_VEINS;
             }
@@ -864,6 +872,14 @@ public final class MineGenerator {
             return OrePlacementPlanner.passageVeinTarget(path.size());
         }
         return OrePlacementPlanner.ORDINARY_VEINS;
+    }
+
+    private Set<String> jackpotNodeIds() {
+        if (jackpotNodeIds == null) {
+            jackpotNodeIds = OrePlacementPlanner.jackpotNodeIds(
+                    topology.nodes(), topology.seed());
+        }
+        return jackpotNodeIds;
     }
 
     private boolean applyOperation(ServerLevel mine, BlockPos pos,

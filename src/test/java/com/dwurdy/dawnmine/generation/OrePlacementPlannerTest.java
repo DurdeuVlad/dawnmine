@@ -14,6 +14,7 @@ import com.dwurdy.dawnmine.topology.TopologyPlanner;
 import com.dwurdy.dawnmine.topology.TopologyProfile;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import net.minecraft.resources.ResourceLocation;
@@ -162,9 +163,104 @@ class OrePlacementPlannerTest {
     }
 
     @Test
+    void jackpotSelectionIsDeterministicBoundedAndVariesWithSeed() {
+        Set<String> first = null;
+        Set<String> union = new HashSet<>();
+        for (long seed : new long[] {42, 1337, 2026, 9001, 77777}) {
+            var topology = TopologyPlanner.plan(seed, TopologyProfile.builtin(), BOUNDS);
+            Set<String> ids = OrePlacementPlanner.jackpotNodeIds(topology.nodes(), topology.seed());
+            Map<String, Long> perRegion = topology.nodes().stream()
+                    .filter(n -> n.kind() == com.dwurdy.dawnmine.topology.NodeKind.CAVERN)
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            TopoNode::region, java.util.stream.Collectors.counting()));
+            long expected = perRegion.values().stream()
+                    .mapToLong(c -> Math.min(OrePlacementPlanner.JACKPOT_NODES_PER_REGION, c))
+                    .sum();
+            assertEquals(expected, ids.size(),
+                    "seed " + seed + " selected " + ids + " - expected exactly "
+                            + OrePlacementPlanner.JACKPOT_NODES_PER_REGION + " per cavern region");
+            for (String id : ids) {
+                TopoNode node = topology.node(id);
+                assertTrue(node != null && node.kind()
+                        == com.dwurdy.dawnmine.topology.NodeKind.CAVERN,
+                        "jackpot id " + id + " is not a cavern node");
+            }
+            assertEquals(ids, OrePlacementPlanner.jackpotNodeIds(
+                    topology.nodes(), topology.seed()),
+                    "same seed must replay identical jackpot selection");
+            if (first == null) {
+                first = ids;
+            }
+            union.addAll(ids);
+        }
+        assertTrue(union.size() > 3,
+                "identical picks across every seed would mean the hash does not vary");
+    }
+
+    @Test
+    void jackpotVeinTargetIsMultipleOfBase() {
+        assertEquals(OrePlacementPlanner.RESOURCE_FIELD_VEINS
+                        * OrePlacementPlanner.JACKPOT_VEIN_MULTIPLIER,
+                OrePlacementPlanner.jackpotVeinTarget(OrePlacementPlanner.RESOURCE_FIELD_VEINS));
+    }
+
+    @Test
+    void jackpotNodesPlaceStrictlyMoreOreThanOrdinaryNodes() {
+        var topology = TopologyPlanner.plan(42, TopologyProfile.builtin(), BOUNDS);
+        Set<String> jackpots = OrePlacementPlanner.jackpotNodeIds(
+                topology.nodes(), topology.seed());
+        assertFalse(jackpots.isEmpty(), "builtin topology must yield jackpot nodes");
+        for (String id : jackpots) {
+            TopoNode node = topology.node(id);
+            SegmentGeometry.SegmentPlan structural =
+                    SegmentGeometry.node(topology, node, BOUNDS, ARRIVAL);
+            SegmentGeometry.SegmentPlan jackpot = plan("node:" + id, structural, CATALOG,
+                    OrePlacementPlanner.jackpotVeinTarget(OrePlacementPlanner.RESOURCE_FIELD_VEINS),
+                    topology.seed());
+            SegmentGeometry.SegmentPlan ordinary = plan("node:" + id, structural, CATALOG,
+                    OrePlacementPlanner.ORDINARY_VEINS, topology.seed());
+            assertTrue(jackpot.operations().size() > ordinary.operations().size(),
+                    "jackpot " + id + " placed " + jackpot.operations().size()
+                            + " vs ordinary " + ordinary.operations().size());
+            assertTrue(jackpot.operations().size() > OrePlacementPlanner.RESOURCE_FIELD_VEINS,
+                    "jackpot " + id + " placed only " + jackpot.operations().size()
+                            + " ore blocks - must exceed the resource-field baseline");
+            // Deterministic replay: same inputs, byte-for-byte identical plan.
+            assertEquals(jackpot, plan("node:" + id, structural, CATALOG,
+                    OrePlacementPlanner.jackpotVeinTarget(OrePlacementPlanner.RESOURCE_FIELD_VEINS),
+                    topology.seed()));
+        }
+    }
+
+    @Test
+    void jackpotOresResolveOnlyThroughCatalogEntries() {
+        var topology = TopologyPlanner.plan(1337, TopologyProfile.builtin(), BOUNDS);
+        Set<String> jackpots = OrePlacementPlanner.jackpotNodeIds(
+                topology.nodes(), topology.seed());
+        assertFalse(jackpots.isEmpty(), "builtin topology must yield jackpot nodes");
+        Set<String> catalogIds = CATALOG.entries().keySet().stream()
+                .map(ResourceLocation::toString)
+                .collect(java.util.stream.Collectors.toSet());
+        for (String id : jackpots) {
+            TopoNode node = topology.node(id);
+            SegmentGeometry.SegmentPlan structural =
+                    SegmentGeometry.node(topology, node, BOUNDS, ARRIVAL);
+            SegmentGeometry.SegmentPlan ores = plan("node:" + id, structural, CATALOG,
+                    OrePlacementPlanner.jackpotVeinTarget(OrePlacementPlanner.RESOURCE_FIELD_VEINS),
+                    topology.seed());
+            for (var op : ores.operations()) {
+                assertTrue(catalogIds.contains(op.blockId()),
+                        "jackpot ore " + op.blockId() + " is not a catalog entry");
+            }
+        }
+    }
+
+    @Test
     void wholeRunOrePlanStaysWithinProvenanceBudget() {
         for (long seed : new long[] {42, 1337, 2026}) {
             var topology = TopologyPlanner.plan(seed, TopologyProfile.builtin(), BOUNDS);
+            Set<String> jackpots = OrePlacementPlanner.jackpotNodeIds(
+                    topology.nodes(), topology.seed());
             long total = 0;
             for (String id : PreparationPlan.structuralSegments(topology)) {
                 SegmentGeometry.SegmentPlan structural;
@@ -172,9 +268,14 @@ class OrePlacementPlannerTest {
                 if (id.startsWith("node:")) {
                     TopoNode node = topology.node(id.substring(5));
                     structural = SegmentGeometry.node(topology, node, BOUNDS, ARRIVAL);
-                    target = node.has(NodeFeature.RESOURCE_FIELD)
-                            ? OrePlacementPlanner.RESOURCE_FIELD_VEINS
-                            : OrePlacementPlanner.ORDINARY_VEINS;
+                    if (jackpots.contains(node.id())) {
+                        target = OrePlacementPlanner.jackpotVeinTarget(
+                                OrePlacementPlanner.RESOURCE_FIELD_VEINS);
+                    } else {
+                        target = node.has(NodeFeature.RESOURCE_FIELD)
+                                ? OrePlacementPlanner.RESOURCE_FIELD_VEINS
+                                : OrePlacementPlanner.ORDINARY_VEINS;
+                    }
                 } else if (id.startsWith("edge:")) {
                     TopoEdge edge = SegmentGeometry.edgeFromSegmentId(topology, id);
                     structural = SegmentGeometry.edge(topology, edge, BOUNDS, ARRIVAL);
