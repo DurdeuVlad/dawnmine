@@ -1,3 +1,15 @@
+// CurseGradle is applied conditionally below (only when a token + project
+// id are present), so it cannot sit in the versioned plugins block - it
+// resolves on the buildscript classpath instead.
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'com.matthewprenger.cursegradle:com.matthewprenger.cursegradle.gradle.plugin:1.4.0'
+    }
+}
+
 plugins {
     id 'java-library'
     id 'idea'
