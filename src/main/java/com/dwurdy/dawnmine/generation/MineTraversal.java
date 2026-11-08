@@ -1,7 +1,6 @@
 package com.dwurdy.dawnmine.generation;
 
 import com.dwurdy.dawnmine.topology.HubLayout;
-import com.dwurdy.dawnmine.topology.NodeFeature;
 import com.dwurdy.dawnmine.topology.TopoBounds;
 import com.dwurdy.dawnmine.topology.TopoEdge;
 import com.dwurdy.dawnmine.topology.TopoNode;
@@ -131,23 +130,14 @@ public final class MineTraversal {
                 || world.get(pos) == SegmentGeometry.BlockKind.RAIL;
     }
 
-    /** Main-route and checkpoint positions a prepared run must reach. */
+    /** Every destination a prepared run must reach on foot: each topology
+     * node's resolved centre (route, branch, pocket, resource field,
+     * cavern, landmark, dead end) plus the hub consoles. */
     public static List<TopoPos> requiredTargets(TopologyPlan topology) {
         List<TopoPos> targets = new ArrayList<>();
         PassageNetwork network = PassageNetwork.of(topology, HubLayout.LANDING);
-        for (String id : topology.mainPath()) {
-            TopoNode node = topology.node(id);
-            if (node != null) {
-                targets.add(network.center(node.id()));
-            }
-        }
-        for (TopoNode node : topology.checkpoints()) {
-            targets.add(network.center(node.id()));
-        }
         for (TopoNode node : topology.nodes()) {
-            if (node.has(NodeFeature.CHECKPOINT)) {
-                targets.add(network.center(node.id()));
-            }
+            targets.add(network.center(node.id()));
         }
         targets.add(HubLayout.TELEPORTER_CONSOLE.offset(0, 0, 1)); // console floor
         targets.add(HubLayout.DISPATCH_CONSOLE.offset(1, 0, 0));   // console floor

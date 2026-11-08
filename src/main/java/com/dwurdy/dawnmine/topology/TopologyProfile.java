@@ -264,13 +264,13 @@ public record TopologyProfile(
      * own file, so this is a last-resort guard, not a shadowing path). */
     public static TopologyProfile builtin() {
         return new TopologyProfile("standard",
-                36, 6, 32, 72, 75, 160, 400, 80000, 4,
+                36, 6, 26, 56, 75, 160, 400, 80000, 5,
                 List.of(
                         new RegionSpec("upper", "Upper Galleries", 56, 24,
-                                18, 5, 8, 4, 8, 8, 3, 1),
+                                26, 4, 12, 10, 9, 9, 3, 1),
                         new RegionSpec("middle", "Middle Descent", 24, -16,
-                                22, 6, 10, 5, 10, 10, 3, 1),
+                                30, 5, 14, 12, 11, 11, 3, 1),
                         new RegionSpec("chaos", "Chaos Depths", -16, -56,
-                                20, 6, 10, 6, 12, 12, 4, 1)));
+                                28, 5, 14, 14, 13, 13, 4, 1)));
     }
 }

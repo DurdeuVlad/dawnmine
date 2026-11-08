@@ -3,738 +3,1142 @@
 # bounds=[-1024,-64,-1024;1023,319,1023]
 
 === seed 42 ===
-summary: 187 nodes, 201 segments, 3 checkpoints, 3 regions, fingerprint cf3c8a28b74c
-fingerprint: cf3c8a28b74c5d28fdd23998ccc478376fc71107f3657dc7a53a1830d872133e
+summary: 288 nodes, 323 segments, 3 checkpoints, 3 regions, fingerprint 91c1f1b26520
+fingerprint: 91c1f1b26520766f66b16fd07c134e28764f9ac4e7090ff4bbd23db159658a6c
 validation: PASS
 profile=standard
 seed=42
 bounds=[-1024,-64,-1024;1023,319,1023]
 entrance=m000
-terminus=m060
-main=m000 m001 m002 m003 m004 m005 m006 m007 m008 m009 m010 m011 m012 m013 m014 m015 m016 m017 m018 m019 m020 m021 m022 m023 m024 m025 m026 m027 m028 m029 m030 m031 m032 m033 m034 m035 m036 m037 m038 m039 m040 m041 m042 m043 m044 m045 m046 m047 m048 m049 m050 m051 m052 m053 m054 m055 m056 m057 m058 m059 m060
-node b000-0 kind=CAVE region=upper pos=-21,27,-103 features=
-node b000-1 kind=CAVE region=upper pos=-1,24,-69 features=
-node b000-2 kind=CAVE region=upper pos=-34,24,-34 features=
-node b001-0 kind=CAVE region=upper pos=-318,36,56 features=
-node b001-1 kind=CAVE region=upper pos=-329,42,84 features=LANDMARK label=Ashen Cascade
-node b001-2 kind=CAVE region=upper pos=-327,37,106 features=DEAD_END
-node b002-0 kind=CAVE region=upper pos=-191,47,119 features=
-node b002-1 kind=CAVE region=upper pos=-174,50,128 features=DEAD_END
-node b003-0 kind=CAVE region=upper pos=25,24,-44 features=
-node b003-1 kind=CAVE region=upper pos=75,24,-23 features=
-node b003-2 kind=CAVE region=upper pos=119,24,-7 features=
-node b003-3 kind=CAVE region=upper pos=118,24,32 features=DEAD_END
-node b004-0 kind=CAVE region=upper pos=-249,39,85 features=DEAD_END
-node b005-0 kind=CAVE region=upper pos=-193,40,160 features=
-node b005-1 kind=CAVE region=upper pos=-190,45,218 features=DEAD_END
-node b006-0 kind=CAVE region=upper pos=7,25,-45 features=
-node b006-1 kind=CAVE region=upper pos=1,30,-27 features=
-node b006-2 kind=CAVE region=upper pos=-28,36,-43 features=
-node b006-3 kind=CAVE region=upper pos=18,34,-43 features=LANDMARK label=Sunken Cascade
-node b007-0 kind=CAVE region=upper pos=-25,56,86 features=
-node b007-1 kind=CAVE region=upper pos=-65,54,116 features=DEAD_END|LANDMARK label=Silent Vault
-node b008-0 kind=CAVE region=middle pos=-94,-6,136 features=
-node b009-0 kind=CAVE region=middle pos=142,8,188 features=
-node b009-1 kind=CAVE region=middle pos=108,13,187 features=
-node b009-2 kind=CAVE region=middle pos=64,13,189 features=DEAD_END
-node b010-0 kind=CAVE region=middle pos=239,-9,-219 features=
-node b010-1 kind=CAVE region=middle pos=266,-12,-236 features=
-node b010-2 kind=CAVE region=middle pos=299,-8,-256 features=
-node b011-0 kind=CAVE region=middle pos=44,1,196 features=
-node b011-1 kind=CAVE region=middle pos=18,3,198 features=DEAD_END|LANDMARK label=Ashen Pillar
-node b012-0 kind=CAVE region=middle pos=261,16,70 features=
-node b012-1 kind=CAVE region=middle pos=286,20,37 features=
-node b012-2 kind=CAVE region=middle pos=304,18,-4 features=
-node b012-3 kind=CAVE region=middle pos=274,13,-40 features=DEAD_END
-node b013-0 kind=CAVE region=middle pos=103,-11,-84 features=
-node b014-0 kind=CAVE region=middle pos=211,9,251 features=
-node b015-0 kind=CAVE region=middle pos=15,-3,38 features=
-node b015-1 kind=CAVE region=middle pos=65,-9,30 features=
-node b015-2 kind=CAVE region=middle pos=88,-5,8 features=DEAD_END|LANDMARK label=Collapsed Dome
-node b016-0 kind=CAVE region=middle pos=227,6,197 features=
-node b016-1 kind=CAVE region=middle pos=261,11,199 features=DEAD_END
-node b017-0 kind=CAVE region=middle pos=271,8,232 features=DEAD_END
-node b018-0 kind=CAVE region=chaos pos=32,-23,-261 features=
-node b018-1 kind=CAVE region=chaos pos=-9,-19,-277 features=
-node b018-2 kind=CAVE region=chaos pos=-43,-21,-300 features=DEAD_END
-node b019-0 kind=CAVE region=chaos pos=-28,-51,-334 features=
-node b020-0 kind=CAVE region=chaos pos=-138,-48,-384 features=LANDMARK label=Collapsed Span
-node b020-1 kind=CAVE region=chaos pos=-169,-44,-346 features=DEAD_END
-node b021-0 kind=CAVE region=chaos pos=-146,-56,-426 features=
-node b021-1 kind=CAVE region=chaos pos=-148,-56,-397 features=
-node b021-2 kind=CAVE region=chaos pos=-185,-56,-389 features=LANDMARK label=Shattered Gallery
-node b022-0 kind=CAVE region=chaos pos=-230,-41,-253 features=
-node b023-0 kind=CAVE region=chaos pos=-179,-44,-302 features=
-node b023-1 kind=CAVE region=chaos pos=-201,-44,-331 features=
-node b023-2 kind=CAVE region=chaos pos=-251,-44,-314 features=
-node b024-0 kind=CAVE region=chaos pos=-133,-54,-408 features=
-node b024-1 kind=CAVE region=chaos pos=-171,-52,-405 features=
-node b025-0 kind=CAVE region=chaos pos=-155,-46,-354 features=
-node b025-1 kind=CAVE region=chaos pos=-173,-47,-316 features=
-node b025-2 kind=CAVE region=chaos pos=-213,-46,-288 features=DEAD_END
-node b026-0 kind=CAVE region=chaos pos=-221,-36,-109 features=
-node b026-1 kind=CAVE region=chaos pos=-260,-31,-92 features=DEAD_END
-node b027-0 kind=CAVE region=chaos pos=-131,-26,-61 features=
-node b027-1 kind=CAVE region=chaos pos=-182,-27,-35 features=
-node b027-2 kind=CAVE region=chaos pos=-202,-26,-13 features=
-node b027-3 kind=CAVE region=chaos pos=-222,-20,41 features=DEAD_END
+terminus=m084
+main=m000 m001 m002 m003 m004 m005 m006 m007 m008 m009 m010 m011 m012 m013 m014 m015 m016 m017 m018 m019 m020 m021 m022 m023 m024 m025 m026 m027 m028 m029 m030 m031 m032 m033 m034 m035 m036 m037 m038 m039 m040 m041 m042 m043 m044 m045 m046 m047 m048 m049 m050 m051 m052 m053 m054 m055 m056 m057 m058 m059 m060 m061 m062 m063 m064 m065 m066 m067 m068 m069 m070 m071 m072 m073 m074 m075 m076 m077 m078 m079 m080 m081 m082 m083 m084
+node b000-0 kind=CAVE region=upper pos=-198,41,96 features=LANDMARK label=Echoing Pillar
+node b000-1 kind=CAVE region=upper pos=-186,42,86 features=
+node b000-2 kind=CAVE region=upper pos=-183,43,51 features=
+node b000-3 kind=CAVE region=upper pos=-170,48,38 features=
+node b000-4 kind=CAVE region=upper pos=-152,46,20 features=DEAD_END
+node b001-0 kind=CAVE region=upper pos=-243,42,71 features=
+node b001-1 kind=CAVE region=upper pos=-285,40,79 features=
+node b001-2 kind=CAVE region=upper pos=-312,45,82 features=
+node b002-0 kind=CAVE region=upper pos=-22,27,123 features=
+node b003-0 kind=CAVE region=upper pos=55,41,-14 features=
+node b003-1 kind=CAVE region=upper pos=66,42,-38 features=
+node b003-2 kind=CAVE region=upper pos=89,42,-69 features=DEAD_END
+node b004-0 kind=CAVE region=upper pos=-194,46,-28 features=
+node b004-1 kind=CAVE region=upper pos=-210,40,7 features=
+node b004-2 kind=CAVE region=upper pos=-245,34,2 features=
+node b004-3 kind=CAVE region=upper pos=-259,37,-41 features=
+node b004-4 kind=CAVE region=upper pos=-252,41,-60 features=DEAD_END|LANDMARK label=Buried Cascade
+node b005-0 kind=CAVE region=upper pos=-7,25,79 features=
+node b005-1 kind=CAVE region=upper pos=-8,24,55 features=
+node b005-2 kind=CAVE region=upper pos=1,24,29 features=
+node b005-3 kind=CAVE region=upper pos=12,24,14 features=DEAD_END
+node b006-0 kind=CAVE region=upper pos=-139,54,131 features=
+node b006-1 kind=CAVE region=upper pos=-104,56,154 features=
+node b006-2 kind=CAVE region=upper pos=-88,56,151 features=
+node b006-3 kind=CAVE region=upper pos=-64,51,133 features=DEAD_END
+node b007-0 kind=CAVE region=upper pos=23,29,119 features=
+node b007-1 kind=CAVE region=upper pos=6,35,140 features=
+node b007-2 kind=CAVE region=upper pos=-17,32,131 features=
+node b008-0 kind=CAVE region=upper pos=-40,28,-133 features=
+node b008-1 kind=CAVE region=upper pos=-60,24,-143 features=DEAD_END
+node b009-0 kind=CAVE region=upper pos=-247,39,102 features=
+node b009-1 kind=CAVE region=upper pos=-270,37,133 features=
+node b009-2 kind=CAVE region=upper pos=-303,42,140 features=
+node b009-3 kind=CAVE region=upper pos=-334,46,129 features=
+node b009-4 kind=CAVE region=upper pos=-355,49,129 features=DEAD_END
+node b010-0 kind=CAVE region=upper pos=-195,41,-55 features=
+node b010-1 kind=CAVE region=upper pos=-230,47,-31 features=
+node b010-2 kind=CAVE region=upper pos=-255,45,-17 features=
+node b010-3 kind=CAVE region=upper pos=-252,41,-1 features=
+node b010-4 kind=CAVE region=upper pos=-230,38,37 features=DEAD_END
+node b011-0 kind=CAVE region=upper pos=-202,39,-51 features=
+node b011-1 kind=CAVE region=upper pos=-218,45,-33 features=
+node b011-2 kind=CAVE region=upper pos=-210,42,-14 features=
+node b011-3 kind=CAVE region=upper pos=-186,48,5 features=DEAD_END
+node b012-0 kind=CAVE region=middle pos=-87,20,128 features=LANDMARK label=Hollow Dome
+node b012-1 kind=CAVE region=middle pos=-62,16,101 features=
+node b012-2 kind=CAVE region=middle pos=-82,13,68 features=DEAD_END
+node b013-0 kind=CAVE region=middle pos=-86,4,-66 features=
+node b013-1 kind=CAVE region=middle pos=-49,9,-90 features=
+node b013-2 kind=CAVE region=middle pos=-21,12,-84 features=
+node b014-0 kind=CAVE region=middle pos=-300,10,55 features=
+node b014-1 kind=CAVE region=middle pos=-328,12,64 features=
+node b015-0 kind=CAVE region=middle pos=-288,-1,80 features=
+node b016-0 kind=CAVE region=middle pos=-232,11,11 features=
+node b016-1 kind=CAVE region=middle pos=-211,15,23 features=DEAD_END
+node b017-0 kind=CAVE region=middle pos=-84,0,-124 features=
+node b017-1 kind=CAVE region=middle pos=-73,-4,-145 features=
+node b017-2 kind=CAVE region=middle pos=-101,1,-174 features=
+node b017-3 kind=CAVE region=middle pos=-127,0,-171 features=
+node b017-4 kind=CAVE region=middle pos=-151,-1,-181 features=DEAD_END
+node b018-0 kind=CAVE region=middle pos=-459,-11,-86 features=
+node b018-1 kind=CAVE region=middle pos=-477,-15,-115 features=
+node b018-2 kind=CAVE region=middle pos=-477,-16,-155 features=DEAD_END
+node b019-0 kind=CAVE region=middle pos=-282,-3,86 features=
+node b019-1 kind=CAVE region=middle pos=-268,-2,110 features=
+node b020-0 kind=CAVE region=middle pos=-217,16,82 features=
+node b020-1 kind=CAVE region=middle pos=-235,12,80 features=
+node b020-2 kind=CAVE region=middle pos=-247,16,43 features=DEAD_END
+node b021-0 kind=CAVE region=middle pos=-97,3,-167 features=
+node b021-1 kind=CAVE region=middle pos=-65,-3,-159 features=
+node b021-2 kind=CAVE region=middle pos=-36,-7,-188 features=
+node b021-3 kind=CAVE region=middle pos=-16,-13,-181 features=
+node b021-4 kind=CAVE region=middle pos=9,-15,-179 features=
+node b022-0 kind=CAVE region=middle pos=-200,-3,124 features=
+node b022-1 kind=CAVE region=middle pos=-178,-4,161 features=
+node b022-2 kind=CAVE region=middle pos=-155,0,179 features=
+node b022-3 kind=CAVE region=middle pos=-144,4,206 features=LANDMARK label=Buried Dome
+node b022-4 kind=CAVE region=middle pos=-123,7,218 features=DEAD_END
+node b023-0 kind=CAVE region=middle pos=-62,24,99 features=
+node b023-1 kind=CAVE region=middle pos=-71,18,85 features=
+node b023-2 kind=CAVE region=middle pos=-60,23,56 features=
+node b023-3 kind=CAVE region=middle pos=-79,24,37 features=
+node b023-4 kind=CAVE region=middle pos=-107,21,50 features=DEAD_END
+node b024-0 kind=CAVE region=middle pos=-158,3,105 features=
+node b024-1 kind=CAVE region=middle pos=-162,-2,123 features=
+node b024-2 kind=CAVE region=middle pos=-155,-1,142 features=
+node b024-3 kind=CAVE region=middle pos=-150,-1,164 features=
+node b024-4 kind=CAVE region=middle pos=-181,-3,181 features=DEAD_END
+node b025-0 kind=CAVE region=middle pos=-52,23,96 features=
+node b025-1 kind=CAVE region=middle pos=-42,18,80 features=
+node b025-2 kind=CAVE region=middle pos=-43,23,55 features=
+node b025-3 kind=CAVE region=middle pos=-32,24,11 features=DEAD_END
+node b026-0 kind=CAVE region=chaos pos=-165,-55,-193 features=
+node b027-0 kind=CAVE region=chaos pos=-279,-37,-40 features=
+node b027-1 kind=CAVE region=chaos pos=-287,-35,-70 features=
+node b027-2 kind=CAVE region=chaos pos=-305,-31,-80 features=
+node b027-3 kind=CAVE region=chaos pos=-308,-35,-106 features=
+node b027-4 kind=CAVE region=chaos pos=-307,-30,-133 features=DEAD_END
+node b028-0 kind=CAVE region=chaos pos=-258,-48,-235 features=
+node b028-1 kind=CAVE region=chaos pos=-269,-43,-206 features=
+node b028-2 kind=CAVE region=chaos pos=-262,-46,-186 features=
+node b028-3 kind=CAVE region=chaos pos=-239,-40,-179 features=
+node b028-4 kind=CAVE region=chaos pos=-206,-45,-206 features=
+node b029-0 kind=CAVE region=chaos pos=-231,-36,0 features=
+node b029-1 kind=CAVE region=chaos pos=-186,-33,1 features=
+node b029-2 kind=CAVE region=chaos pos=-165,-36,-14 features=DEAD_END
+node b030-0 kind=CAVE region=chaos pos=-388,-35,31 features=
+node b030-1 kind=CAVE region=chaos pos=-350,-40,48 features=
+node b031-0 kind=CAVE region=chaos pos=-202,-51,-246 features=
+node b031-1 kind=CAVE region=chaos pos=-208,-53,-270 features=DEAD_END
+node b032-0 kind=CAVE region=chaos pos=-236,-50,-288 features=
+node b032-1 kind=CAVE region=chaos pos=-211,-44,-317 features=
+node b032-2 kind=CAVE region=chaos pos=-189,-45,-321 features=
+node b032-3 kind=CAVE region=chaos pos=-154,-44,-319 features=LANDMARK label=Silent Cascade
+node b033-0 kind=CAVE region=chaos pos=-457,-33,16 features=
+node b033-1 kind=CAVE region=chaos pos=-429,-33,34 features=
+node b034-0 kind=CAVE region=chaos pos=-299,-47,-239 features=
+node b034-1 kind=CAVE region=chaos pos=-282,-43,-255 features=
+node b034-2 kind=CAVE region=chaos pos=-264,-49,-250 features=
+node b034-3 kind=CAVE region=chaos pos=-261,-52,-231 features=
+node b034-4 kind=CAVE region=chaos pos=-288,-56,-194 features=
+node b035-0 kind=CAVE region=chaos pos=-348,-38,-248 features=
+node b035-1 kind=CAVE region=chaos pos=-363,-40,-281 features=
+node b035-2 kind=CAVE region=chaos pos=-384,-40,-309 features=
+node b035-3 kind=CAVE region=chaos pos=-388,-44,-342 features=
+node b035-4 kind=CAVE region=chaos pos=-399,-40,-375 features=DEAD_END
+node b036-0 kind=CAVE region=chaos pos=-390,-49,-223 features=
+node b036-1 kind=CAVE region=chaos pos=-403,-45,-263 features=LANDMARK label=Echoing Pillar
+node b036-2 kind=CAVE region=chaos pos=-406,-40,-282 features=
+node b036-3 kind=CAVE region=chaos pos=-422,-38,-286 features=DEAD_END
+node b037-0 kind=CAVE region=chaos pos=-174,-55,-246 features=
+node b037-1 kind=CAVE region=chaos pos=-140,-51,-236 features=
+node b037-2 kind=CAVE region=chaos pos=-121,-53,-262 features=
+node b037-3 kind=CAVE region=chaos pos=-112,-56,-289 features=DEAD_END
+node b038-0 kind=CAVE region=chaos pos=-484,-43,-92 features=
+node b038-1 kind=CAVE region=chaos pos=-522,-45,-80 features=DEAD_END
+node b039-0 kind=CAVE region=chaos pos=-379,-42,-3 features=
 node m000 kind=ENTRANCE region=upper pos=28,42,0 features= label=Expedition Gateway
-node m001 kind=ROUTE region=upper pos=38,52,36 features=
-node m002 kind=ROUTE region=upper pos=-5,55,61 features=
-node m003 kind=ROUTE region=upper pos=-70,48,89 features=
-node m004 kind=ROUTE region=upper pos=-111,46,91 features=
-node m005 kind=CAVERN region=upper pos=-156,44,99 features=
-node m006 kind=ROUTE region=upper pos=-209,46,114 features=
-node m007 kind=ROUTE region=upper pos=-264,44,123 features=
-node m008 kind=ROUTE region=upper pos=-315,40,138 features=
-node m009 kind=ROUTE region=upper pos=-336,40,103 features=
-node m010 kind=CAVERN region=upper pos=-307,41,73 features=
-node m011 kind=ROUTE region=upper pos=-270,38,23 features=
-node m012 kind=CAVERN region=upper pos=-238,34,-10 features=
-node m013 kind=ROUTE region=upper pos=-207,36,-25 features=
-node m014 kind=ROUTE region=upper pos=-162,34,-54 features=
-node m015 kind=CAVERN region=upper pos=-98,27,-85 features=
-node m016 kind=ROUTE region=upper pos=-39,27,-123 features=
-node m017 kind=CAVERN region=upper pos=23,29,-89 features=
-node m018 kind=ROUTE region=upper pos=51,24,-69 features=CHECKPOINT
-node m019 kind=ROUTE region=middle pos=100,23,-25 features=LANDMARK label=Silent Vault
-node m020 kind=ROUTE region=middle pos=136,19,17 features=
-node m021 kind=ROUTE region=middle pos=174,19,52 features=
-node m022 kind=ROUTE region=middle pos=206,19,75 features=
-node m023 kind=CAVERN region=middle pos=243,16,109 features=
-node m024 kind=ROUTE region=middle pos=275,11,132 features=
-node m025 kind=ROUTE region=middle pos=252,8,194 features=
-node m026 kind=ROUTE region=middle pos=208,7,200 features=
-node m027 kind=ROUTE region=middle pos=168,7,191 features=
-node m028 kind=CAVERN region=middle pos=114,6,172 features=
-node m029 kind=CAVERN region=middle pos=67,5,162 features=
-node m030 kind=ROUTE region=middle pos=4,3,156 features=
-node m031 kind=ROUTE region=middle pos=-27,-3,141 features=
-node m032 kind=ROUTE region=middle pos=-55,-4,123 features=
-node m033 kind=ROUTE region=middle pos=-36,-6,65 features=
-node m034 kind=CAVERN region=middle pos=-14,-5,18 features=
-node m035 kind=CAVERN region=middle pos=12,-5,-8 features=
-node m036 kind=ROUTE region=middle pos=60,-12,-46 features=
-node m037 kind=ROUTE region=middle pos=85,-10,-71 features=
-node m038 kind=ROUTE region=middle pos=115,-10,-110 features=
-node m039 kind=ROUTE region=middle pos=150,-14,-167 features=
-node m040 kind=CAVERN region=middle pos=185,-13,-211 features=CHECKPOINT
-node m041 kind=CAVERN region=chaos pos=143,-19,-267 features=
-node m042 kind=CAVERN region=chaos pos=88,-19,-245 features=
-node m043 kind=CAVERN region=chaos pos=61,-19,-221 features=
-node m044 kind=ROUTE region=chaos pos=15,-26,-189 features=
-node m045 kind=ROUTE region=chaos pos=-23,-23,-179 features=
-node m046 kind=CAVERN region=chaos pos=-51,-31,-147 features=
-node m047 kind=ROUTE region=chaos pos=-113,-30,-113 features=
-node m048 kind=ROUTE region=chaos pos=-133,-29,-75 features=LANDMARK label=Ashen Rotunda
-node m049 kind=CAVERN region=chaos pos=-171,-32,-83 features=
-node m050 kind=ROUTE region=chaos pos=-174,-39,-148 features=
-node m051 kind=CAVERN region=chaos pos=-185,-40,-212 features=
-node m052 kind=ROUTE region=chaos pos=-187,-41,-247 features=
-node m053 kind=ROUTE region=chaos pos=-192,-42,-280 features=
-node m054 kind=ROUTE region=chaos pos=-195,-42,-344 features=
-node m055 kind=ROUTE region=chaos pos=-191,-49,-401 features=
-node m056 kind=ROUTE region=chaos pos=-194,-47,-455 features=
-node m057 kind=ROUTE region=chaos pos=-140,-51,-472 features=
-node m058 kind=ROUTE region=chaos pos=-119,-52,-439 features=
-node m059 kind=ROUTE region=chaos pos=-86,-52,-399 features=LANDMARK label=Shattered Pillar
-node m060 kind=ROUTE region=chaos pos=-61,-54,-360 features=CHECKPOINT
-node p000 kind=POCKET region=upper pos=57,51,35 features=DEAD_END|RESOURCE_FIELD
-node p001 kind=POCKET region=upper pos=-151,30,-72 features=DEAD_END|RESOURCE_FIELD
-node p002 kind=POCKET region=upper pos=-85,26,-110 features=DEAD_END|RESOURCE_FIELD
-node p003 kind=POCKET region=upper pos=-360,33,79 features=DEAD_END|RESOURCE_FIELD
-node p004 kind=POCKET region=upper pos=-134,38,86 features=DEAD_END|RESOURCE_FIELD
-node p005 kind=POCKET region=upper pos=-195,52,150 features=DEAD_END|RESOURCE_FIELD
-node p006 kind=POCKET region=upper pos=-210,53,142 features=DEAD_END|RESOURCE_FIELD
-node p007 kind=POCKET region=upper pos=-169,26,-2 features=DEAD_END|RESOURCE_FIELD
-node p008 kind=POCKET region=upper pos=-207,48,192 features=DEAD_END
-node p009 kind=POCKET region=upper pos=-47,44,129 features=DEAD_END
-node p010 kind=POCKET region=upper pos=-353,46,167 features=DEAD_END
-node p011 kind=POCKET region=upper pos=-227,38,91 features=DEAD_END
-node p012 kind=POCKET region=upper pos=-233,44,106 features=DEAD_END
-node p013 kind=POCKET region=upper pos=-331,35,50 features=DEAD_END
-node p014 kind=POCKET region=upper pos=-32,32,-60 features=DEAD_END
-node p015 kind=POCKET region=upper pos=-190,42,133 features=DEAD_END
-node p016 kind=POCKET region=middle pos=294,18,118 features=DEAD_END|RESOURCE_FIELD
-node p017 kind=POCKET region=middle pos=278,0,219 features=DEAD_END|RESOURCE_FIELD
-node p018 kind=POCKET region=middle pos=331,16,-10 features=DEAD_END|RESOURCE_FIELD
-node p019 kind=POCKET region=middle pos=235,8,99 features=DEAD_END|RESOURCE_FIELD
-node p020 kind=POCKET region=middle pos=314,5,141 features=RESOURCE_FIELD
-node p021 kind=POCKET region=middle pos=137,-16,-221 features=DEAD_END|RESOURCE_FIELD
-node p022 kind=POCKET region=middle pos=140,16,98 features=DEAD_END|RESOURCE_FIELD
-node p023 kind=POCKET region=middle pos=176,9,212 features=DEAD_END|RESOURCE_FIELD
-node p024 kind=POCKET region=middle pos=304,5,107 features=DEAD_END|RESOURCE_FIELD
-node p025 kind=POCKET region=middle pos=-19,0,97 features=DEAD_END|RESOURCE_FIELD
-node p026 kind=POCKET region=middle pos=217,2,264 features=DEAD_END
-node p027 kind=POCKET region=middle pos=290,-5,-238 features=DEAD_END
-node p028 kind=POCKET region=middle pos=271,16,157 features=DEAD_END
-node p029 kind=POCKET region=middle pos=-64,-12,160 features=DEAD_END
-node p030 kind=POCKET region=middle pos=-62,-4,140 features=DEAD_END
-node p031 kind=POCKET region=middle pos=113,18,-55 features=DEAD_END
-node p032 kind=POCKET region=middle pos=113,-15,21 features=DEAD_END
-node p033 kind=POCKET region=middle pos=-42,-6,94 features=DEAD_END
-node p034 kind=POCKET region=middle pos=65,10,145 features=DEAD_END
-node p035 kind=POCKET region=middle pos=-18,-3,4 features=DEAD_END
-node p036 kind=POCKET region=chaos pos=-73,-44,-365 features=DEAD_END|RESOURCE_FIELD
-node p037 kind=POCKET region=chaos pos=-205,-51,-357 features=DEAD_END|RESOURCE_FIELD
-node p038 kind=POCKET region=chaos pos=-125,-46,-456 features=RESOURCE_FIELD
-node p039 kind=POCKET region=chaos pos=-161,-48,-394 features=DEAD_END|RESOURCE_FIELD
-node p040 kind=POCKET region=chaos pos=-211,-45,-194 features=DEAD_END|RESOURCE_FIELD
-node p041 kind=POCKET region=chaos pos=60,-30,-159 features=DEAD_END|RESOURCE_FIELD
-node p042 kind=POCKET region=chaos pos=-258,-34,-282 features=RESOURCE_FIELD
-node p043 kind=POCKET region=chaos pos=-198,-30,-1 features=DEAD_END|RESOURCE_FIELD
-node p044 kind=POCKET region=chaos pos=88,-24,-268 features=DEAD_END|RESOURCE_FIELD
-node p045 kind=POCKET region=chaos pos=-124,-51,-422 features=DEAD_END|RESOURCE_FIELD
-node p046 kind=POCKET region=chaos pos=-244,-40,-348 features=DEAD_END|RESOURCE_FIELD
-node p047 kind=POCKET region=chaos pos=-205,-52,-397 features=DEAD_END|RESOURCE_FIELD
-node p048 kind=POCKET region=chaos pos=-121,-56,-426 features=DEAD_END
-node p049 kind=POCKET region=chaos pos=-112,-36,-145 features=DEAD_END
-node p050 kind=POCKET region=chaos pos=23,-29,-315 features=DEAD_END
-node p051 kind=POCKET region=chaos pos=-167,-44,-387 features=DEAD_END
-node p052 kind=POCKET region=chaos pos=-46,-49,-352 features=DEAD_END
-node p053 kind=POCKET region=chaos pos=-255,-36,-273 features=DEAD_END
-node p054 kind=POCKET region=chaos pos=-40,-32,-173 features=DEAD_END
-node p055 kind=POCKET region=chaos pos=-1,-27,-287 features=DEAD_END
-node p056 kind=POCKET region=chaos pos=-195,-51,-447 features=DEAD_END
-node p057 kind=POCKET region=chaos pos=-264,-37,-271 features=DEAD_END
-node p058 kind=POCKET region=chaos pos=-104,-51,-446 features=DEAD_END
-node p059 kind=POCKET region=chaos pos=-215,-48,-392 features=DEAD_END
+node m001 kind=ROUTE region=upper pos=37,53,35 features=
+node m002 kind=ROUTE region=upper pos=-5,56,59 features=
+node m003 kind=ROUTE region=upper pos=-43,49,75 features=
+node m004 kind=ROUTE region=upper pos=-73,49,84 features=
+node m005 kind=ROUTE region=upper pos=-119,49,92 features=
+node m006 kind=ROUTE region=upper pos=-162,51,94 features=
+node m007 kind=ROUTE region=upper pos=-190,47,99 features=
+node m008 kind=ROUTE region=upper pos=-220,43,108 features=
+node m009 kind=ROUTE region=upper pos=-237,42,81 features=
+node m010 kind=CAVERN region=upper pos=-235,46,41 features=
+node m011 kind=ROUTE region=upper pos=-239,41,-13 features=
+node m012 kind=CAVERN region=upper pos=-218,42,-49 features=
+node m013 kind=ROUTE region=upper pos=-184,43,-94 features=
+node m014 kind=ROUTE region=upper pos=-156,38,-142 features=
+node m015 kind=ROUTE region=upper pos=-141,41,-177 features=
+node m016 kind=CAVERN region=upper pos=-126,34,-202 features=
+node m017 kind=ROUTE region=upper pos=-86,33,-191 features=
+node m018 kind=ROUTE region=upper pos=-63,33,-146 features=
+node m019 kind=ROUTE region=upper pos=-37,31,-107 features=
+node m020 kind=ROUTE region=upper pos=-28,30,-68 features=
+node m021 kind=CAVERN region=upper pos=-11,32,-23 features=
+node m022 kind=ROUTE region=upper pos=-3,26,11 features=
+node m023 kind=ROUTE region=upper pos=10,28,46 features=
+node m024 kind=ROUTE region=upper pos=24,24,73 features=
+node m025 kind=ROUTE region=upper pos=5,25,90 features=LANDMARK label=Sunken Dome
+node m026 kind=ROUTE region=upper pos=-39,24,121 features=CHECKPOINT
+node m027 kind=ROUTE region=middle pos=-66,20,115 features=
+node m028 kind=ROUTE region=middle pos=-116,22,135 features=
+node m029 kind=ROUTE region=middle pos=-165,18,124 features=
+node m030 kind=CAVERN region=middle pos=-193,17,106 features=
+node m031 kind=ROUTE region=middle pos=-246,18,107 features=
+node m032 kind=ROUTE region=middle pos=-281,16,71 features=
+node m033 kind=ROUTE region=middle pos=-271,14,40 features=
+node m034 kind=CAVERN region=middle pos=-273,11,-6 features=
+node m035 kind=CAVERN region=middle pos=-257,15,-57 features=
+node m036 kind=ROUTE region=middle pos=-239,8,-80 features=
+node m037 kind=ROUTE region=middle pos=-210,11,-109 features=
+node m038 kind=ROUTE region=middle pos=-188,7,-158 features=
+node m039 kind=ROUTE region=middle pos=-162,4,-166 features=
+node m040 kind=ROUTE region=middle pos=-118,5,-164 features=
+node m041 kind=ROUTE region=middle pos=-109,4,-121 features=
+node m042 kind=ROUTE region=middle pos=-114,0,-86 features=
+node m043 kind=ROUTE region=middle pos=-115,-2,-58 features=
+node m044 kind=ROUTE region=middle pos=-121,-3,-19 features=
+node m045 kind=ROUTE region=middle pos=-146,0,8 features=
+node m046 kind=ROUTE region=middle pos=-165,-5,34 features=
+node m047 kind=ROUTE region=middle pos=-185,-3,70 features=
+node m048 kind=ROUTE region=middle pos=-208,-3,90 features=
+node m049 kind=ROUTE region=middle pos=-257,-4,72 features=
+node m050 kind=CAVERN region=middle pos=-305,-7,60 features=
+node m051 kind=ROUTE region=middle pos=-332,-9,42 features=
+node m052 kind=ROUTE region=middle pos=-358,-12,20 features=
+node m053 kind=CAVERN region=middle pos=-370,-11,-3 features=LANDMARK label=Shattered Rotunda
+node m054 kind=ROUTE region=middle pos=-393,-12,-23 features=
+node m055 kind=ROUTE region=middle pos=-420,-15,-72 features=
+node m056 kind=ROUTE region=middle pos=-436,-16,-113 features=CHECKPOINT
+node m057 kind=CAVERN region=chaos pos=-396,-16,-143 features=
+node m058 kind=ROUTE region=chaos pos=-342,-17,-146 features=
+node m059 kind=CAVERN region=chaos pos=-304,-21,-123 features=
+node m060 kind=ROUTE region=chaos pos=-274,-25,-84 features=
+node m061 kind=CAVERN region=chaos pos=-239,-21,-49 features=
+node m062 kind=ROUTE region=chaos pos=-194,-25,-28 features=
+node m063 kind=ROUTE region=chaos pos=-152,-29,-46 features=
+node m064 kind=ROUTE region=chaos pos=-129,-28,-28 features=LANDMARK label=Shattered Cascade
+node m065 kind=CAVERN region=chaos pos=-141,-31,0 features=
+node m066 kind=ROUTE region=chaos pos=-186,-28,16 features=
+node m067 kind=ROUTE region=chaos pos=-235,-29,15 features=
+node m068 kind=ROUTE region=chaos pos=-265,-33,3 features=LANDMARK label=Collapsed Dome
+node m069 kind=ROUTE region=chaos pos=-306,-32,2 features=
+node m070 kind=ROUTE region=chaos pos=-354,-33,-5 features=
+node m071 kind=ROUTE region=chaos pos=-402,-38,5 features=
+node m072 kind=ROUTE region=chaos pos=-451,-37,-15 features=
+node m073 kind=ROUTE region=chaos pos=-457,-40,-62 features=
+node m074 kind=ROUTE region=chaos pos=-457,-45,-104 features=
+node m075 kind=ROUTE region=chaos pos=-435,-46,-136 features=
+node m076 kind=ROUTE region=chaos pos=-416,-43,-173 features=
+node m077 kind=ROUTE region=chaos pos=-370,-47,-198 features=
+node m078 kind=ROUTE region=chaos pos=-337,-44,-222 features=
+node m079 kind=CAVERN region=chaos pos=-312,-49,-235 features=
+node m080 kind=ROUTE region=chaos pos=-272,-52,-263 features=
+node m081 kind=ROUTE region=chaos pos=-218,-49,-251 features=
+node m082 kind=ROUTE region=chaos pos=-187,-50,-231 features=
+node m083 kind=ROUTE region=chaos pos=-155,-56,-232 features=
+node m084 kind=ROUTE region=chaos pos=-119,-53,-209 features=CHECKPOINT|DEAD_END
+node p000 kind=POCKET region=upper pos=-164,49,80 features=RESOURCE_FIELD
+node p001 kind=POCKET region=upper pos=-263,35,-1 features=RESOURCE_FIELD
+node p002 kind=POCKET region=upper pos=-226,39,-2 features=DEAD_END|RESOURCE_FIELD
+node p003 kind=POCKET region=upper pos=-183,40,-27 features=DEAD_END|RESOURCE_FIELD
+node p004 kind=POCKET region=upper pos=-211,39,9 features=DEAD_END|RESOURCE_FIELD
+node p005 kind=POCKET region=upper pos=-187,52,42 features=RESOURCE_FIELD
+node p006 kind=POCKET region=upper pos=-4,27,131 features=DEAD_END|RESOURCE_FIELD
+node p007 kind=POCKET region=upper pos=26,37,-57 features=DEAD_END|RESOURCE_FIELD
+node p008 kind=POCKET region=upper pos=-172,56,43 features=DEAD_END|RESOURCE_FIELD
+node p009 kind=POCKET region=upper pos=-204,49,68 features=DEAD_END
+node p010 kind=POCKET region=upper pos=-236,39,111 features=DEAD_END
+node p011 kind=POCKET region=upper pos=-78,56,173 features=DEAD_END
+node p012 kind=POCKET region=upper pos=35,46,-28 features=DEAD_END
+node p013 kind=POCKET region=upper pos=-14,30,160 features=DEAD_END
+node p014 kind=POCKET region=upper pos=-279,36,-9 features=DEAD_END
+node p015 kind=POCKET region=upper pos=-71,50,52 features=DEAD_END
+node p016 kind=POCKET region=upper pos=-230,39,97 features=DEAD_END
+node p017 kind=POCKET region=upper pos=-107,30,-154 features=DEAD_END
+node p018 kind=POCKET region=middle pos=-219,11,134 features=RESOURCE_FIELD
+node p019 kind=POCKET region=middle pos=-204,-3,100 features=DEAD_END|RESOURCE_FIELD
+node p020 kind=POCKET region=middle pos=-326,14,43 features=DEAD_END|RESOURCE_FIELD
+node p021 kind=POCKET region=middle pos=-295,9,88 features=DEAD_END|RESOURCE_FIELD
+node p022 kind=POCKET region=middle pos=-43,17,120 features=DEAD_END|RESOURCE_FIELD
+node p023 kind=POCKET region=middle pos=-303,8,82 features=DEAD_END|RESOURCE_FIELD
+node p024 kind=POCKET region=middle pos=-60,16,112 features=RESOURCE_FIELD
+node p025 kind=POCKET region=middle pos=-153,5,80 features=DEAD_END|RESOURCE_FIELD
+node p026 kind=POCKET region=middle pos=-43,16,135 features=DEAD_END|RESOURCE_FIELD
+node p027 kind=POCKET region=middle pos=-99,8,-152 features=DEAD_END|RESOURCE_FIELD
+node p028 kind=POCKET region=middle pos=-307,8,94 features=DEAD_END|RESOURCE_FIELD
+node p029 kind=POCKET region=middle pos=-58,22,109 features=DEAD_END
+node p030 kind=POCKET region=middle pos=-278,12,-60 features=DEAD_END
+node p031 kind=POCKET region=middle pos=-204,-12,154 features=DEAD_END
+node p032 kind=POCKET region=middle pos=-182,-10,107 features=DEAD_END
+node p033 kind=POCKET region=middle pos=-249,8,141 features=
+node p034 kind=POCKET region=middle pos=-209,4,163 features=DEAD_END
+node p035 kind=POCKET region=middle pos=-293,18,-31 features=DEAD_END
+node p036 kind=POCKET region=middle pos=-67,22,24 features=DEAD_END
+node p037 kind=POCKET region=middle pos=-357,-9,37 features=DEAD_END
+node p038 kind=POCKET region=middle pos=-19,8,121 features=DEAD_END
+node p039 kind=POCKET region=middle pos=-140,1,68 features=DEAD_END
+node p040 kind=POCKET region=chaos pos=-167,-34,12 features=RESOURCE_FIELD
+node p041 kind=POCKET region=chaos pos=-159,-48,-352 features=RESOURCE_FIELD
+node p042 kind=POCKET region=chaos pos=-293,-32,-35 features=DEAD_END|RESOURCE_FIELD
+node p043 kind=POCKET region=chaos pos=-323,-40,-227 features=RESOURCE_FIELD
+node p044 kind=POCKET region=chaos pos=-268,-17,-110 features=DEAD_END|RESOURCE_FIELD
+node p045 kind=POCKET region=chaos pos=-173,-28,36 features=RESOURCE_FIELD
+node p046 kind=POCKET region=chaos pos=-330,-33,-208 features=DEAD_END|RESOURCE_FIELD
+node p047 kind=POCKET region=chaos pos=-303,-43,-93 features=DEAD_END|RESOURCE_FIELD
+node p048 kind=POCKET region=chaos pos=-309,-16,-135 features=DEAD_END|RESOURCE_FIELD
+node p049 kind=POCKET region=chaos pos=-305,-56,-208 features=DEAD_END|RESOURCE_FIELD
+node p050 kind=POCKET region=chaos pos=-283,-42,-255 features=DEAD_END|RESOURCE_FIELD
+node p051 kind=POCKET region=chaos pos=-122,-55,-373 features=DEAD_END|RESOURCE_FIELD
+node p052 kind=POCKET region=chaos pos=-413,-37,-277 features=DEAD_END|RESOURCE_FIELD
+node p053 kind=POCKET region=chaos pos=-215,-34,47 features=
+node p054 kind=POCKET region=chaos pos=-383,-48,-235 features=DEAD_END
+node p055 kind=POCKET region=chaos pos=-146,-20,18 features=DEAD_END
+node p056 kind=POCKET region=chaos pos=-439,-47,-92 features=DEAD_END
+node p057 kind=POCKET region=chaos pos=-213,-26,33 features=DEAD_END
+node p058 kind=POCKET region=chaos pos=-475,-40,-110 features=DEAD_END
+node p059 kind=POCKET region=chaos pos=-216,-36,24 features=DEAD_END
+node p060 kind=POCKET region=chaos pos=-222,-53,-224 features=DEAD_END
+node p061 kind=POCKET region=chaos pos=-344,-33,-108 features=DEAD_END
+node p062 kind=POCKET region=chaos pos=-328,-39,-110 features=DEAD_END
+node p063 kind=POCKET region=chaos pos=-336,-31,-242 features=DEAD_END
+node p064 kind=POCKET region=chaos pos=-241,-37,39 features=DEAD_END
+node p065 kind=POCKET region=chaos pos=-369,-36,26 features=DEAD_END
 edge b000-0 b000-1 BRANCH
-edge b000-0 m016 BRANCH
-edge b000-0 m017 LOOP
+edge b000-0 m008 BRANCH
+edge b000-0 m011 LOOP
 edge b000-1 b000-2 BRANCH
-edge b000-2 p014 SPUR
+edge b000-1 b001-2 LOOP
+edge b000-2 b000-3 BRANCH
+edge b000-3 b000-4 BRANCH
+edge b000-3 p000 SPUR
 edge b001-0 b001-1 BRANCH
-edge b001-0 m011 BRANCH
+edge b001-0 b010-0 LOOP
+edge b001-0 m008 BRANCH
 edge b001-1 b001-2 BRANCH
-edge b001-1 p013 SPUR
-edge b002-0 b002-1 BRANCH
-edge b002-0 m006 BRANCH
-edge b002-0 p005 SPUR
-edge b002-0 p006 SPUR
+edge b001-1 b004-2 LOOP
+edge b002-0 m026 BRANCH
+edge b002-0 p013 SPUR
 edge b003-0 b003-1 BRANCH
-edge b003-0 m017 BRANCH
+edge b003-0 m000 BRANCH
 edge b003-1 b003-2 BRANCH
-edge b003-2 b003-3 BRANCH
-edge b004-0 m010 BRANCH
+edge b003-1 p007 SPUR
+edge b004-0 b004-1 BRANCH
+edge b004-0 b010-3 LOOP
+edge b004-0 m012 BRANCH
+edge b004-1 b004-2 BRANCH
+edge b004-2 b004-3 BRANCH
+edge b004-2 b009-3 LOOP
+edge b004-3 b004-4 BRANCH
 edge b005-0 b005-1 BRANCH
-edge b005-0 m006 BRANCH
-edge b005-0 p008 SPUR
-edge b005-0 p015 SPUR
+edge b005-0 m025 BRANCH
+edge b005-1 b005-2 BRANCH
+edge b005-2 b005-3 BRANCH
+edge b005-2 m025 LOOP
 edge b006-0 b006-1 BRANCH
-edge b006-0 m002 LOOP
-edge b006-0 m018 BRANCH
+edge b006-0 b009-0 LOOP
+edge b006-0 m006 BRANCH
 edge b006-1 b006-2 BRANCH
+edge b006-1 p011 SPUR
 edge b006-2 b006-3 BRANCH
-edge b006-3 m017 LOOP
 edge b007-0 b007-1 BRANCH
-edge b007-0 m002 BRANCH
-edge b008-0 m032 BRANCH
-edge b008-0 p029 SPUR
+edge b007-0 m025 BRANCH
+edge b007-1 b007-2 BRANCH
+edge b007-2 p006 SPUR
+edge b008-0 b008-1 BRANCH
+edge b008-0 m019 BRANCH
 edge b009-0 b009-1 BRANCH
-edge b009-0 b014-0 LOOP
-edge b009-0 m027 BRANCH
+edge b009-0 m009 BRANCH
 edge b009-1 b009-2 BRANCH
-edge b009-1 m025 LOOP
+edge b009-2 b009-3 BRANCH
+edge b009-3 b009-4 BRANCH
 edge b010-0 b010-1 BRANCH
-edge b010-0 m040 BRANCH
+edge b010-0 m009 LOOP
+edge b010-0 m013 BRANCH
 edge b010-1 b010-2 BRANCH
-edge b010-2 p027 SPUR
+edge b010-2 b010-3 BRANCH
+edge b010-3 b010-4 BRANCH
+edge b010-3 p001 SPUR
 edge b011-0 b011-1 BRANCH
-edge b011-0 m029 BRANCH
+edge b011-0 m013 BRANCH
+edge b011-1 b011-2 BRANCH
+edge b011-1 p003 SPUR
+edge b011-1 p004 SPUR
+edge b011-2 b011-3 BRANCH
+edge b011-2 p002 SPUR
 edge b012-0 b012-1 BRANCH
-edge b012-0 m023 BRANCH
+edge b012-0 b024-2 LOOP
+edge b012-0 m028 BRANCH
 edge b012-1 b012-2 BRANCH
-edge b012-2 b012-3 BRANCH
-edge b012-2 m024 LOOP
-edge b012-2 p018 SPUR
-edge b013-0 m038 BRANCH
-edge b013-0 m039 LOOP
-edge b014-0 m026 BRANCH
-edge b014-0 p026 SPUR
-edge b015-0 b015-1 BRANCH
-edge b015-0 m034 BRANCH
-edge b015-1 b015-2 BRANCH
-edge b015-1 p032 SPUR
+edge b013-0 b013-1 BRANCH
+edge b013-0 m043 BRANCH
+edge b013-1 b013-2 BRANCH
+edge b013-2 b021-4 LOOP
+edge b014-0 b014-1 BRANCH
+edge b014-0 m032 BRANCH
+edge b014-0 p023 SPUR
+edge b014-0 p028 SPUR
+edge b014-1 p020 SPUR
+edge b014-1 p021 SPUR
+edge b015-0 b019-1 LOOP
+edge b015-0 m049 BRANCH
 edge b016-0 b016-1 BRANCH
-edge b016-0 m026 BRANCH
-edge b017-0 m025 BRANCH
+edge b016-0 m033 LOOP
+edge b016-0 m034 BRANCH
+edge b017-0 b017-1 BRANCH
+edge b017-0 m041 BRANCH
+edge b017-1 b017-2 BRANCH
+edge b017-2 b017-3 BRANCH
+edge b017-2 b021-1 LOOP
+edge b017-3 b017-4 BRANCH
+edge b017-3 p027 SPUR
 edge b018-0 b018-1 BRANCH
-edge b018-0 m042 BRANCH
-edge b018-0 p044 SPUR
-edge b018-0 p050 SPUR
+edge b018-0 m055 BRANCH
 edge b018-1 b018-2 BRANCH
-edge b018-1 b019-0 LOOP
-edge b018-1 p055 SPUR
-edge b019-0 m060 BRANCH
+edge b019-0 b019-1 BRANCH
+edge b019-0 m050 BRANCH
 edge b020-0 b020-1 BRANCH
-edge b020-0 m058 BRANCH
-edge b020-0 p048 SPUR
+edge b020-0 m030 BRANCH
+edge b020-1 b020-2 BRANCH
 edge b021-0 b021-1 BRANCH
-edge b021-0 m057 LOOP
-edge b021-0 m058 BRANCH
-edge b021-0 p045 SPUR
-edge b021-0 p056 SPUR
+edge b021-0 m040 BRANCH
 edge b021-1 b021-2 BRANCH
-edge b021-2 m060 LOOP
-edge b021-2 p047 SPUR
-edge b022-0 b025-0 LOOP
-edge b022-0 m053 BRANCH
-edge b022-0 p042 SPUR
-edge b022-0 p053 SPUR
+edge b021-2 b021-3 BRANCH
+edge b021-3 b021-4 BRANCH
+edge b022-0 b022-1 BRANCH
+edge b022-0 m048 BRANCH
+edge b022-0 p032 SPUR
+edge b022-1 b022-2 BRANCH
+edge b022-1 p031 SPUR
+edge b022-2 b022-3 BRANCH
+edge b022-3 b022-4 BRANCH
 edge b023-0 b023-1 BRANCH
-edge b023-0 m053 BRANCH
+edge b023-0 m027 BRANCH
+edge b023-0 m045 LOOP
+edge b023-0 p022 SPUR
+edge b023-0 p024 SPUR
 edge b023-1 b023-2 BRANCH
-edge b023-1 m055 LOOP
-edge b023-2 p046 SPUR
+edge b023-2 b023-3 BRANCH
+edge b023-3 b023-4 BRANCH
+edge b023-3 b024-1 LOOP
+edge b023-3 m048 LOOP
 edge b024-0 b024-1 BRANCH
-edge b024-0 m058 BRANCH
-edge b024-0 p039 SPUR
-edge b024-1 p051 SPUR
+edge b024-0 m045 LOOP
+edge b024-0 m047 BRANCH
+edge b024-1 b024-2 BRANCH
+edge b024-1 m030 LOOP
+edge b024-1 p025 SPUR
+edge b024-2 b024-3 BRANCH
+edge b024-3 b024-4 BRANCH
 edge b025-0 b025-1 BRANCH
-edge b025-0 m055 BRANCH
-edge b025-0 p037 SPUR
+edge b025-0 m027 BRANCH
 edge b025-1 b025-2 BRANCH
-edge b026-0 b026-1 BRANCH
-edge b026-0 m049 BRANCH
+edge b025-2 b025-3 BRANCH
+edge b025-2 m028 LOOP
+edge b025-2 p036 SPUR
+edge b026-0 b034-3 LOOP
+edge b026-0 m082 BRANCH
 edge b027-0 b027-1 BRANCH
-edge b027-0 m047 BRANCH
+edge b027-0 m068 BRANCH
+edge b027-0 p042 SPUR
 edge b027-1 b027-2 BRANCH
+edge b027-1 m062 LOOP
+edge b027-1 p047 SPUR
 edge b027-2 b027-3 BRANCH
-edge b027-2 p043 SPUR
+edge b027-3 b027-4 BRANCH
+edge b027-3 b028-3 LOOP
+edge b027-3 m078 LOOP
+edge b027-3 p061 SPUR
+edge b027-3 p062 SPUR
+edge b028-0 b028-1 BRANCH
+edge b028-0 m080 BRANCH
+edge b028-0 p050 SPUR
+edge b028-1 b028-2 BRANCH
+edge b028-2 b028-3 BRANCH
+edge b028-3 b028-4 BRANCH
+edge b028-4 m081 LOOP
+edge b029-0 b029-1 BRANCH
+edge b029-0 m066 LOOP
+edge b029-0 m068 BRANCH
+edge b029-1 b029-2 BRANCH
+edge b030-0 b030-1 BRANCH
+edge b030-0 m071 BRANCH
+edge b030-1 m071 LOOP
+edge b030-1 p065 SPUR
+edge b031-0 b031-1 BRANCH
+edge b031-0 m082 BRANCH
+edge b031-0 p060 SPUR
+edge b032-0 b032-1 BRANCH
+edge b032-0 m080 BRANCH
+edge b032-1 b032-2 BRANCH
+edge b032-2 b032-3 BRANCH
+edge b032-3 m082 LOOP
+edge b032-3 p041 SPUR
+edge b033-0 b033-1 BRANCH
+edge b033-0 m072 BRANCH
+edge b033-1 b039-0 LOOP
+edge b034-0 b034-1 BRANCH
+edge b034-0 m078 BRANCH
+edge b034-0 p043 SPUR
+edge b034-1 b034-2 BRANCH
+edge b034-2 b034-3 BRANCH
+edge b034-3 b034-4 BRANCH
+edge b034-3 m059 LOOP
+edge b034-4 m078 LOOP
+edge b034-4 p049 SPUR
+edge b035-0 b035-1 BRANCH
+edge b035-0 m077 LOOP
+edge b035-0 m078 BRANCH
+edge b035-0 p063 SPUR
+edge b035-1 b035-2 BRANCH
+edge b035-2 b035-3 BRANCH
+edge b035-3 b035-4 BRANCH
+edge b036-0 b036-1 BRANCH
+edge b036-0 m077 BRANCH
+edge b036-0 p054 SPUR
+edge b036-1 b036-2 BRANCH
+edge b036-1 m079 LOOP
+edge b036-1 p052 SPUR
+edge b036-2 b036-3 BRANCH
+edge b037-0 b037-1 BRANCH
+edge b037-0 m081 BRANCH
+edge b037-1 b037-2 BRANCH
+edge b037-2 b037-3 BRANCH
+edge b038-0 b038-1 BRANCH
+edge b038-0 m073 BRANCH
+edge b038-0 p056 SPUR
+edge b038-0 p058 SPUR
+edge b039-0 m071 BRANCH
 edge m000 m001 MAIN
+edge m000 p012 SPUR
 edge m001 m002 MAIN
-edge m001 p000 SPUR
 edge m002 m003 MAIN
 edge m003 m004 MAIN
-edge m003 m005 LOOP
-edge m003 p009 SPUR
+edge m003 p015 SPUR
 edge m004 m005 MAIN
 edge m005 m006 MAIN
-edge m005 p004 SPUR
 edge m006 m007 MAIN
 edge m007 m008 MAIN
-edge m007 p011 SPUR
-edge m007 p012 SPUR
+edge m007 p016 SPUR
 edge m008 m009 MAIN
 edge m008 p010 SPUR
 edge m009 m010 MAIN
-edge m009 p003 SPUR
 edge m010 m011 MAIN
 edge m011 m012 MAIN
 edge m012 m013 MAIN
 edge m013 m014 MAIN
 edge m014 m015 MAIN
-edge m014 p001 SPUR
-edge m014 p007 SPUR
 edge m015 m016 MAIN
-edge m015 p002 SPUR
+edge m015 m019 LOOP
 edge m016 m017 MAIN
 edge m017 m018 MAIN
 edge m018 m019 MAIN
+edge m018 p017 SPUR
 edge m019 m020 MAIN
-edge m019 p031 SPUR
 edge m020 m021 MAIN
 edge m021 m022 MAIN
-edge m021 m037 LOOP
-edge m021 p022 SPUR
 edge m022 m023 MAIN
 edge m023 m024 MAIN
-edge m023 p019 SPUR
-edge m023 p028 SPUR
 edge m024 m025 MAIN
-edge m024 p016 SPUR
-edge m024 p020 SPUR
 edge m025 m026 MAIN
-edge m025 p017 SPUR
 edge m026 m027 MAIN
 edge m027 m028 MAIN
-edge m027 p023 SPUR
+edge m027 p029 SPUR
 edge m028 m029 MAIN
 edge m029 m030 MAIN
-edge m029 p034 SPUR
 edge m030 m031 MAIN
+edge m030 m034 LOOP
+edge m030 p018 SPUR
 edge m031 m032 MAIN
-edge m031 p025 SPUR
-edge m031 p030 SPUR
 edge m032 m033 MAIN
-edge m032 p033 SPUR
 edge m033 m034 MAIN
 edge m034 m035 MAIN
 edge m034 p035 SPUR
 edge m035 m036 MAIN
+edge m035 p030 SPUR
 edge m036 m037 MAIN
 edge m037 m038 MAIN
 edge m038 m039 MAIN
 edge m039 m040 MAIN
-edge m039 p021 SPUR
 edge m040 m041 MAIN
 edge m041 m042 MAIN
 edge m042 m043 MAIN
 edge m043 m044 MAIN
 edge m044 m045 MAIN
-edge m044 p041 SPUR
 edge m045 m046 MAIN
 edge m046 m047 MAIN
-edge m046 p054 SPUR
+edge m046 p039 SPUR
 edge m047 m048 MAIN
-edge m047 p049 SPUR
+edge m047 p019 SPUR
 edge m048 m049 MAIN
 edge m049 m050 MAIN
 edge m050 m051 MAIN
 edge m051 m052 MAIN
-edge m051 p040 SPUR
 edge m052 m053 MAIN
+edge m052 p037 SPUR
 edge m053 m054 MAIN
 edge m054 m055 MAIN
-edge m054 p059 SPUR
 edge m055 m056 MAIN
 edge m056 m057 MAIN
 edge m057 m058 MAIN
-edge m057 m060 LOOP
 edge m058 m059 MAIN
-edge m058 p038 SPUR
+edge m058 m076 LOOP
 edge m059 m060 MAIN
-edge m059 p036 SPUR
-edge m060 p052 SPUR
-edge p020 p024 SPUR
-edge p038 p058 SPUR
-edge p042 p057 SPUR
+edge m059 p048 SPUR
+edge m060 m061 MAIN
+edge m060 p044 SPUR
+edge m061 m062 MAIN
+edge m062 m063 MAIN
+edge m063 m064 MAIN
+edge m064 m065 MAIN
+edge m065 m066 MAIN
+edge m065 p040 SPUR
+edge m066 m067 MAIN
+edge m066 p059 SPUR
+edge m067 m068 MAIN
+edge m067 p064 SPUR
+edge m068 m069 MAIN
+edge m069 m070 MAIN
+edge m070 m071 MAIN
+edge m071 m072 MAIN
+edge m072 m073 MAIN
+edge m073 m074 MAIN
+edge m074 m075 MAIN
+edge m075 m076 MAIN
+edge m076 m077 MAIN
+edge m077 m078 MAIN
+edge m078 m079 MAIN
+edge m079 m080 MAIN
+edge m080 m081 MAIN
+edge m081 m082 MAIN
+edge m082 m083 MAIN
+edge m083 m084 MAIN
+edge p000 p005 SPUR
+edge p000 p009 SPUR
+edge p001 p014 SPUR
+edge p005 p008 SPUR
+edge p018 p033 SPUR
+edge p024 p026 SPUR
+edge p024 p038 SPUR
+edge p033 p034 SPUR
+edge p040 p045 SPUR
+edge p041 p051 SPUR
+edge p043 p046 SPUR
+edge p045 p053 SPUR
+edge p045 p055 SPUR
+edge p053 p057 SPUR
 
 === seed 1337 ===
-summary: 185 nodes, 199 segments, 3 checkpoints, 3 regions, fingerprint 2308213d6c0e
-fingerprint: 2308213d6c0ecabb33fe000db37a72615db3a745040be40ac45e5b3538f0f412
+summary: 282 nodes, 317 segments, 3 checkpoints, 3 regions, fingerprint f7d589ca1a7e
+fingerprint: f7d589ca1a7e4bb3ea856b4f00c95f2232540ef40f13fdd0ab3e0de4c154a320
 validation: PASS
 profile=standard
 seed=1337
 bounds=[-1024,-64,-1024;1023,319,1023]
 entrance=m000
-terminus=m060
-main=m000 m001 m002 m003 m004 m005 m006 m007 m008 m009 m010 m011 m012 m013 m014 m015 m016 m017 m018 m019 m020 m021 m022 m023 m024 m025 m026 m027 m028 m029 m030 m031 m032 m033 m034 m035 m036 m037 m038 m039 m040 m041 m042 m043 m044 m045 m046 m047 m048 m049 m050 m051 m052 m053 m054 m055 m056 m057 m058 m059 m060
-node b000-0 kind=CAVE region=upper pos=-308,34,-227 features=
-node b001-0 kind=CAVE region=upper pos=-141,56,-69 features=
-node b001-1 kind=CAVE region=upper pos=-172,56,-116 features=
-node b002-0 kind=CAVE region=upper pos=-187,30,-406 features=
-node b002-1 kind=CAVE region=upper pos=-154,27,-441 features=
-node b002-2 kind=CAVE region=upper pos=-133,29,-496 features=DEAD_END
-node b003-0 kind=CAVE region=upper pos=-112,46,-50 features=
-node b003-1 kind=CAVE region=upper pos=-154,40,-88 features=
-node b003-2 kind=CAVE region=upper pos=-176,44,-105 features=
-node b004-0 kind=CAVE region=upper pos=-235,48,-69 features=
-node b004-1 kind=CAVE region=upper pos=-243,52,-26 features=DEAD_END
-node b005-0 kind=CAVE region=upper pos=-204,36,-619 features=
-node b005-1 kind=CAVE region=upper pos=-168,41,-653 features=
-node b005-2 kind=CAVE region=upper pos=-154,39,-683 features=DEAD_END
-node b006-0 kind=CAVE region=upper pos=78,56,-28 features=
-node b007-0 kind=CAVE region=upper pos=76,56,10 features=
-node b007-1 kind=CAVE region=upper pos=61,56,40 features=DEAD_END
-node b008-0 kind=CAVE region=middle pos=-163,15,-463 features=
-node b008-1 kind=CAVE region=middle pos=-161,10,-489 features=
-node b008-2 kind=CAVE region=middle pos=-166,16,-541 features=DEAD_END
-node b009-0 kind=CAVE region=middle pos=-144,-16,81 features=LANDMARK label=Hollow Span
-node b009-1 kind=CAVE region=middle pos=-92,-16,100 features=
-node b009-2 kind=CAVE region=middle pos=-41,-16,79 features=
-node b009-3 kind=CAVE region=middle pos=-17,-16,83 features=DEAD_END
-node b010-0 kind=CAVE region=middle pos=-453,-6,52 features=
-node b010-1 kind=CAVE region=middle pos=-468,0,89 features=DEAD_END
-node b011-0 kind=CAVE region=middle pos=-381,1,-25 features=
-node b011-1 kind=CAVE region=middle pos=-397,5,4 features=
-node b012-0 kind=CAVE region=middle pos=-276,13,-161 features=
-node b012-1 kind=CAVE region=middle pos=-318,9,-131 features=
-node b012-2 kind=CAVE region=middle pos=-374,13,-140 features=
-node b012-3 kind=CAVE region=middle pos=-412,12,-165 features=
-node b013-0 kind=CAVE region=middle pos=-226,11,-177 features=
-node b013-1 kind=CAVE region=middle pos=-250,15,-177 features=
-node b013-2 kind=CAVE region=middle pos=-272,11,-212 features=
-node b014-0 kind=CAVE region=middle pos=-374,-8,81 features=
-node b014-1 kind=CAVE region=middle pos=-399,-10,107 features=
-node b014-2 kind=CAVE region=middle pos=-433,-7,144 features=
-node b015-0 kind=CAVE region=middle pos=-173,24,-437 features=DEAD_END
-node b016-0 kind=CAVE region=middle pos=-446,3,-106 features=
-node b016-1 kind=CAVE region=middle pos=-443,7,-126 features=
-node b016-2 kind=CAVE region=middle pos=-459,9,-141 features=DEAD_END|LANDMARK label=Collapsed Rotunda
-node b017-0 kind=CAVE region=middle pos=-285,14,-160 features=
-node b017-1 kind=CAVE region=middle pos=-323,17,-126 features=
-node b017-2 kind=CAVE region=middle pos=-345,18,-104 features=DEAD_END
-node b018-0 kind=CAVE region=chaos pos=-165,-42,492 features=
-node b018-1 kind=CAVE region=chaos pos=-200,-40,535 features=
-node b019-0 kind=CAVE region=chaos pos=-136,-32,420 features=
-node b019-1 kind=CAVE region=chaos pos=-97,-32,385 features=DEAD_END
-node b020-0 kind=CAVE region=chaos pos=-80,-20,118 features=
-node b020-1 kind=CAVE region=chaos pos=-62,-26,101 features=DEAD_END
-node b021-0 kind=CAVE region=chaos pos=-39,-39,493 features=
-node b022-0 kind=CAVE region=chaos pos=-70,-23,213 features=
-node b022-1 kind=CAVE region=chaos pos=-45,-20,207 features=
-node b023-0 kind=CAVE region=chaos pos=-138,-34,494 features=LANDMARK label=Shattered Span
-node b024-0 kind=CAVE region=chaos pos=-118,-25,220 features=
-node b024-1 kind=CAVE region=chaos pos=-133,-22,245 features=DEAD_END
-node b025-0 kind=CAVE region=chaos pos=-149,-21,189 features=
-node b025-1 kind=CAVE region=chaos pos=-174,-18,201 features=
-node b025-2 kind=CAVE region=chaos pos=-226,-19,206 features=
-node b025-3 kind=CAVE region=chaos pos=-256,-18,168 features=DEAD_END|LANDMARK label=Ancient Arch
-node b026-0 kind=CAVE region=chaos pos=-145,-50,202 features=
-node b026-1 kind=CAVE region=chaos pos=-165,-46,195 features=
-node b027-0 kind=CAVE region=chaos pos=-117,-38,476 features=
+terminus=m084
+main=m000 m001 m002 m003 m004 m005 m006 m007 m008 m009 m010 m011 m012 m013 m014 m015 m016 m017 m018 m019 m020 m021 m022 m023 m024 m025 m026 m027 m028 m029 m030 m031 m032 m033 m034 m035 m036 m037 m038 m039 m040 m041 m042 m043 m044 m045 m046 m047 m048 m049 m050 m051 m052 m053 m054 m055 m056 m057 m058 m059 m060 m061 m062 m063 m064 m065 m066 m067 m068 m069 m070 m071 m072 m073 m074 m075 m076 m077 m078 m079 m080 m081 m082 m083 m084
+node b000-0 kind=CAVE region=upper pos=-120,29,-74 features=
+node b001-0 kind=CAVE region=upper pos=-29,56,-53 features=
+node b001-1 kind=CAVE region=upper pos=-43,50,-20 features=
+node b001-2 kind=CAVE region=upper pos=-77,45,-16 features=
+node b001-3 kind=CAVE region=upper pos=-98,47,-13 features=DEAD_END|LANDMARK label=Ancient Dome
+node b002-0 kind=CAVE region=upper pos=-61,28,-264 features=
+node b002-1 kind=CAVE region=upper pos=-85,24,-281 features=
+node b002-2 kind=CAVE region=upper pos=-118,24,-263 features=
+node b003-0 kind=CAVE region=upper pos=-205,39,-238 features=
+node b003-1 kind=CAVE region=upper pos=-165,33,-259 features=
+node b003-2 kind=CAVE region=upper pos=-137,36,-258 features=
+node b003-3 kind=CAVE region=upper pos=-121,33,-270 features=
+node b003-4 kind=CAVE region=upper pos=-79,27,-252 features=
+node b004-0 kind=CAVE region=upper pos=19,56,-51 features=
+node b004-1 kind=CAVE region=upper pos=50,56,-53 features=DEAD_END
+node b005-0 kind=CAVE region=upper pos=-159,46,-131 features=
+node b005-1 kind=CAVE region=upper pos=-175,42,-166 features=
+node b005-2 kind=CAVE region=upper pos=-160,39,-186 features=
+node b005-3 kind=CAVE region=upper pos=-164,36,-209 features=
+node b006-0 kind=CAVE region=upper pos=-60,27,-233 features=DEAD_END
+node b007-0 kind=CAVE region=upper pos=-16,34,-166 features=
+node b007-1 kind=CAVE region=upper pos=17,37,-173 features=
+node b007-2 kind=CAVE region=upper pos=50,43,-197 features=
+node b007-3 kind=CAVE region=upper pos=91,45,-208 features=
+node b007-4 kind=CAVE region=upper pos=115,51,-229 features=DEAD_END
+node b008-0 kind=CAVE region=upper pos=-118,50,-46 features=
+node b009-0 kind=CAVE region=upper pos=-125,38,-328 features=
+node b009-1 kind=CAVE region=upper pos=-125,34,-282 features=
+node b009-2 kind=CAVE region=upper pos=-142,36,-266 features=DEAD_END
+node b010-0 kind=CAVE region=upper pos=-232,37,-269 features=
+node b010-1 kind=CAVE region=upper pos=-238,35,-242 features=
+node b010-2 kind=CAVE region=upper pos=-229,39,-226 features=
+node b010-3 kind=CAVE region=upper pos=-219,41,-210 features=
+node b010-4 kind=CAVE region=upper pos=-184,35,-219 features=DEAD_END
+node b011-0 kind=CAVE region=upper pos=-230,42,-63 features=
+node b011-1 kind=CAVE region=upper pos=-225,36,-43 features=LANDMARK label=Buried Rotunda
+node b011-2 kind=CAVE region=upper pos=-226,37,-24 features=
+node b012-0 kind=CAVE region=middle pos=-158,-14,228 features=
+node b012-1 kind=CAVE region=middle pos=-140,-13,236 features=
+node b013-0 kind=CAVE region=middle pos=-252,8,40 features=
+node b013-1 kind=CAVE region=middle pos=-228,9,34 features=
+node b013-2 kind=CAVE region=middle pos=-216,5,7 features=
+node b013-3 kind=CAVE region=middle pos=-211,7,-34 features=
+node b013-4 kind=CAVE region=middle pos=-220,9,-54 features=
+node b014-0 kind=CAVE region=middle pos=-103,-6,270 features=
+node b014-1 kind=CAVE region=middle pos=-89,-3,229 features=
+node b015-0 kind=CAVE region=middle pos=-146,-2,373 features=LANDMARK label=Hollow Arch
+node b015-1 kind=CAVE region=middle pos=-125,-2,386 features=
+node b015-2 kind=CAVE region=middle pos=-96,-6,386 features=
+node b015-3 kind=CAVE region=middle pos=-78,-8,402 features=
+node b015-4 kind=CAVE region=middle pos=-88,-6,441 features=DEAD_END
+node b016-0 kind=CAVE region=middle pos=-105,-16,86 features=
+node b016-1 kind=CAVE region=middle pos=-99,-16,50 features=
+node b016-2 kind=CAVE region=middle pos=-115,-16,10 features=DEAD_END
+node b017-0 kind=CAVE region=middle pos=-223,18,-36 features=
+node b017-1 kind=CAVE region=middle pos=-246,19,-49 features=
+node b017-2 kind=CAVE region=middle pos=-246,22,-70 features=DEAD_END
+node b018-0 kind=CAVE region=middle pos=-216,7,66 features=
+node b018-1 kind=CAVE region=middle pos=-198,8,67 features=
+node b018-2 kind=CAVE region=middle pos=-177,6,72 features=DEAD_END
+node b019-0 kind=CAVE region=middle pos=-108,-10,337 features=LANDMARK label=Glimmering Pillar
+node b019-1 kind=CAVE region=middle pos=-141,-10,356 features=
+node b019-2 kind=CAVE region=middle pos=-165,-8,366 features=
+node b019-3 kind=CAVE region=middle pos=-195,-4,348 features=DEAD_END
+node b020-0 kind=CAVE region=middle pos=-113,1,327 features=
+node b020-1 kind=CAVE region=middle pos=-132,-1,292 features=
+node b021-0 kind=CAVE region=middle pos=-229,17,32 features=
+node b022-0 kind=CAVE region=middle pos=-84,7,201 features=
+node b022-1 kind=CAVE region=middle pos=-82,12,157 features=
+node b022-2 kind=CAVE region=middle pos=-67,12,129 features=
+node b022-3 kind=CAVE region=middle pos=-75,12,99 features=
+node b022-4 kind=CAVE region=middle pos=-88,13,89 features=DEAD_END
+node b023-0 kind=CAVE region=middle pos=-150,-16,226 features=
+node b023-1 kind=CAVE region=middle pos=-127,-11,231 features=
+node b023-2 kind=CAVE region=middle pos=-89,-15,228 features=LANDMARK label=Glimmering Chasm
+node b023-3 kind=CAVE region=middle pos=-58,-9,217 features=
+node b023-4 kind=CAVE region=middle pos=-32,-9,239 features=
+node b024-0 kind=CAVE region=middle pos=-158,-16,183 features=
+node b024-1 kind=CAVE region=middle pos=-201,-14,190 features=
+node b024-2 kind=CAVE region=middle pos=-229,-15,207 features=
+node b024-3 kind=CAVE region=middle pos=-262,-16,184 features=DEAD_END
+node b025-0 kind=CAVE region=middle pos=-248,10,17 features=DEAD_END
+node b026-0 kind=CAVE region=chaos pos=-232,-46,-83 features=LANDMARK label=Collapsed Arch
+node b026-1 kind=CAVE region=chaos pos=-234,-43,-105 features=
+node b026-2 kind=CAVE region=chaos pos=-205,-38,-125 features=
+node b026-3 kind=CAVE region=chaos pos=-178,-33,-108 features=
+node b026-4 kind=CAVE region=chaos pos=-143,-34,-129 features=DEAD_END
+node b027-0 kind=CAVE region=chaos pos=-273,-56,-125 features=
+node b027-1 kind=CAVE region=chaos pos=-258,-56,-133 features=
+node b027-2 kind=CAVE region=chaos pos=-221,-56,-116 features=DEAD_END
+node b028-0 kind=CAVE region=chaos pos=-155,-44,176 features=
+node b028-1 kind=CAVE region=chaos pos=-186,-49,144 features=
+node b028-2 kind=CAVE region=chaos pos=-196,-45,102 features=
+node b028-3 kind=CAVE region=chaos pos=-227,-47,81 features=
+node b028-4 kind=CAVE region=chaos pos=-263,-53,96 features=DEAD_END
+node b029-0 kind=CAVE region=chaos pos=-226,-44,67 features=
+node b029-1 kind=CAVE region=chaos pos=-255,-40,91 features=
+node b030-0 kind=CAVE region=chaos pos=109,-27,188 features=LANDMARK label=Hollow Pillar
+node b030-1 kind=CAVE region=chaos pos=103,-27,153 features=
+node b030-2 kind=CAVE region=chaos pos=66,-32,142 features=DEAD_END
+node b031-0 kind=CAVE region=chaos pos=135,-22,210 features=
+node b032-0 kind=CAVE region=chaos pos=-39,-18,102 features=
+node b032-1 kind=CAVE region=chaos pos=-76,-17,79 features=
+node b032-2 kind=CAVE region=chaos pos=-79,-20,52 features=DEAD_END
+node b033-0 kind=CAVE region=chaos pos=208,-25,273 features=DEAD_END|LANDMARK label=Glimmering Dome
+node b034-0 kind=CAVE region=chaos pos=-201,-38,65 features=
+node b034-1 kind=CAVE region=chaos pos=-182,-37,35 features=
+node b034-2 kind=CAVE region=chaos pos=-156,-37,18 features=DEAD_END
+node b035-0 kind=CAVE region=chaos pos=-66,-40,273 features=
+node b035-1 kind=CAVE region=chaos pos=-45,-37,261 features=
+node b035-2 kind=CAVE region=chaos pos=-7,-34,243 features=LANDMARK label=Hollow Span
+node b035-3 kind=CAVE region=chaos pos=22,-40,263 features=DEAD_END
+node b036-0 kind=CAVE region=chaos pos=-169,-40,60 features=
+node b036-1 kind=CAVE region=chaos pos=-158,-39,47 features=
+node b036-2 kind=CAVE region=chaos pos=-167,-44,32 features=
+node b036-3 kind=CAVE region=chaos pos=-154,-42,7 features=
+node b036-4 kind=CAVE region=chaos pos=-158,-38,-39 features=DEAD_END
+node b037-0 kind=CAVE region=chaos pos=-233,-49,-96 features=
+node b037-1 kind=CAVE region=chaos pos=-197,-47,-92 features=
+node b037-2 kind=CAVE region=chaos pos=-182,-51,-106 features=
+node b037-3 kind=CAVE region=chaos pos=-186,-56,-142 features=
+node b037-4 kind=CAVE region=chaos pos=-204,-53,-163 features=DEAD_END
+node b038-0 kind=CAVE region=chaos pos=144,-18,247 features=
+node b038-1 kind=CAVE region=chaos pos=102,-16,254 features=
+node b038-2 kind=CAVE region=chaos pos=93,-16,269 features=
+node b038-3 kind=CAVE region=chaos pos=73,-20,300 features=
+node b038-4 kind=CAVE region=chaos pos=85,-16,321 features=DEAD_END
+node b039-0 kind=CAVE region=chaos pos=80,-28,203 features=
+node b039-1 kind=CAVE region=chaos pos=45,-34,207 features=
+node b039-2 kind=CAVE region=chaos pos=12,-29,181 features=
+node b039-3 kind=CAVE region=chaos pos=-9,-34,161 features=DEAD_END
 node m000 kind=ENTRANCE region=upper pos=28,42,0 features= label=Expedition Gateway
-node m001 kind=ROUTE region=upper pos=37,56,-33 features=
-node m002 kind=CAVERN region=upper pos=4,55,-52 features=
-node m003 kind=ROUTE region=upper pos=-64,51,-63 features=
-node m004 kind=ROUTE region=upper pos=-112,50,-77 features=
-node m005 kind=ROUTE region=upper pos=-158,46,-85 features=
-node m006 kind=ROUTE region=upper pos=-199,46,-87 features=
-node m007 kind=CAVERN region=upper pos=-250,47,-109 features=
-node m008 kind=CAVERN region=upper pos=-305,44,-125 features=
-node m009 kind=CAVERN region=upper pos=-304,43,-169 features=
-node m010 kind=ROUTE region=upper pos=-281,36,-226 features=
-node m011 kind=ROUTE region=upper pos=-270,33,-267 features=
-node m012 kind=CAVERN region=upper pos=-261,37,-328 features=
-node m013 kind=ROUTE region=upper pos=-244,36,-393 features=LANDMARK label=Echoing Rotunda
-node m014 kind=ROUTE region=upper pos=-234,29,-460 features=LANDMARK label=Glimmering Amphitheater
-node m015 kind=ROUTE region=upper pos=-233,28,-522 features=
-node m016 kind=ROUTE region=upper pos=-225,31,-575 features=LANDMARK label=Ancient Chasm
-node m017 kind=ROUTE region=upper pos=-163,28,-582 features=
-node m018 kind=ROUTE region=upper pos=-148,24,-544 features=CHECKPOINT
-node m019 kind=CAVERN region=middle pos=-147,24,-482 features=
-node m020 kind=ROUTE region=middle pos=-127,21,-432 features=
-node m021 kind=ROUTE region=middle pos=-126,20,-370 features=
-node m022 kind=ROUTE region=middle pos=-120,18,-331 features=
-node m023 kind=ROUTE region=middle pos=-119,18,-274 features=
-node m024 kind=ROUTE region=middle pos=-124,13,-217 features=
-node m025 kind=ROUTE region=middle pos=-170,12,-161 features=
-node m026 kind=CAVERN region=middle pos=-205,10,-128 features=
-node m027 kind=ROUTE region=middle pos=-254,8,-144 features=
-node m028 kind=CAVERN region=middle pos=-286,9,-94 features=
-node m029 kind=ROUTE region=middle pos=-330,3,-87 features=
-node m030 kind=ROUTE region=middle pos=-361,3,-78 features=
-node m031 kind=CAVERN region=middle pos=-422,2,-68 features=
-node m032 kind=ROUTE region=middle pos=-466,2,-55 features=
-node m033 kind=ROUTE region=middle pos=-465,-1,-2 features=
-node m034 kind=ROUTE region=middle pos=-439,-4,20 features=
-node m035 kind=ROUTE region=middle pos=-373,-6,44 features=LANDMARK label=Shattered Amphitheater
-node m036 kind=CAVERN region=middle pos=-327,-7,55 features=
-node m037 kind=ROUTE region=middle pos=-261,-12,63 features=
-node m038 kind=ROUTE region=middle pos=-195,-15,79 features=
-node m039 kind=CAVERN region=middle pos=-158,-15,83 features=
-node m040 kind=ROUTE region=middle pos=-108,-13,95 features=CHECKPOINT
-node m041 kind=ROUTE region=chaos pos=-94,-18,148 features=
-node m042 kind=ROUTE region=chaos pos=-100,-20,210 features=
-node m043 kind=ROUTE region=chaos pos=-98,-24,281 features=
-node m044 kind=CAVERN region=chaos pos=-93,-25,313 features=
-node m045 kind=ROUTE region=chaos pos=-92,-24,375 features=
-node m046 kind=CAVERN region=chaos pos=-86,-29,414 features=
-node m047 kind=ROUTE region=chaos pos=-85,-30,464 features=LANDMARK label=Glimmering Chasm
-node m048 kind=ROUTE region=chaos pos=-89,-34,502 features=
-node m049 kind=ROUTE region=chaos pos=-127,-35,508 features=
-node m050 kind=ROUTE region=chaos pos=-143,-34,473 features=
-node m051 kind=ROUTE region=chaos pos=-145,-36,438 features=
-node m052 kind=ROUTE region=chaos pos=-172,-40,380 features=
-node m053 kind=CAVERN region=chaos pos=-217,-45,335 features=
-node m054 kind=ROUTE region=chaos pos=-225,-43,295 features=
-node m055 kind=CAVERN region=chaos pos=-240,-43,247 features=LANDMARK label=Glimmering Vault
-node m056 kind=ROUTE region=chaos pos=-255,-47,215 features=
-node m057 kind=ROUTE region=chaos pos=-206,-47,175 features=
-node m058 kind=CAVERN region=chaos pos=-138,-55,169 features=
-node m059 kind=ROUTE region=chaos pos=-106,-55,178 features=
-node m060 kind=CAVERN region=chaos pos=-41,-56,204 features=CHECKPOINT
-node p000 kind=POCKET region=upper pos=-215,24,-499 features=DEAD_END|RESOURCE_FIELD
-node p001 kind=POCKET region=upper pos=-337,28,-212 features=DEAD_END|RESOURCE_FIELD
-node p002 kind=POCKET region=upper pos=60,55,-9 features=RESOURCE_FIELD
-node p003 kind=POCKET region=upper pos=-97,24,-543 features=DEAD_END|RESOURCE_FIELD
-node p004 kind=POCKET region=upper pos=-1,56,-60 features=DEAD_END|RESOURCE_FIELD
-node p005 kind=POCKET region=upper pos=41,53,-51 features=DEAD_END|RESOURCE_FIELD
-node p006 kind=POCKET region=upper pos=-219,53,-93 features=RESOURCE_FIELD
-node p007 kind=POCKET region=upper pos=-265,36,-477 features=DEAD_END|RESOURCE_FIELD
-node p008 kind=POCKET region=upper pos=60,56,-37 features=DEAD_END
-node p009 kind=POCKET region=upper pos=-115,24,-575 features=DEAD_END
-node p010 kind=POCKET region=upper pos=-293,45,-113 features=DEAD_END
-node p011 kind=POCKET region=upper pos=-202,28,-546 features=DEAD_END
-node p012 kind=POCKET region=upper pos=-300,33,-219 features=DEAD_END
-node p013 kind=POCKET region=upper pos=-94,50,-55 features=DEAD_END
-node p014 kind=POCKET region=upper pos=-181,54,-77 features=DEAD_END
-node p015 kind=POCKET region=upper pos=-149,56,-110 features=DEAD_END
-node p016 kind=POCKET region=middle pos=-79,-16,89 features=DEAD_END|RESOURCE_FIELD
-node p017 kind=POCKET region=middle pos=-427,8,-185 features=DEAD_END|RESOURCE_FIELD
-node p018 kind=POCKET region=middle pos=-129,-16,127 features=DEAD_END|RESOURCE_FIELD
-node p019 kind=POCKET region=middle pos=-126,19,-519 features=RESOURCE_FIELD
-node p020 kind=POCKET region=middle pos=-294,11,-203 features=DEAD_END|RESOURCE_FIELD
-node p021 kind=POCKET region=middle pos=-377,-4,66 features=RESOURCE_FIELD
-node p022 kind=POCKET region=middle pos=-413,2,-119 features=RESOURCE_FIELD
-node p023 kind=POCKET region=middle pos=-353,-4,-63 features=DEAD_END|RESOURCE_FIELD
-node p024 kind=POCKET region=middle pos=-392,4,-8 features=DEAD_END|RESOURCE_FIELD
-node p025 kind=POCKET region=middle pos=-441,-4,-137 features=DEAD_END|RESOURCE_FIELD
-node p026 kind=POCKET region=middle pos=-396,-4,50 features=DEAD_END
-node p027 kind=POCKET region=middle pos=-434,-13,44 features=DEAD_END
-node p028 kind=POCKET region=middle pos=-328,6,-105 features=DEAD_END
-node p029 kind=POCKET region=middle pos=-114,14,-528 features=DEAD_END
-node p030 kind=POCKET region=middle pos=-395,6,-65 features=DEAD_END
-node p031 kind=POCKET region=middle pos=-414,-4,124 features=DEAD_END
-node p032 kind=POCKET region=middle pos=-375,18,-117 features=DEAD_END
-node p033 kind=POCKET region=middle pos=-65,-16,117 features=DEAD_END
-node p034 kind=POCKET region=middle pos=-97,-13,70 features=DEAD_END
-node p035 kind=POCKET region=middle pos=-481,1,-132 features=DEAD_END
-node p036 kind=POCKET region=chaos pos=-52,-16,187 features=DEAD_END|RESOURCE_FIELD
-node p037 kind=POCKET region=chaos pos=-114,-18,264 features=DEAD_END|RESOURCE_FIELD
-node p038 kind=POCKET region=chaos pos=-110,-40,508 features=RESOURCE_FIELD
-node p039 kind=POCKET region=chaos pos=-115,-47,175 features=DEAD_END|RESOURCE_FIELD
-node p040 kind=POCKET region=chaos pos=-109,-17,379 features=DEAD_END|RESOURCE_FIELD
-node p041 kind=POCKET region=chaos pos=-169,-28,467 features=DEAD_END|RESOURCE_FIELD
-node p042 kind=POCKET region=chaos pos=-111,-17,366 features=DEAD_END|RESOURCE_FIELD
-node p043 kind=POCKET region=chaos pos=-72,-16,201 features=DEAD_END|RESOURCE_FIELD
-node p044 kind=POCKET region=chaos pos=-40,-56,173 features=DEAD_END|RESOURCE_FIELD
-node p045 kind=POCKET region=chaos pos=-89,-34,521 features=DEAD_END|RESOURCE_FIELD
-node p046 kind=POCKET region=chaos pos=-123,-18,225 features=DEAD_END|RESOURCE_FIELD
-node p047 kind=POCKET region=chaos pos=-269,-49,219 features=DEAD_END|RESOURCE_FIELD
-node p048 kind=POCKET region=chaos pos=-158,-30,497 features=DEAD_END
-node p049 kind=POCKET region=chaos pos=-157,-39,452 features=DEAD_END
-node p050 kind=POCKET region=chaos pos=-169,-32,542 features=DEAD_END
-node p051 kind=POCKET region=chaos pos=-149,-45,189 features=DEAD_END
-node p052 kind=POCKET region=chaos pos=-190,-28,433 features=DEAD_END
-node p053 kind=POCKET region=chaos pos=-80,-16,191 features=DEAD_END
-node p054 kind=POCKET region=chaos pos=-172,-38,515 features=DEAD_END
-node p055 kind=POCKET region=chaos pos=-106,-44,470 features=DEAD_END
-node p056 kind=POCKET region=chaos pos=-160,-29,233 features=DEAD_END
-node p057 kind=POCKET region=chaos pos=-260,-40,272 features=DEAD_END
-node p058 kind=POCKET region=chaos pos=-98,-17,192 features=DEAD_END
-node p059 kind=POCKET region=chaos pos=-189,-28,168 features=DEAD_END
-edge b000-0 m009 LOOP
-edge b000-0 m010 BRANCH
-edge b000-0 p001 SPUR
+node m001 kind=ROUTE region=upper pos=41,56,-47 features=
+node m002 kind=ROUTE region=upper pos=8,56,-66 features=
+node m003 kind=ROUTE region=upper pos=-41,52,-74 features=
+node m004 kind=ROUTE region=upper pos=-71,49,-83 features=
+node m005 kind=ROUTE region=upper pos=-116,49,-91 features=
+node m006 kind=CAVERN region=upper pos=-154,50,-93 features=
+node m007 kind=ROUTE region=upper pos=-198,49,-90 features=
+node m008 kind=ROUTE region=upper pos=-241,46,-92 features=
+node m009 kind=ROUTE region=upper pos=-250,45,-135 features=
+node m010 kind=ROUTE region=upper pos=-253,44,-169 features=
+node m011 kind=CAVERN region=upper pos=-252,45,-200 features=
+node m012 kind=ROUTE region=upper pos=-232,39,-250 features=
+node m013 kind=ROUTE region=upper pos=-221,40,-290 features=
+node m014 kind=ROUTE region=upper pos=-217,38,-317 features=LANDMARK label=Hollow Amphitheater
+node m015 kind=ROUTE region=upper pos=-203,38,-371 features=
+node m016 kind=ROUTE region=upper pos=-198,35,-406 features=
+node m017 kind=ROUTE region=upper pos=-143,34,-413 features=
+node m018 kind=ROUTE region=upper pos=-125,37,-368 features=
+node m019 kind=ROUTE region=upper pos=-89,31,-328 features=
+node m020 kind=ROUTE region=upper pos=-69,28,-278 features=
+node m021 kind=ROUTE region=upper pos=-58,28,-238 features=
+node m022 kind=ROUTE region=upper pos=-52,31,-196 features=
+node m023 kind=CAVERN region=upper pos=-39,29,-148 features=
+node m024 kind=ROUTE region=upper pos=-23,29,-107 features=
+node m025 kind=ROUTE region=upper pos=-53,24,-85 features=
+node m026 kind=CAVERN region=upper pos=-81,24,-58 features=CHECKPOINT
+node m027 kind=ROUTE region=middle pos=-121,22,-41 features=
+node m028 kind=ROUTE region=middle pos=-155,19,-31 features=
+node m029 kind=CAVERN region=middle pos=-206,18,-9 features=
+node m030 kind=ROUTE region=middle pos=-248,16,-7 features=
+node m031 kind=CAVERN region=middle pos=-280,14,-2 features=
+node m032 kind=ROUTE region=middle pos=-303,13,11 features=
+node m033 kind=ROUTE region=middle pos=-289,13,64 features=
+node m034 kind=ROUTE region=middle pos=-243,11,64 features=
+node m035 kind=ROUTE region=middle pos=-211,13,52 features=
+node m036 kind=ROUTE region=middle pos=-186,9,39 features=
+node m037 kind=ROUTE region=middle pos=-157,8,36 features=
+node m038 kind=ROUTE region=middle pos=-113,7,36 features=
+node m039 kind=CAVERN region=middle pos=-85,8,39 features=
+node m040 kind=ROUTE region=middle pos=-51,5,47 features=
+node m041 kind=ROUTE region=middle pos=-50,2,94 features=
+node m042 kind=ROUTE region=middle pos=-54,2,131 features=
+node m043 kind=ROUTE region=middle pos=-65,1,183 features=
+node m044 kind=ROUTE region=middle pos=-82,3,233 features=
+node m045 kind=ROUTE region=middle pos=-95,2,260 features=
+node m046 kind=CAVERN region=middle pos=-107,-5,296 features=
+node m047 kind=ROUTE region=middle pos=-121,-6,324 features=
+node m048 kind=CAVERN region=middle pos=-135,-3,364 features=
+node m049 kind=ROUTE region=middle pos=-170,-8,362 features=
+node m050 kind=ROUTE region=middle pos=-180,-7,312 features=
+node m051 kind=ROUTE region=middle pos=-174,-6,277 features=
+node m052 kind=ROUTE region=middle pos=-172,-14,238 features=
+node m053 kind=ROUTE region=middle pos=-175,-13,194 features=
+node m054 kind=ROUTE region=middle pos=-142,-12,159 features=
+node m055 kind=ROUTE region=middle pos=-116,-16,137 features=
+node m056 kind=ROUTE region=middle pos=-101,-16,112 features=CHECKPOINT
+node m057 kind=CAVERN region=chaos pos=-60,-16,113 features=
+node m058 kind=ROUTE region=chaos pos=-18,-20,119 features=
+node m059 kind=ROUTE region=chaos pos=5,-20,140 features=
+node m060 kind=ROUTE region=chaos pos=52,-22,147 features=
+node m061 kind=ROUTE region=chaos pos=79,-23,172 features=
+node m062 kind=ROUTE region=chaos pos=107,-25,204 features=
+node m063 kind=ROUTE region=chaos pos=137,-28,232 features=
+node m064 kind=ROUTE region=chaos pos=174,-24,259 features=
+node m065 kind=ROUTE region=chaos pos=160,-28,296 features=
+node m066 kind=ROUTE region=chaos pos=133,-31,293 features=
+node m067 kind=CAVERN region=chaos pos=100,-34,294 features=
+node m068 kind=ROUTE region=chaos pos=48,-33,289 features=
+node m069 kind=ROUTE region=chaos pos=-1,-34,290 features=
+node m070 kind=ROUTE region=chaos pos=-38,-39,277 features=
+node m071 kind=ROUTE region=chaos pos=-87,-40,253 features=
+node m072 kind=ROUTE region=chaos pos=-134,-41,223 features=
+node m073 kind=ROUTE region=chaos pos=-139,-38,195 features=
+node m074 kind=CAVERN region=chaos pos=-170,-45,162 features=
+node m075 kind=ROUTE region=chaos pos=-182,-44,134 features=
+node m076 kind=ROUTE region=chaos pos=-197,-43,83 features=
+node m077 kind=ROUTE region=chaos pos=-217,-46,37 features=
+node m078 kind=CAVERN region=chaos pos=-238,-46,0 features=
+node m079 kind=ROUTE region=chaos pos=-246,-51,-45 features=
+node m080 kind=CAVERN region=chaos pos=-249,-51,-101 features=
+node m081 kind=ROUTE region=chaos pos=-300,-54,-112 features=
+node m082 kind=ROUTE region=chaos pos=-322,-55,-87 features=
+node m083 kind=ROUTE region=chaos pos=-318,-53,-57 features=
+node m084 kind=ROUTE region=chaos pos=-345,-54,-26 features=CHECKPOINT|DEAD_END
+node p000 kind=POCKET region=upper pos=-175,45,-99 features=DEAD_END|RESOURCE_FIELD
+node p001 kind=POCKET region=upper pos=47,30,-176 features=RESOURCE_FIELD
+node p002 kind=POCKET region=upper pos=69,31,-186 features=DEAD_END|RESOURCE_FIELD
+node p003 kind=POCKET region=upper pos=-225,46,-80 features=DEAD_END|RESOURCE_FIELD
+node p004 kind=POCKET region=upper pos=-232,45,-130 features=DEAD_END|RESOURCE_FIELD
+node p005 kind=POCKET region=upper pos=-143,30,-242 features=DEAD_END|RESOURCE_FIELD
+node p006 kind=POCKET region=upper pos=-34,56,-36 features=DEAD_END|RESOURCE_FIELD
+node p007 kind=POCKET region=upper pos=-126,40,-272 features=DEAD_END|RESOURCE_FIELD
+node p008 kind=POCKET region=upper pos=-119,38,-200 features=DEAD_END|RESOURCE_FIELD
+node p009 kind=POCKET region=upper pos=-97,27,-48 features=DEAD_END
+node p010 kind=POCKET region=upper pos=-143,55,-45 features=DEAD_END
+node p011 kind=POCKET region=upper pos=-275,45,-127 features=DEAD_END
+node p012 kind=POCKET region=upper pos=-66,25,-261 features=DEAD_END
+node p013 kind=POCKET region=upper pos=75,49,-239 features=DEAD_END
+node p014 kind=POCKET region=upper pos=-75,52,-50 features=DEAD_END
+node p015 kind=POCKET region=upper pos=-125,24,-252 features=DEAD_END
+node p016 kind=POCKET region=upper pos=47,43,-8 features=DEAD_END
+node p017 kind=POCKET region=upper pos=25,40,-171 features=DEAD_END
+node p018 kind=POCKET region=middle pos=-283,21,54 features=DEAD_END|RESOURCE_FIELD
+node p019 kind=POCKET region=middle pos=-66,-7,406 features=DEAD_END|RESOURCE_FIELD
+node p020 kind=POCKET region=middle pos=-234,7,-57 features=DEAD_END|RESOURCE_FIELD
+node p021 kind=POCKET region=middle pos=-237,9,5 features=DEAD_END|RESOURCE_FIELD
+node p022 kind=POCKET region=middle pos=-318,16,64 features=DEAD_END|RESOURCE_FIELD
+node p023 kind=POCKET region=middle pos=-193,16,24 features=DEAD_END|RESOURCE_FIELD
+node p024 kind=POCKET region=middle pos=-217,24,-35 features=DEAD_END|RESOURCE_FIELD
+node p025 kind=POCKET region=middle pos=-111,2,305 features=DEAD_END|RESOURCE_FIELD
+node p026 kind=POCKET region=middle pos=-141,-9,275 features=DEAD_END|RESOURCE_FIELD
+node p027 kind=POCKET region=middle pos=-183,1,-55 features=DEAD_END|RESOURCE_FIELD
+node p028 kind=POCKET region=middle pos=-133,-11,132 features=RESOURCE_FIELD
+node p029 kind=POCKET region=middle pos=-222,22,-21 features=DEAD_END
+node p030 kind=POCKET region=middle pos=-153,-14,105 features=DEAD_END
+node p031 kind=POCKET region=middle pos=-206,-7,235 features=DEAD_END
+node p032 kind=POCKET region=middle pos=-196,24,-39 features=DEAD_END
+node p033 kind=POCKET region=middle pos=-28,9,63 features=DEAD_END
+node p034 kind=POCKET region=middle pos=-209,12,46 features=DEAD_END
+node p035 kind=POCKET region=middle pos=-119,14,-12 features=DEAD_END
+node p036 kind=POCKET region=middle pos=-130,-3,305 features=DEAD_END
+node p037 kind=POCKET region=middle pos=-177,-11,205 features=DEAD_END
+node p038 kind=POCKET region=middle pos=-197,20,69 features=DEAD_END
+node p039 kind=POCKET region=middle pos=-221,24,-84 features=DEAD_END
+node p040 kind=POCKET region=chaos pos=-164,-31,56 features=DEAD_END|RESOURCE_FIELD
+node p041 kind=POCKET region=chaos pos=-44,-25,89 features=RESOURCE_FIELD
+node p042 kind=POCKET region=chaos pos=-173,-50,-110 features=DEAD_END|RESOURCE_FIELD
+node p043 kind=POCKET region=chaos pos=-131,-37,21 features=DEAD_END|RESOURCE_FIELD
+node p044 kind=POCKET region=chaos pos=-215,-54,-140 features=DEAD_END|RESOURCE_FIELD
+node p045 kind=POCKET region=chaos pos=-244,-44,-69 features=DEAD_END|RESOURCE_FIELD
+node p046 kind=POCKET region=chaos pos=185,-17,263 features=RESOURCE_FIELD
+node p047 kind=POCKET region=chaos pos=-34,-21,95 features=DEAD_END|RESOURCE_FIELD
+node p048 kind=POCKET region=chaos pos=-166,-35,245 features=RESOURCE_FIELD
+node p049 kind=POCKET region=chaos pos=-143,-36,239 features=DEAD_END|RESOURCE_FIELD
+node p050 kind=POCKET region=chaos pos=-115,-36,251 features=DEAD_END|RESOURCE_FIELD
+node p051 kind=POCKET region=chaos pos=-221,-40,-46 features=DEAD_END|RESOURCE_FIELD
+node p052 kind=POCKET region=chaos pos=184,-16,292 features=DEAD_END|RESOURCE_FIELD
+node p053 kind=POCKET region=chaos pos=-181,-40,78 features=DEAD_END
+node p054 kind=POCKET region=chaos pos=-302,-55,-122 features=DEAD_END
+node p055 kind=POCKET region=chaos pos=121,-26,332 features=DEAD_END
+node p056 kind=POCKET region=chaos pos=150,-23,270 features=DEAD_END
+node p057 kind=POCKET region=chaos pos=-194,-39,275 features=DEAD_END
+node p058 kind=POCKET region=chaos pos=89,-16,246 features=DEAD_END
+node p059 kind=POCKET region=chaos pos=104,-33,285 features=DEAD_END
+node p060 kind=POCKET region=chaos pos=-40,-23,78 features=DEAD_END
+node p061 kind=POCKET region=chaos pos=115,-28,277 features=DEAD_END
+node p062 kind=POCKET region=chaos pos=-167,-41,135 features=DEAD_END
+node p063 kind=POCKET region=chaos pos=95,-16,251 features=DEAD_END
+node p064 kind=POCKET region=chaos pos=-169,-43,141 features=DEAD_END
+node p065 kind=POCKET region=chaos pos=145,-27,221 features=DEAD_END
+edge b000-0 m026 BRANCH
+edge b000-0 p009 SPUR
 edge b001-0 b001-1 BRANCH
-edge b001-0 b003-2 LOOP
-edge b001-0 m002 LOOP
-edge b001-0 m004 BRANCH
-edge b001-1 p015 SPUR
+edge b001-0 m003 BRANCH
+edge b001-0 p006 SPUR
+edge b001-1 b001-2 BRANCH
+edge b001-2 b001-3 BRANCH
 edge b002-0 b002-1 BRANCH
-edge b002-0 m013 BRANCH
+edge b002-0 m021 BRANCH
 edge b002-1 b002-2 BRANCH
+edge b002-2 p015 SPUR
 edge b003-0 b003-1 BRANCH
-edge b003-0 m003 BRANCH
+edge b003-0 m012 BRANCH
 edge b003-1 b003-2 BRANCH
+edge b003-2 b003-3 BRANCH
+edge b003-2 p007 SPUR
+edge b003-3 b003-4 BRANCH
+edge b003-4 b005-2 LOOP
+edge b003-4 p012 SPUR
 edge b004-0 b004-1 BRANCH
-edge b004-0 m007 BRANCH
+edge b004-0 m002 BRANCH
 edge b005-0 b005-1 BRANCH
-edge b005-0 m016 BRANCH
+edge b005-0 m006 BRANCH
 edge b005-1 b005-2 BRANCH
-edge b006-0 m001 BRANCH
-edge b006-0 p002 SPUR
+edge b005-2 b005-3 BRANCH
+edge b005-2 b008-0 LOOP
+edge b005-2 p008 SPUR
+edge b005-3 b010-0 LOOP
+edge b005-3 p005 SPUR
+edge b006-0 m020 BRANCH
 edge b007-0 b007-1 BRANCH
-edge b007-0 m000 LOOP
-edge b007-0 m001 BRANCH
-edge b008-0 b008-1 BRANCH
-edge b008-0 m020 BRANCH
-edge b008-1 b008-2 BRANCH
-edge b008-1 m020 LOOP
+edge b007-0 m023 BRANCH
+edge b007-1 b007-2 BRANCH
+edge b007-1 b007-3 LOOP
+edge b007-1 p001 SPUR
+edge b007-2 b007-3 BRANCH
+edge b007-2 p017 SPUR
+edge b007-3 b007-4 BRANCH
+edge b007-3 p013 SPUR
+edge b008-0 m005 BRANCH
+edge b008-0 p010 SPUR
 edge b009-0 b009-1 BRANCH
-edge b009-0 m038 BRANCH
+edge b009-0 m018 BRANCH
+edge b009-0 m021 LOOP
 edge b009-1 b009-2 BRANCH
-edge b009-2 b009-3 BRANCH
-edge b009-2 p016 SPUR
-edge b009-2 p034 SPUR
 edge b010-0 b010-1 BRANCH
-edge b010-0 m034 BRANCH
-edge b010-0 p027 SPUR
+edge b010-0 m013 BRANCH
+edge b010-1 b010-2 BRANCH
+edge b010-2 b010-3 BRANCH
+edge b010-2 m006 LOOP
+edge b010-3 b010-4 BRANCH
 edge b011-0 b011-1 BRANCH
-edge b011-0 m031 BRANCH
-edge b011-0 p023 SPUR
-edge b011-0 p024 SPUR
-edge b011-0 p030 SPUR
-edge b011-1 b017-1 LOOP
+edge b011-0 m007 LOOP
+edge b011-0 m008 BRANCH
+edge b011-1 b011-2 BRANCH
+edge b011-2 m008 LOOP
 edge b012-0 b012-1 BRANCH
-edge b012-0 b017-1 LOOP
-edge b012-0 m027 BRANCH
-edge b012-1 b012-2 BRANCH
-edge b012-1 m027 LOOP
-edge b012-2 b012-3 BRANCH
-edge b012-3 m028 LOOP
-edge b012-3 p017 SPUR
+edge b012-0 m053 BRANCH
+edge b012-1 b014-0 LOOP
+edge b012-1 b020-0 LOOP
 edge b013-0 b013-1 BRANCH
-edge b013-0 m025 BRANCH
+edge b013-0 m033 BRANCH
 edge b013-1 b013-2 BRANCH
-edge b013-2 p020 SPUR
+edge b013-2 b013-3 BRANCH
+edge b013-2 p021 SPUR
+edge b013-3 b013-4 BRANCH
+edge b013-4 p020 SPUR
+edge b013-4 p027 SPUR
 edge b014-0 b014-1 BRANCH
-edge b014-0 m035 BRANCH
-edge b014-1 b014-2 BRANCH
-edge b014-2 p031 SPUR
-edge b015-0 m019 BRANCH
+edge b014-0 b024-1 LOOP
+edge b014-0 m046 BRANCH
+edge b014-0 p025 SPUR
+edge b014-1 m052 LOOP
+edge b015-0 b015-1 BRANCH
+edge b015-0 m049 BRANCH
+edge b015-1 b015-2 BRANCH
+edge b015-1 b019-0 LOOP
+edge b015-2 b015-3 BRANCH
+edge b015-3 b015-4 BRANCH
+edge b015-3 p019 SPUR
 edge b016-0 b016-1 BRANCH
-edge b016-0 m031 BRANCH
-edge b016-0 p022 SPUR
-edge b016-0 p035 SPUR
+edge b016-0 m056 BRANCH
 edge b016-1 b016-2 BRANCH
 edge b017-0 b017-1 BRANCH
-edge b017-0 m027 BRANCH
+edge b017-0 m029 BRANCH
 edge b017-1 b017-2 BRANCH
-edge b017-1 p032 SPUR
+edge b017-1 p024 SPUR
+edge b017-1 p029 SPUR
+edge b017-1 p039 SPUR
 edge b018-0 b018-1 BRANCH
-edge b018-0 m045 LOOP
-edge b018-0 m051 BRANCH
-edge b018-1 p054 SPUR
+edge b018-0 m034 BRANCH
+edge b018-1 b018-2 BRANCH
 edge b019-0 b019-1 BRANCH
-edge b019-0 m051 BRANCH
-edge b019-0 p049 SPUR
+edge b019-0 m046 BRANCH
+edge b019-1 b019-2 BRANCH
+edge b019-2 b019-3 BRANCH
 edge b020-0 b020-1 BRANCH
-edge b020-0 m041 BRANCH
-edge b021-0 m048 BRANCH
-edge b021-0 m050 LOOP
+edge b020-0 b023-2 LOOP
+edge b020-0 m048 BRANCH
+edge b020-1 p026 SPUR
+edge b021-0 m027 LOOP
+edge b021-0 m035 BRANCH
 edge b022-0 b022-1 BRANCH
-edge b022-0 m042 BRANCH
-edge b022-0 p046 SPUR
-edge b022-1 b025-1 LOOP
-edge b022-1 p043 SPUR
-edge b023-0 m050 BRANCH
-edge b023-0 p041 SPUR
-edge b023-0 p050 SPUR
+edge b022-0 m044 BRANCH
+edge b022-1 b022-2 BRANCH
+edge b022-2 b022-3 BRANCH
+edge b022-3 b022-4 BRANCH
+edge b023-0 b023-1 BRANCH
+edge b023-0 m049 LOOP
+edge b023-0 m051 LOOP
+edge b023-0 m052 BRANCH
+edge b023-1 b023-2 BRANCH
+edge b023-2 b023-3 BRANCH
+edge b023-2 m047 LOOP
+edge b023-3 b023-4 BRANCH
+edge b023-4 m043 LOOP
 edge b024-0 b024-1 BRANCH
-edge b024-0 m042 BRANCH
+edge b024-0 m054 BRANCH
 edge b024-0 p037 SPUR
-edge b024-0 p056 SPUR
-edge b024-0 p058 SPUR
-edge b025-0 b025-1 BRANCH
-edge b025-0 m042 BRANCH
-edge b025-0 p059 SPUR
-edge b025-1 b025-2 BRANCH
-edge b025-1 m057 LOOP
-edge b025-2 b025-3 BRANCH
+edge b024-1 b024-2 BRANCH
+edge b024-1 p031 SPUR
+edge b024-2 b024-3 BRANCH
+edge b025-0 m031 BRANCH
 edge b026-0 b026-1 BRANCH
-edge b026-0 m059 BRANCH
+edge b026-0 m079 BRANCH
 edge b026-0 p051 SPUR
-edge b026-1 m058 LOOP
-edge b027-0 m051 BRANCH
-edge b027-0 p038 SPUR
-edge b027-0 p045 SPUR
-edge b027-0 p048 SPUR
+edge b026-1 b026-2 BRANCH
+edge b026-2 b026-3 BRANCH
+edge b026-2 m078 LOOP
+edge b026-3 b026-4 BRANCH
+edge b027-0 b027-1 BRANCH
+edge b027-0 m081 BRANCH
+edge b027-1 b027-2 BRANCH
+edge b027-1 p044 SPUR
+edge b028-0 b028-1 BRANCH
+edge b028-0 m073 BRANCH
+edge b028-1 b028-2 BRANCH
+edge b028-1 p062 SPUR
+edge b028-2 b028-3 BRANCH
+edge b028-2 m074 LOOP
+edge b028-3 b028-4 BRANCH
+edge b029-0 b029-1 BRANCH
+edge b029-0 m077 BRANCH
+edge b029-1 m076 LOOP
+edge b030-0 b030-1 BRANCH
+edge b030-0 m062 BRANCH
+edge b030-1 b030-2 BRANCH
+edge b031-0 m059 LOOP
+edge b031-0 m062 BRANCH
+edge b032-0 b032-1 BRANCH
+edge b032-0 m058 BRANCH
+edge b032-0 p041 SPUR
+edge b032-1 b032-2 BRANCH
+edge b033-0 m064 BRANCH
+edge b034-0 b034-1 BRANCH
+edge b034-0 m076 BRANCH
+edge b034-1 b034-2 BRANCH
+edge b034-1 p053 SPUR
+edge b035-0 b035-1 BRANCH
+edge b035-0 m071 BRANCH
+edge b035-1 b035-2 BRANCH
+edge b035-2 b035-3 BRANCH
+edge b036-0 b036-1 BRANCH
+edge b036-0 m074 LOOP
+edge b036-0 m076 BRANCH
+edge b036-1 b036-2 BRANCH
+edge b036-1 p040 SPUR
+edge b036-2 b036-3 BRANCH
+edge b036-3 b036-4 BRANCH
+edge b036-3 p043 SPUR
+edge b037-0 b037-1 BRANCH
+edge b037-0 m080 BRANCH
+edge b037-0 p045 SPUR
+edge b037-1 b037-2 BRANCH
+edge b037-1 p042 SPUR
+edge b037-2 b037-3 BRANCH
+edge b037-2 m080 LOOP
+edge b037-3 b037-4 BRANCH
+edge b038-0 b038-1 BRANCH
+edge b038-0 m064 BRANCH
+edge b038-0 m067 LOOP
+edge b038-1 b038-2 BRANCH
+edge b038-1 m059 LOOP
+edge b038-1 m062 LOOP
+edge b038-2 b038-3 BRANCH
+edge b038-2 m065 LOOP
+edge b038-2 p058 SPUR
+edge b038-2 p063 SPUR
+edge b038-3 b038-4 BRANCH
+edge b038-3 m067 LOOP
+edge b039-0 b039-1 BRANCH
+edge b039-0 m062 BRANCH
+edge b039-1 b039-2 BRANCH
+edge b039-2 b039-3 BRANCH
+edge b039-2 m061 LOOP
 edge m000 m001 MAIN
+edge m000 p016 SPUR
 edge m001 m002 MAIN
-edge m001 p004 SPUR
-edge m001 p005 SPUR
 edge m002 m003 MAIN
 edge m003 m004 MAIN
-edge m003 p013 SPUR
 edge m004 m005 MAIN
+edge m004 p014 SPUR
 edge m005 m006 MAIN
 edge m006 m007 MAIN
-edge m006 p006 SPUR
+edge m006 m010 LOOP
+edge m006 p000 SPUR
 edge m007 m008 MAIN
-edge m007 p010 SPUR
 edge m008 m009 MAIN
+edge m008 p003 SPUR
+edge m008 p004 SPUR
 edge m009 m010 MAIN
+edge m009 m011 LOOP
+edge m009 p011 SPUR
 edge m010 m011 MAIN
-edge m010 p012 SPUR
 edge m011 m012 MAIN
 edge m012 m013 MAIN
 edge m013 m014 MAIN
 edge m014 m015 MAIN
 edge m015 m016 MAIN
-edge m015 p000 SPUR
-edge m015 p007 SPUR
 edge m016 m017 MAIN
 edge m017 m018 MAIN
 edge m018 m019 MAIN
-edge m018 p003 SPUR
-edge m018 p009 SPUR
-edge m018 p011 SPUR
 edge m019 m020 MAIN
-edge m019 p019 SPUR
 edge m020 m021 MAIN
 edge m021 m022 MAIN
 edge m022 m023 MAIN
@@ -743,438 +1147,673 @@ edge m024 m025 MAIN
 edge m025 m026 MAIN
 edge m026 m027 MAIN
 edge m027 m028 MAIN
+edge m027 p035 SPUR
 edge m028 m029 MAIN
+edge m028 p032 SPUR
 edge m029 m030 MAIN
-edge m029 p028 SPUR
 edge m030 m031 MAIN
 edge m031 m032 MAIN
 edge m032 m033 MAIN
 edge m033 m034 MAIN
+edge m033 p018 SPUR
+edge m033 p022 SPUR
 edge m034 m035 MAIN
 edge m035 m036 MAIN
+edge m035 p038 SPUR
 edge m036 m037 MAIN
-edge m036 p021 SPUR
+edge m036 p023 SPUR
+edge m036 p034 SPUR
 edge m037 m038 MAIN
 edge m038 m039 MAIN
 edge m039 m040 MAIN
 edge m040 m041 MAIN
-edge m040 p018 SPUR
 edge m040 p033 SPUR
 edge m041 m042 MAIN
-edge m041 p036 SPUR
-edge m041 p053 SPUR
 edge m042 m043 MAIN
 edge m043 m044 MAIN
 edge m044 m045 MAIN
 edge m045 m046 MAIN
-edge m045 p040 SPUR
-edge m045 p042 SPUR
+edge m045 m054 LOOP
 edge m046 m047 MAIN
+edge m046 p036 SPUR
 edge m047 m048 MAIN
-edge m047 m052 LOOP
 edge m048 m049 MAIN
 edge m049 m050 MAIN
 edge m050 m051 MAIN
 edge m051 m052 MAIN
-edge m051 p052 SPUR
 edge m052 m053 MAIN
 edge m053 m054 MAIN
 edge m054 m055 MAIN
+edge m054 p028 SPUR
 edge m055 m056 MAIN
-edge m055 p057 SPUR
 edge m056 m057 MAIN
-edge m056 p047 SPUR
 edge m057 m058 MAIN
 edge m058 m059 MAIN
-edge m058 p039 SPUR
 edge m059 m060 MAIN
-edge m060 p044 SPUR
-edge p002 p008 SPUR
-edge p006 p014 SPUR
-edge p019 p029 SPUR
-edge p021 p026 SPUR
-edge p022 p025 SPUR
-edge p038 p055 SPUR
+edge m060 m061 MAIN
+edge m061 m062 MAIN
+edge m061 m066 LOOP
+edge m062 m063 MAIN
+edge m062 p065 SPUR
+edge m063 m064 MAIN
+edge m063 p056 SPUR
+edge m064 m065 MAIN
+edge m064 p046 SPUR
+edge m065 m066 MAIN
+edge m066 m067 MAIN
+edge m066 p055 SPUR
+edge m067 m068 MAIN
+edge m067 p059 SPUR
+edge m067 p061 SPUR
+edge m068 m069 MAIN
+edge m069 m070 MAIN
+edge m070 m071 MAIN
+edge m071 m072 MAIN
+edge m071 p050 SPUR
+edge m072 m073 MAIN
+edge m072 p048 SPUR
+edge m073 m074 MAIN
+edge m074 m075 MAIN
+edge m074 p064 SPUR
+edge m075 m076 MAIN
+edge m076 m077 MAIN
+edge m077 m078 MAIN
+edge m077 m083 LOOP
+edge m078 m079 MAIN
+edge m079 m080 MAIN
+edge m080 m081 MAIN
+edge m081 m082 MAIN
+edge m081 p054 SPUR
+edge m082 m083 MAIN
+edge m083 m084 MAIN
+edge p001 p002 SPUR
+edge p028 p030 SPUR
+edge p041 p047 SPUR
+edge p041 p060 SPUR
+edge p046 p052 SPUR
+edge p048 p049 SPUR
+edge p048 p057 SPUR
 
 === seed 20261102 ===
-summary: 179 nodes, 193 segments, 3 checkpoints, 3 regions, fingerprint dfa745dacda1
-fingerprint: dfa745dacda15868e151b104ce48f4a6f3b3783a651863aa9e4cc488d3bfd821
+summary: 269 nodes, 304 segments, 3 checkpoints, 3 regions, fingerprint 26ac45609ba4
+fingerprint: 26ac45609ba4845b82e068ba36954af2e997b1b14ca95fa3f4fa4e83b1c9b9ae
 validation: PASS
 profile=standard
 seed=20261102
 bounds=[-1024,-64,-1024;1023,319,1023]
 entrance=m000
-terminus=m060
-main=m000 m001 m002 m003 m004 m005 m006 m007 m008 m009 m010 m011 m012 m013 m014 m015 m016 m017 m018 m019 m020 m021 m022 m023 m024 m025 m026 m027 m028 m029 m030 m031 m032 m033 m034 m035 m036 m037 m038 m039 m040 m041 m042 m043 m044 m045 m046 m047 m048 m049 m050 m051 m052 m053 m054 m055 m056 m057 m058 m059 m060
-node b000-0 kind=CAVE region=upper pos=-38,47,125 features=
-node b000-1 kind=CAVE region=upper pos=-40,41,93 features=
-node b000-2 kind=CAVE region=upper pos=-45,43,60 features=
-node b000-3 kind=CAVE region=upper pos=-25,44,46 features=DEAD_END
-node b001-0 kind=CAVE region=upper pos=-7,56,158 features=
-node b001-1 kind=CAVE region=upper pos=19,53,167 features=
-node b001-2 kind=CAVE region=upper pos=57,51,146 features=
-node b002-0 kind=CAVE region=upper pos=59,29,210 features=DEAD_END
-node b003-0 kind=CAVE region=upper pos=-97,40,305 features=
-node b004-0 kind=CAVE region=upper pos=-80,51,143 features=DEAD_END|LANDMARK label=Sunken Arch
-node b005-0 kind=CAVE region=upper pos=-170,46,287 features=DEAD_END
-node b006-0 kind=CAVE region=upper pos=54,44,-18 features=
-node b006-1 kind=CAVE region=upper pos=8,38,-45 features=
-node b007-0 kind=CAVE region=upper pos=-237,38,348 features=DEAD_END
-node b008-0 kind=CAVE region=middle pos=417,14,475 features=DEAD_END
-node b009-0 kind=CAVE region=middle pos=260,6,455 features=
-node b010-0 kind=CAVE region=middle pos=150,-4,337 features=DEAD_END
-node b011-0 kind=CAVE region=middle pos=275,-11,-45 features=
-node b011-1 kind=CAVE region=middle pos=248,-5,-77 features=DEAD_END
-node b012-0 kind=CAVE region=middle pos=83,-8,259 features=
-node b012-1 kind=CAVE region=middle pos=55,-6,280 features=DEAD_END
-node b013-0 kind=CAVE region=middle pos=255,12,451 features=LANDMARK label=Sunken Chasm
-node b013-1 kind=CAVE region=middle pos=268,6,437 features=
-node b013-2 kind=CAVE region=middle pos=312,5,398 features=
-node b013-3 kind=CAVE region=middle pos=314,8,354 features=DEAD_END
-node b014-0 kind=CAVE region=middle pos=348,21,347 features=
-node b014-1 kind=CAVE region=middle pos=373,24,332 features=DEAD_END
-node b015-0 kind=CAVE region=middle pos=177,-7,226 features=
-node b015-1 kind=CAVE region=middle pos=225,-1,239 features=
-node b016-0 kind=CAVE region=middle pos=416,17,551 features=
-node b016-1 kind=CAVE region=middle pos=419,17,595 features=
-node b016-2 kind=CAVE region=middle pos=442,11,617 features=
-node b016-3 kind=CAVE region=middle pos=457,7,631 features=DEAD_END
-node b017-0 kind=CAVE region=middle pos=348,24,390 features=
-node b017-1 kind=CAVE region=middle pos=330,24,419 features=
-node b017-2 kind=CAVE region=middle pos=282,24,441 features=
-node b017-3 kind=CAVE region=middle pos=234,24,419 features=
-node b018-0 kind=CAVE region=chaos pos=309,-18,-46 features=
-node b018-1 kind=CAVE region=chaos pos=268,-19,-63 features=
-node b018-2 kind=CAVE region=chaos pos=231,-18,-62 features=LANDMARK label=Sunken Vault
-node b018-3 kind=CAVE region=chaos pos=217,-16,-93 features=
-node b019-0 kind=CAVE region=chaos pos=294,-35,181 features=
-node b020-0 kind=CAVE region=chaos pos=153,-56,80 features=
-node b020-1 kind=CAVE region=chaos pos=204,-54,50 features=
-node b021-0 kind=CAVE region=chaos pos=216,-39,98 features=
-node b022-0 kind=CAVE region=chaos pos=276,-50,129 features=
-node b022-1 kind=CAVE region=chaos pos=321,-49,110 features=
-node b023-0 kind=CAVE region=chaos pos=121,-50,-50 features=LANDMARK label=Silent Chasm
-node b023-1 kind=CAVE region=chaos pos=149,-45,-50 features=
-node b023-2 kind=CAVE region=chaos pos=175,-47,-45 features=DEAD_END
-node b024-0 kind=CAVE region=chaos pos=349,-20,156 features=
-node b024-1 kind=CAVE region=chaos pos=356,-16,185 features=
-node b025-0 kind=CAVE region=chaos pos=349,-32,227 features=
-node b025-1 kind=CAVE region=chaos pos=371,-31,195 features=
-node b025-2 kind=CAVE region=chaos pos=381,-33,161 features=DEAD_END
-node b026-0 kind=CAVE region=chaos pos=352,-21,186 features=
-node b027-0 kind=CAVE region=chaos pos=342,-22,136 features=
-node b027-1 kind=CAVE region=chaos pos=356,-20,98 features=
-node b027-2 kind=CAVE region=chaos pos=366,-18,65 features=DEAD_END
+terminus=m084
+main=m000 m001 m002 m003 m004 m005 m006 m007 m008 m009 m010 m011 m012 m013 m014 m015 m016 m017 m018 m019 m020 m021 m022 m023 m024 m025 m026 m027 m028 m029 m030 m031 m032 m033 m034 m035 m036 m037 m038 m039 m040 m041 m042 m043 m044 m045 m046 m047 m048 m049 m050 m051 m052 m053 m054 m055 m056 m057 m058 m059 m060 m061 m062 m063 m064 m065 m066 m067 m068 m069 m070 m071 m072 m073 m074 m075 m076 m077 m078 m079 m080 m081 m082 m083 m084
+node b000-0 kind=CAVE region=upper pos=-110,37,264 features=
+node b001-0 kind=CAVE region=upper pos=-143,53,266 features=
+node b001-1 kind=CAVE region=upper pos=-106,48,253 features=DEAD_END
+node b002-0 kind=CAVE region=upper pos=347,26,352 features=DEAD_END
+node b003-0 kind=CAVE region=upper pos=104,36,103 features=
+node b003-1 kind=CAVE region=upper pos=89,35,137 features=
+node b003-2 kind=CAVE region=upper pos=55,39,148 features=
+node b003-3 kind=CAVE region=upper pos=41,36,138 features=
+node b004-0 kind=CAVE region=upper pos=-36,54,61 features=
+node b004-1 kind=CAVE region=upper pos=-61,48,71 features=
+node b004-2 kind=CAVE region=upper pos=-88,49,50 features=
+node b005-0 kind=CAVE region=upper pos=-126,40,254 features=DEAD_END
+node b006-0 kind=CAVE region=upper pos=147,34,98 features=
+node b006-1 kind=CAVE region=upper pos=147,31,73 features=
+node b006-2 kind=CAVE region=upper pos=153,31,57 features=
+node b006-3 kind=CAVE region=upper pos=168,26,18 features=DEAD_END
+node b007-0 kind=CAVE region=upper pos=216,34,140 features=
+node b007-1 kind=CAVE region=upper pos=225,36,122 features=
+node b007-2 kind=CAVE region=upper pos=239,32,109 features=
+node b007-3 kind=CAVE region=upper pos=284,27,101 features=
+node b007-4 kind=CAVE region=upper pos=295,24,87 features=DEAD_END
+node b008-0 kind=CAVE region=upper pos=319,33,296 features=
+node b009-0 kind=CAVE region=upper pos=12,39,114 features=
+node b009-1 kind=CAVE region=upper pos=6,35,149 features=
+node b009-2 kind=CAVE region=upper pos=-33,40,172 features=
+node b009-3 kind=CAVE region=upper pos=-67,40,190 features=DEAD_END
+node b010-0 kind=CAVE region=upper pos=144,33,139 features=
+node b010-1 kind=CAVE region=upper pos=125,31,162 features=
+node b010-2 kind=CAVE region=upper pos=102,26,155 features=
+node b011-0 kind=CAVE region=upper pos=172,35,78 features=
+node b011-1 kind=CAVE region=upper pos=214,40,70 features=
+node b011-2 kind=CAVE region=upper pos=256,44,52 features=DEAD_END
+node b012-0 kind=CAVE region=middle pos=310,6,121 features=
+node b012-1 kind=CAVE region=middle pos=311,4,151 features=
+node b012-2 kind=CAVE region=middle pos=313,8,167 features=DEAD_END
+node b013-0 kind=CAVE region=middle pos=286,8,-42 features=LANDMARK label=Ashen Rotunda
+node b013-1 kind=CAVE region=middle pos=322,8,-57 features=
+node b013-2 kind=CAVE region=middle pos=333,4,-77 features=
+node b013-3 kind=CAVE region=middle pos=331,-2,-108 features=
+node b013-4 kind=CAVE region=middle pos=352,-5,-117 features=DEAD_END
+node b014-0 kind=CAVE region=middle pos=180,14,87 features=
+node b014-1 kind=CAVE region=middle pos=207,8,89 features=
+node b014-2 kind=CAVE region=middle pos=249,10,106 features=
+node b014-3 kind=CAVE region=middle pos=251,4,129 features=
+node b014-4 kind=CAVE region=middle pos=241,3,143 features=
+node b015-0 kind=CAVE region=middle pos=171,24,244 features=
+node b016-0 kind=CAVE region=middle pos=324,-16,23 features=
+node b016-1 kind=CAVE region=middle pos=330,-14,4 features=
+node b016-2 kind=CAVE region=middle pos=365,-14,-21 features=
+node b016-3 kind=CAVE region=middle pos=385,-12,-13 features=
+node b016-4 kind=CAVE region=middle pos=398,-12,11 features=DEAD_END
+node b017-0 kind=CAVE region=middle pos=153,17,245 features=
+node b017-1 kind=CAVE region=middle pos=131,23,255 features=
+node b017-2 kind=CAVE region=middle pos=114,24,289 features=
+node b017-3 kind=CAVE region=middle pos=119,24,304 features=
+node b018-0 kind=CAVE region=middle pos=312,4,82 features=
+node b018-1 kind=CAVE region=middle pos=325,10,92 features=
+node b018-2 kind=CAVE region=middle pos=318,5,113 features=
+node b019-0 kind=CAVE region=middle pos=143,9,54 features=
+node b019-1 kind=CAVE region=middle pos=120,4,29 features=
+node b019-2 kind=CAVE region=middle pos=90,7,0 features=
+node b019-3 kind=CAVE region=middle pos=81,7,-40 features=
+node b019-4 kind=CAVE region=middle pos=78,12,-66 features=DEAD_END
+node b020-0 kind=CAVE region=middle pos=375,-14,155 features=
+node b020-1 kind=CAVE region=middle pos=401,-16,181 features=
+node b020-2 kind=CAVE region=middle pos=444,-16,192 features=
+node b021-0 kind=CAVE region=middle pos=286,0,-36 features=
+node b022-0 kind=CAVE region=middle pos=293,-1,56 features=DEAD_END
+node b023-0 kind=CAVE region=middle pos=52,10,185 features=
+node b023-1 kind=CAVE region=middle pos=29,14,181 features=DEAD_END
+node b024-0 kind=CAVE region=middle pos=117,17,113 features=
+node b024-1 kind=CAVE region=middle pos=99,12,98 features=
+node b024-2 kind=CAVE region=middle pos=105,14,55 features=
+node b024-3 kind=CAVE region=middle pos=105,19,10 features=
+node b024-4 kind=CAVE region=middle pos=101,17,-11 features=DEAD_END|LANDMARK label=Hollow Chasm
+node b025-0 kind=CAVE region=middle pos=294,4,-33 features=
+node b025-1 kind=CAVE region=middle pos=261,6,-55 features=
+node b025-2 kind=CAVE region=middle pos=219,11,-58 features=
+node b025-3 kind=CAVE region=middle pos=201,16,-76 features=DEAD_END
+node b026-0 kind=CAVE region=chaos pos=425,-26,-69 features=
+node b026-1 kind=CAVE region=chaos pos=446,-25,-75 features=DEAD_END
+node b027-0 kind=CAVE region=chaos pos=446,-16,26 features=
+node b027-1 kind=CAVE region=chaos pos=423,-20,62 features=
+node b027-2 kind=CAVE region=chaos pos=390,-16,56 features=
+node b027-3 kind=CAVE region=chaos pos=364,-16,48 features=
+node b028-0 kind=CAVE region=chaos pos=489,-21,239 features=
+node b028-1 kind=CAVE region=chaos pos=501,-25,256 features=
+node b028-2 kind=CAVE region=chaos pos=492,-29,270 features=
+node b028-3 kind=CAVE region=chaos pos=477,-31,304 features=
+node b028-4 kind=CAVE region=chaos pos=477,-34,324 features=
+node b029-0 kind=CAVE region=chaos pos=84,-51,200 features=
+node b030-0 kind=CAVE region=chaos pos=269,-30,300 features=DEAD_END|LANDMARK label=Hollow Gallery
+node b031-0 kind=CAVE region=chaos pos=182,-40,309 features=
+node b031-1 kind=CAVE region=chaos pos=175,-43,346 features=
+node b031-2 kind=CAVE region=chaos pos=161,-44,353 features=
+node b031-3 kind=CAVE region=chaos pos=126,-45,355 features=
+node b031-4 kind=CAVE region=chaos pos=102,-43,371 features=LANDMARK label=Collapsed Gallery
+node b032-0 kind=CAVE region=chaos pos=133,-56,78 features=
+node b032-1 kind=CAVE region=chaos pos=151,-56,97 features=
+node b032-2 kind=CAVE region=chaos pos=181,-56,106 features=
+node b032-3 kind=CAVE region=chaos pos=194,-53,141 features=
+node b032-4 kind=CAVE region=chaos pos=184,-54,179 features=
+node b033-0 kind=CAVE region=chaos pos=255,-42,277 features=
+node b033-1 kind=CAVE region=chaos pos=285,-36,288 features=DEAD_END
+node b034-0 kind=CAVE region=chaos pos=5,-49,150 features=
+node b035-0 kind=CAVE region=chaos pos=455,-25,77 features=
+node b035-1 kind=CAVE region=chaos pos=439,-28,101 features=
+node b035-2 kind=CAVE region=chaos pos=415,-32,112 features=
+node b035-3 kind=CAVE region=chaos pos=384,-37,117 features=
+node b035-4 kind=CAVE region=chaos pos=345,-41,106 features=DEAD_END
+node b036-0 kind=CAVE region=chaos pos=311,-32,245 features=
+node b036-1 kind=CAVE region=chaos pos=327,-26,233 features=DEAD_END
+node b037-0 kind=CAVE region=chaos pos=433,-23,-64 features=
+node b038-0 kind=CAVE region=chaos pos=232,-39,260 features=
+node b038-1 kind=CAVE region=chaos pos=215,-39,243 features=
+node b038-2 kind=CAVE region=chaos pos=222,-39,203 features=
+node b039-0 kind=CAVE region=chaos pos=120,-40,244 features=
+node b039-1 kind=CAVE region=chaos pos=123,-46,213 features=
 node m000 kind=ENTRANCE region=upper pos=28,42,0 features= label=Expedition Gateway
-node m001 kind=ROUTE region=upper pos=46,52,66 features=
-node m002 kind=CAVERN region=upper pos=10,54,122 features=
-node m003 kind=ROUTE region=upper pos=-32,50,153 features=
-node m004 kind=ROUTE region=upper pos=-83,51,202 features=
-node m005 kind=ROUTE region=upper pos=-127,47,255 features=
-node m006 kind=ROUTE region=upper pos=-151,43,278 features=
-node m007 kind=ROUTE region=upper pos=-194,44,330 features=
-node m008 kind=CAVERN region=upper pos=-219,44,370 features=
-node m009 kind=ROUTE region=upper pos=-185,38,408 features=
-node m010 kind=ROUTE region=upper pos=-124,37,376 features=
-node m011 kind=CAVERN region=upper pos=-96,35,357 features=LANDMARK label=Buried Amphitheater
-node m012 kind=ROUTE region=upper pos=-72,32,336 features=
-node m013 kind=ROUTE region=upper pos=-24,31,283 features=
-node m014 kind=ROUTE region=upper pos=36,34,252 features=
-node m015 kind=ROUTE region=upper pos=67,30,231 features=
-node m016 kind=ROUTE region=upper pos=102,31,201 features=
-node m017 kind=CAVERN region=upper pos=159,24,240 features=LANDMARK label=Glimmering Span
-node m018 kind=CAVERN region=upper pos=199,24,275 features=CHECKPOINT
-node m019 kind=ROUTE region=middle pos=257,22,314 features=LANDMARK label=Ancient Vault
-node m020 kind=CAVERN region=middle pos=315,20,344 features=
-node m021 kind=CAVERN region=middle pos=354,22,370 features=
-node m022 kind=ROUTE region=middle pos=393,17,403 features=
-node m023 kind=ROUTE region=middle pos=429,15,428 features=
-node m024 kind=ROUTE region=middle pos=454,11,450 features=
-node m025 kind=CAVERN region=middle pos=425,11,510 features=LANDMARK label=Buried Amphitheater
-node m026 kind=ROUTE region=middle pos=390,11,503 features=
-node m027 kind=ROUTE region=middle pos=348,10,490 features=
-node m028 kind=ROUTE region=middle pos=286,6,462 features=
-node m029 kind=ROUTE region=middle pos=237,6,446 features=
-node m030 kind=CAVERN region=middle pos=198,5,396 features=
-node m031 kind=ROUTE region=middle pos=167,0,365 features=
-node m032 kind=ROUTE region=middle pos=118,-4,343 features=
-node m033 kind=ROUTE region=middle pos=115,-2,303 features=
-node m034 kind=CAVERN region=middle pos=128,-4,258 features=
-node m035 kind=ROUTE region=middle pos=136,-6,208 features=
-node m036 kind=ROUTE region=middle pos=166,-7,157 features=
-node m037 kind=ROUTE region=middle pos=185,-14,131 features=
-node m038 kind=CAVERN region=middle pos=211,-10,103 features=
-node m039 kind=ROUTE region=middle pos=254,-15,46 features=
-node m040 kind=ROUTE region=middle pos=288,-16,-13 features=CHECKPOINT
-node m041 kind=ROUTE region=chaos pos=333,-21,-1 features=
-node m042 kind=ROUTE region=chaos pos=333,-21,47 features=
-node m043 kind=CAVERN region=chaos pos=337,-20,82 features=
-node m044 kind=ROUTE region=chaos pos=349,-21,130 features=
-node m045 kind=ROUTE region=chaos pos=331,-27,179 features=LANDMARK label=Silent Cascade
-node m046 kind=ROUTE region=chaos pos=316,-29,239 features=
-node m047 kind=CAVERN region=chaos pos=322,-32,292 features=
-node m048 kind=CAVERN region=chaos pos=311,-31,336 features=
-node m049 kind=ROUTE region=chaos pos=248,-34,337 features=
-node m050 kind=CAVERN region=chaos pos=233,-39,284 features=
-node m051 kind=ROUTE region=chaos pos=205,-38,220 features=
-node m052 kind=CAVERN region=chaos pos=249,-39,164 features=
-node m053 kind=ROUTE region=chaos pos=253,-44,102 features=
-node m054 kind=ROUTE region=chaos pos=236,-47,73 features=
-node m055 kind=ROUTE region=chaos pos=212,-49,17 features=LANDMARK label=Hollow Span
-node m056 kind=ROUTE region=chaos pos=165,-45,-32 features=
-node m057 kind=ROUTE region=chaos pos=104,-53,2 features=
-node m058 kind=CAVERN region=chaos pos=121,-54,70 features=
-node m059 kind=ROUTE region=chaos pos=133,-52,101 features=
-node m060 kind=ROUTE region=chaos pos=164,-53,137 features=CHECKPOINT
-node p000 kind=POCKET region=upper pos=-79,44,289 features=DEAD_END|RESOURCE_FIELD
-node p001 kind=POCKET region=upper pos=88,25,186 features=DEAD_END|RESOURCE_FIELD
-node p002 kind=POCKET region=upper pos=105,56,124 features=DEAD_END|RESOURCE_FIELD
-node p003 kind=POCKET region=upper pos=77,40,-59 features=DEAD_END|RESOURCE_FIELD
-node p004 kind=POCKET region=upper pos=-22,46,186 features=DEAD_END|RESOURCE_FIELD
-node p005 kind=POCKET region=upper pos=-31,26,348 features=DEAD_END|RESOURCE_FIELD
-node p006 kind=POCKET region=upper pos=-10,48,123 features=DEAD_END|RESOURCE_FIELD
-node p007 kind=POCKET region=upper pos=77,46,-27 features=DEAD_END|RESOURCE_FIELD
-node p008 kind=POCKET region=upper pos=-10,37,-58 features=DEAD_END
-node p009 kind=POCKET region=upper pos=34,49,-53 features=DEAD_END
-node p010 kind=POCKET region=upper pos=-79,50,284 features=DEAD_END
-node p011 kind=POCKET region=upper pos=-189,49,354 features=DEAD_END
-node p012 kind=POCKET region=upper pos=64,43,-59 features=DEAD_END
-node p013 kind=POCKET region=upper pos=-157,40,366 features=DEAD_END
-node p014 kind=POCKET region=upper pos=-10,34,-43 features=DEAD_END
-node p015 kind=POCKET region=middle pos=321,2,455 features=DEAD_END|RESOURCE_FIELD
-node p016 kind=POCKET region=middle pos=217,7,251 features=RESOURCE_FIELD
-node p017 kind=POCKET region=middle pos=292,3,508 features=RESOURCE_FIELD
-node p018 kind=POCKET region=middle pos=222,-3,-23 features=RESOURCE_FIELD
-node p019 kind=POCKET region=middle pos=289,1,521 features=DEAD_END|RESOURCE_FIELD
-node p020 kind=POCKET region=middle pos=394,24,368 features=DEAD_END|RESOURCE_FIELD
-node p021 kind=POCKET region=middle pos=201,5,-73 features=DEAD_END|RESOURCE_FIELD
-node p022 kind=POCKET region=middle pos=412,15,613 features=DEAD_END|RESOURCE_FIELD
-node p023 kind=POCKET region=middle pos=261,-13,-66 features=DEAD_END|RESOURCE_FIELD
-node p024 kind=POCKET region=middle pos=313,12,453 features=DEAD_END|RESOURCE_FIELD
-node p025 kind=POCKET region=middle pos=237,-7,43 features=DEAD_END
-node p026 kind=POCKET region=middle pos=257,14,438 features=DEAD_END
-node p027 kind=POCKET region=middle pos=299,16,398 features=
-node p028 kind=POCKET region=middle pos=387,20,424 features=DEAD_END
-node p029 kind=POCKET region=middle pos=440,22,449 features=DEAD_END
-node p030 kind=POCKET region=middle pos=335,24,367 features=DEAD_END
-node p031 kind=POCKET region=middle pos=161,2,257 features=DEAD_END
-node p032 kind=POCKET region=middle pos=174,7,395 features=DEAD_END
-node p033 kind=POCKET region=middle pos=245,1,452 features=DEAD_END
-node p034 kind=POCKET region=middle pos=321,18,421 features=DEAD_END
-node p035 kind=POCKET region=chaos pos=89,-46,-26 features=DEAD_END|RESOURCE_FIELD
-node p036 kind=POCKET region=chaos pos=406,-16,158 features=DEAD_END|RESOURCE_FIELD
-node p037 kind=POCKET region=chaos pos=146,-56,182 features=DEAD_END|RESOURCE_FIELD
-node p038 kind=POCKET region=chaos pos=208,-16,-62 features=DEAD_END|RESOURCE_FIELD
-node p039 kind=POCKET region=chaos pos=154,-53,28 features=DEAD_END|RESOURCE_FIELD
-node p040 kind=POCKET region=chaos pos=211,-20,-12 features=DEAD_END|RESOURCE_FIELD
-node p041 kind=POCKET region=chaos pos=207,-56,91 features=RESOURCE_FIELD
-node p042 kind=POCKET region=chaos pos=248,-41,357 features=DEAD_END|RESOURCE_FIELD
-node p043 kind=POCKET region=chaos pos=231,-16,-90 features=DEAD_END|RESOURCE_FIELD
-node p044 kind=POCKET region=chaos pos=325,-16,148 features=RESOURCE_FIELD
-node p045 kind=POCKET region=chaos pos=248,-16,-89 features=DEAD_END|RESOURCE_FIELD
-node p046 kind=POCKET region=chaos pos=214,-56,58 features=DEAD_END|RESOURCE_FIELD
-node p047 kind=POCKET region=chaos pos=346,-36,312 features=DEAD_END
-node p048 kind=POCKET region=chaos pos=215,-32,166 features=DEAD_END
-node p049 kind=POCKET region=chaos pos=328,-16,170 features=DEAD_END
-node p050 kind=POCKET region=chaos pos=243,-34,362 features=DEAD_END
-node p051 kind=POCKET region=chaos pos=236,-46,334 features=DEAD_END
-node p052 kind=POCKET region=chaos pos=338,-27,120 features=DEAD_END
-node p053 kind=POCKET region=chaos pos=209,-30,334 features=
-node p054 kind=POCKET region=chaos pos=290,-56,121 features=DEAD_END
-node p055 kind=POCKET region=chaos pos=174,-27,339 features=DEAD_END
-node p056 kind=POCKET region=chaos pos=303,-45,98 features=DEAD_END
-node p057 kind=POCKET region=chaos pos=343,-30,198 features=DEAD_END
-node p058 kind=POCKET region=chaos pos=236,-37,164 features=DEAD_END
-edge b000-0 b000-1 BRANCH
-edge b000-0 m003 BRANCH
-edge b000-1 b000-2 BRANCH
-edge b000-1 m001 LOOP
-edge b000-2 b000-3 BRANCH
+node m001 kind=ROUTE region=upper pos=36,53,30 features=
+node m002 kind=ROUTE region=upper pos=-3,56,67 features=
+node m003 kind=ROUTE region=upper pos=-22,51,106 features=
+node m004 kind=ROUTE region=upper pos=-61,53,143 features=
+node m005 kind=ROUTE region=upper pos=-85,50,172 features=
+node m006 kind=ROUTE region=upper pos=-118,47,203 features=
+node m007 kind=ROUTE region=upper pos=-143,47,234 features=
+node m008 kind=CAVERN region=upper pos=-160,48,260 features=
+node m009 kind=CAVERN region=upper pos=-141,43,281 features=
+node m010 kind=ROUTE region=upper pos=-96,43,258 features=
+node m011 kind=ROUTE region=upper pos=-76,41,222 features=
+node m012 kind=ROUTE region=upper pos=-37,38,189 features=
+node m013 kind=ROUTE region=upper pos=-7,38,156 features=
+node m014 kind=ROUTE region=upper pos=33,42,121 features=LANDMARK label=Echoing Vault
+node m015 kind=ROUTE region=upper pos=55,39,106 features=
+node m016 kind=ROUTE region=upper pos=94,39,73 features=
+node m017 kind=ROUTE region=upper pos=117,32,89 features=LANDMARK label=Ashen Amphitheater
+node m018 kind=ROUTE region=upper pos=153,31,120 features=
+node m019 kind=ROUTE region=upper pos=175,33,144 features=
+node m020 kind=ROUTE region=upper pos=214,31,178 features=
+node m021 kind=ROUTE region=upper pos=260,33,209 features=
+node m022 kind=ROUTE region=upper pos=280,29,237 features=LANDMARK label=Silent Pillar
+node m023 kind=ROUTE region=upper pos=318,28,278 features=
+node m024 kind=CAVERN region=upper pos=341,24,310 features=
+node m025 kind=ROUTE region=upper pos=323,25,332 features=
+node m026 kind=CAVERN region=upper pos=272,26,309 features=CHECKPOINT
+node m027 kind=ROUTE region=middle pos=233,24,297 features=
+node m028 kind=ROUTE region=middle pos=207,21,277 features=
+node m029 kind=ROUTE region=middle pos=175,22,267 features=
+node m030 kind=ROUTE region=middle pos=146,22,261 features=
+node m031 kind=ROUTE region=middle pos=101,17,233 features=
+node m032 kind=CAVERN region=middle pos=71,13,210 features=
+node m033 kind=ROUTE region=middle pos=88,16,170 features=
+node m034 kind=ROUTE region=middle pos=112,14,129 features=
+node m035 kind=ROUTE region=middle pos=129,13,106 features=
+node m036 kind=ROUTE region=middle pos=151,13,92 features=
+node m037 kind=ROUTE region=middle pos=176,6,58 features=
+node m038 kind=ROUTE region=middle pos=211,10,22 features=
+node m039 kind=ROUTE region=middle pos=236,6,-12 features=
+node m040 kind=ROUTE region=middle pos=264,2,-41 features=
+node m041 kind=ROUTE region=middle pos=308,1,-17 features=
+node m042 kind=CAVERN region=middle pos=296,2,33 features=LANDMARK label=Ancient Gallery
+node m043 kind=ROUTE region=middle pos=300,3,64 features=
+node m044 kind=CAVERN region=middle pos=317,3,97 features=
+node m045 kind=ROUTE region=middle pos=328,-2,126 features=
+node m046 kind=CAVERN region=middle pos=312,-4,158 features=
+node m047 kind=ROUTE region=middle pos=309,-6,184 features=
+node m048 kind=CAVERN region=middle pos=330,-4,225 features=
+node m049 kind=ROUTE region=middle pos=357,-7,219 features=
+node m050 kind=ROUTE region=middle pos=359,-11,179 features=
+node m051 kind=ROUTE region=middle pos=366,-9,137 features=
+node m052 kind=ROUTE region=middle pos=361,-10,109 features=
+node m053 kind=ROUTE region=middle pos=346,-14,62 features=
+node m054 kind=ROUTE region=middle pos=362,-16,8 features=
+node m055 kind=ROUTE region=middle pos=359,-16,-31 features=
+node m056 kind=ROUTE region=middle pos=354,-13,-58 features=CHECKPOINT
+node m057 kind=ROUTE region=chaos pos=393,-20,-77 features=
+node m058 kind=ROUTE region=chaos pos=413,-21,-54 features=
+node m059 kind=ROUTE region=chaos pos=437,-18,-19 features=
+node m060 kind=ROUTE region=chaos pos=454,-19,14 features=
+node m061 kind=ROUTE region=chaos pos=470,-25,57 features=
+node m062 kind=ROUTE region=chaos pos=482,-24,109 features=
+node m063 kind=ROUTE region=chaos pos=487,-27,154 features=
+node m064 kind=CAVERN region=chaos pos=487,-24,196 features=
+node m065 kind=ROUTE region=chaos pos=452,-27,228 features=
+node m066 kind=ROUTE region=chaos pos=409,-33,259 features=
+node m067 kind=ROUTE region=chaos pos=376,-31,260 features=
+node m068 kind=ROUTE region=chaos pos=332,-32,277 features=
+node m069 kind=CAVERN region=chaos pos=286,-36,278 features=
+node m070 kind=ROUTE region=chaos pos=239,-37,297 features=
+node m071 kind=ROUTE region=chaos pos=209,-37,298 features=
+node m072 kind=CAVERN region=chaos pos=167,-37,294 features=
+node m073 kind=ROUTE region=chaos pos=144,-38,264 features=
+node m074 kind=CAVERN region=chaos pos=114,-40,254 features=
+node m075 kind=ROUTE region=chaos pos=93,-43,237 features=
+node m076 kind=ROUTE region=chaos pos=74,-46,217 features=
+node m077 kind=ROUTE region=chaos pos=53,-43,189 features=
+node m078 kind=CAVERN region=chaos pos=40,-50,144 features=LANDMARK label=Glimmering Chasm
+node m079 kind=ROUTE region=chaos pos=31,-50,90 features=LANDMARK label=Silent Rotunda
+node m080 kind=ROUTE region=chaos pos=17,-48,44 features=
+node m081 kind=ROUTE region=chaos pos=57,-53,4 features=
+node m082 kind=ROUTE region=chaos pos=85,-56,20 features=
+node m083 kind=ROUTE region=chaos pos=127,-54,51 features=
+node m084 kind=ROUTE region=chaos pos=157,-56,98 features=CHECKPOINT|DEAD_END
+node p000 kind=POCKET region=upper pos=-90,51,75 features=DEAD_END|RESOURCE_FIELD
+node p001 kind=POCKET region=upper pos=-66,40,54 features=RESOURCE_FIELD
+node p002 kind=POCKET region=upper pos=325,30,312 features=DEAD_END|RESOURCE_FIELD
+node p003 kind=POCKET region=upper pos=3,44,100 features=RESOURCE_FIELD
+node p004 kind=POCKET region=upper pos=-1,50,89 features=DEAD_END|RESOURCE_FIELD
+node p005 kind=POCKET region=upper pos=246,27,173 features=DEAD_END|RESOURCE_FIELD
+node p006 kind=POCKET region=upper pos=5,43,151 features=DEAD_END|RESOURCE_FIELD
+node p007 kind=POCKET region=upper pos=-41,56,43 features=DEAD_END|RESOURCE_FIELD
+node p008 kind=POCKET region=upper pos=-80,45,144 features=RESOURCE_FIELD
+node p009 kind=POCKET region=upper pos=-77,41,131 features=DEAD_END
+node p010 kind=POCKET region=upper pos=140,32,83 features=DEAD_END
+node p011 kind=POCKET region=upper pos=164,28,163 features=DEAD_END
+node p012 kind=POCKET region=upper pos=-129,33,300 features=DEAD_END
+node p013 kind=POCKET region=upper pos=-37,47,107 features=DEAD_END
+node p014 kind=POCKET region=upper pos=-103,34,35 features=DEAD_END
+node p015 kind=POCKET region=upper pos=282,30,284 features=DEAD_END
+node p016 kind=POCKET region=upper pos=-78,40,191 features=DEAD_END
+node p017 kind=POCKET region=upper pos=117,31,146 features=DEAD_END
+node p018 kind=POCKET region=middle pos=73,15,227 features=DEAD_END|RESOURCE_FIELD
+node p019 kind=POCKET region=middle pos=271,0,33 features=DEAD_END|RESOURCE_FIELD
+node p020 kind=POCKET region=middle pos=155,23,297 features=DEAD_END|RESOURCE_FIELD
+node p021 kind=POCKET region=middle pos=139,12,117 features=DEAD_END|RESOURCE_FIELD
+node p022 kind=POCKET region=middle pos=296,4,-110 features=DEAD_END|RESOURCE_FIELD
+node p023 kind=POCKET region=middle pos=118,24,287 features=RESOURCE_FIELD
+node p024 kind=POCKET region=middle pos=252,15,126 features=DEAD_END|RESOURCE_FIELD
+node p025 kind=POCKET region=middle pos=162,6,78 features=DEAD_END|RESOURCE_FIELD
+node p026 kind=POCKET region=middle pos=412,-11,197 features=DEAD_END|RESOURCE_FIELD
+node p027 kind=POCKET region=middle pos=73,18,157 features=DEAD_END|RESOURCE_FIELD
+node p028 kind=POCKET region=middle pos=123,18,277 features=DEAD_END|RESOURCE_FIELD
+node p029 kind=POCKET region=middle pos=371,-15,-20 features=DEAD_END
+node p030 kind=POCKET region=middle pos=293,-3,166 features=DEAD_END
+node p031 kind=POCKET region=middle pos=132,24,328 features=DEAD_END
+node p032 kind=POCKET region=middle pos=324,-16,-19 features=DEAD_END
+node p033 kind=POCKET region=middle pos=359,10,95 features=DEAD_END
+node p034 kind=POCKET region=middle pos=287,6,-26 features=DEAD_END
+node p035 kind=POCKET region=middle pos=336,9,136 features=DEAD_END
+node p036 kind=POCKET region=middle pos=318,-6,200 features=DEAD_END
+node p037 kind=POCKET region=middle pos=163,24,307 features=DEAD_END
+node p038 kind=POCKET region=middle pos=282,15,107 features=DEAD_END
+node p039 kind=POCKET region=middle pos=112,8,134 features=DEAD_END
+node p040 kind=POCKET region=chaos pos=159,-56,106 features=RESOURCE_FIELD
+node p041 kind=POCKET region=chaos pos=393,-26,257 features=DEAD_END|RESOURCE_FIELD
+node p042 kind=POCKET region=chaos pos=394,-16,77 features=DEAD_END|RESOURCE_FIELD
+node p043 kind=POCKET region=chaos pos=155,-56,62 features=RESOURCE_FIELD
+node p044 kind=POCKET region=chaos pos=166,-56,71 features=DEAD_END|RESOURCE_FIELD
+node p045 kind=POCKET region=chaos pos=363,-39,288 features=DEAD_END|RESOURCE_FIELD
+node p046 kind=POCKET region=chaos pos=486,-38,333 features=RESOURCE_FIELD
+node p047 kind=POCKET region=chaos pos=424,-19,-28 features=DEAD_END|RESOURCE_FIELD
+node p048 kind=POCKET region=chaos pos=112,-55,231 features=DEAD_END|RESOURCE_FIELD
+node p049 kind=POCKET region=chaos pos=146,-55,98 features=DEAD_END|RESOURCE_FIELD
+node p050 kind=POCKET region=chaos pos=479,-31,293 features=DEAD_END|RESOURCE_FIELD
+node p051 kind=POCKET region=chaos pos=30,-47,203 features=DEAD_END|RESOURCE_FIELD
+node p052 kind=POCKET region=chaos pos=259,-30,332 features=DEAD_END|RESOURCE_FIELD
+node p053 kind=POCKET region=chaos pos=96,-46,177 features=DEAD_END
+node p054 kind=POCKET region=chaos pos=106,-40,340 features=DEAD_END
+node p055 kind=POCKET region=chaos pos=194,-48,338 features=DEAD_END
+node p056 kind=POCKET region=chaos pos=248,-43,267 features=DEAD_END
+node p057 kind=POCKET region=chaos pos=380,-16,-71 features=DEAD_END
+node p058 kind=POCKET region=chaos pos=76,-51,390 features=DEAD_END
+node p059 kind=POCKET region=chaos pos=465,-31,317 features=DEAD_END
+node p060 kind=POCKET region=chaos pos=21,-49,114 features=DEAD_END
+node p061 kind=POCKET region=chaos pos=222,-37,249 features=DEAD_END
+node p062 kind=POCKET region=chaos pos=143,-43,219 features=DEAD_END
+node p063 kind=POCKET region=chaos pos=115,-40,189 features=DEAD_END
+node p064 kind=POCKET region=chaos pos=501,-35,135 features=DEAD_END
+node p065 kind=POCKET region=chaos pos=247,-35,307 features=DEAD_END
+edge b000-0 m009 BRANCH
+edge b000-0 p012 SPUR
 edge b001-0 b001-1 BRANCH
-edge b001-0 m003 BRANCH
-edge b001-1 b001-2 BRANCH
-edge b001-1 p004 SPUR
-edge b001-1 p006 SPUR
-edge b001-2 p002 SPUR
-edge b002-0 m014 BRANCH
-edge b003-0 m011 BRANCH
-edge b003-0 p000 SPUR
-edge b004-0 m003 BRANCH
-edge b005-0 m006 BRANCH
+edge b001-0 m008 BRANCH
+edge b002-0 m025 BRANCH
+edge b003-0 b003-1 BRANCH
+edge b003-0 m016 BRANCH
+edge b003-0 p017 SPUR
+edge b003-1 b003-2 BRANCH
+edge b003-1 b003-3 LOOP
+edge b003-1 m003 LOOP
+edge b003-2 b003-3 BRANCH
+edge b004-0 b004-1 BRANCH
+edge b004-0 m002 BRANCH
+edge b004-1 b004-2 BRANCH
+edge b004-1 p001 SPUR
+edge b004-1 p013 SPUR
+edge b004-2 p000 SPUR
+edge b005-0 m010 BRANCH
 edge b006-0 b006-1 BRANCH
-edge b006-0 m000 BRANCH
-edge b006-0 p003 SPUR
-edge b006-0 p007 SPUR
-edge b006-0 p009 SPUR
-edge b006-0 p012 SPUR
-edge b006-1 m001 LOOP
-edge b006-1 p008 SPUR
-edge b006-1 p014 SPUR
-edge b007-0 m007 BRANCH
-edge b008-0 m025 BRANCH
-edge b009-0 m029 BRANCH
-edge b009-0 m031 LOOP
-edge b009-0 p024 SPUR
-edge b010-0 m031 BRANCH
+edge b006-0 m018 BRANCH
+edge b006-1 b006-2 BRANCH
+edge b006-2 b006-3 BRANCH
+edge b006-2 p010 SPUR
+edge b007-0 b007-1 BRANCH
+edge b007-0 m020 BRANCH
+edge b007-1 b007-2 BRANCH
+edge b007-1 b010-1 LOOP
+edge b007-1 b010-2 LOOP
+edge b007-1 m021 LOOP
+edge b007-2 b007-3 BRANCH
+edge b007-3 b007-4 BRANCH
+edge b008-0 m023 BRANCH
+edge b008-0 p002 SPUR
+edge b008-0 p015 SPUR
+edge b009-0 b009-1 BRANCH
+edge b009-0 m015 BRANCH
+edge b009-0 p003 SPUR
+edge b009-1 b009-2 BRANCH
+edge b009-1 m006 LOOP
+edge b009-1 m012 LOOP
+edge b009-2 b009-3 BRANCH
+edge b010-0 b010-1 BRANCH
+edge b010-0 m019 BRANCH
+edge b010-0 p011 SPUR
+edge b010-1 b010-2 BRANCH
 edge b011-0 b011-1 BRANCH
-edge b011-0 m040 BRANCH
-edge b011-0 p018 SPUR
-edge b011-0 p023 SPUR
+edge b011-0 m014 LOOP
+edge b011-0 m018 BRANCH
+edge b011-1 b011-2 BRANCH
 edge b012-0 b012-1 BRANCH
-edge b012-0 m034 BRANCH
+edge b012-0 m044 BRANCH
+edge b012-0 m051 LOOP
+edge b012-0 p035 SPUR
+edge b012-1 b012-2 BRANCH
 edge b013-0 b013-1 BRANCH
-edge b013-0 m029 BRANCH
+edge b013-0 b013-3 LOOP
+edge b013-0 m040 BRANCH
 edge b013-1 b013-2 BRANCH
-edge b013-1 m020 LOOP
-edge b013-1 p033 SPUR
 edge b013-2 b013-3 BRANCH
+edge b013-3 b013-4 BRANCH
+edge b013-3 p022 SPUR
 edge b014-0 b014-1 BRANCH
-edge b014-0 b017-1 LOOP
-edge b014-0 m019 LOOP
-edge b014-0 m021 BRANCH
-edge b015-0 b015-1 BRANCH
-edge b015-0 m035 BRANCH
-edge b015-1 p016 SPUR
+edge b014-0 m036 BRANCH
+edge b014-1 b014-2 BRANCH
+edge b014-2 b014-3 BRANCH
+edge b014-2 p024 SPUR
+edge b014-2 p038 SPUR
+edge b014-3 b014-4 BRANCH
+edge b014-4 m039 LOOP
+edge b015-0 m030 BRANCH
+edge b015-0 m047 LOOP
 edge b016-0 b016-1 BRANCH
-edge b016-0 m026 BRANCH
+edge b016-0 m042 LOOP
+edge b016-0 m053 BRANCH
+edge b016-0 p032 SPUR
 edge b016-1 b016-2 BRANCH
-edge b016-1 p022 SPUR
 edge b016-2 b016-3 BRANCH
+edge b016-3 b016-4 BRANCH
+edge b016-3 m054 LOOP
 edge b017-0 b017-1 BRANCH
-edge b017-0 m020 BRANCH
-edge b017-0 p028 SPUR
+edge b017-0 m029 BRANCH
 edge b017-1 b017-2 BRANCH
-edge b017-1 p027 SPUR
-edge b017-1 p030 SPUR
 edge b017-2 b017-3 BRANCH
-edge b017-3 m028 LOOP
+edge b017-3 p020 SPUR
+edge b017-3 p023 SPUR
+edge b017-3 p031 SPUR
 edge b018-0 b018-1 BRANCH
-edge b018-0 m041 BRANCH
+edge b018-0 m043 BRANCH
 edge b018-1 b018-2 BRANCH
-edge b018-2 b018-3 BRANCH
-edge b018-2 p040 SPUR
-edge b018-3 p038 SPUR
-edge b018-3 p043 SPUR
-edge b018-3 p045 SPUR
-edge b019-0 m052 BRANCH
-edge b019-0 p057 SPUR
+edge b018-1 p033 SPUR
+edge b018-2 b025-0 LOOP
+edge b019-0 b019-1 BRANCH
+edge b019-0 m036 BRANCH
+edge b019-0 m042 LOOP
+edge b019-1 b019-2 BRANCH
+edge b019-2 b019-3 BRANCH
+edge b019-3 b019-4 BRANCH
 edge b020-0 b020-1 BRANCH
-edge b020-0 m060 BRANCH
-edge b020-0 p039 SPUR
-edge b020-1 m043 LOOP
-edge b020-1 p041 SPUR
-edge b021-0 m051 LOOP
-edge b021-0 m053 BRANCH
-edge b022-0 b022-1 BRANCH
-edge b022-0 m053 BRANCH
-edge b022-0 p054 SPUR
-edge b022-1 p056 SPUR
+edge b020-0 m051 BRANCH
+edge b020-1 b020-2 BRANCH
+edge b020-2 m049 LOOP
+edge b020-2 m051 LOOP
+edge b020-2 p026 SPUR
+edge b021-0 m040 BRANCH
+edge b021-0 p034 SPUR
+edge b022-0 m042 BRANCH
 edge b023-0 b023-1 BRANCH
-edge b023-0 m057 BRANCH
-edge b023-1 b023-2 BRANCH
+edge b023-0 m033 BRANCH
 edge b024-0 b024-1 BRANCH
-edge b024-0 m044 BRANCH
-edge b024-1 m042 LOOP
-edge b024-1 p036 SPUR
+edge b024-0 m034 BRANCH
+edge b024-1 b024-2 BRANCH
+edge b024-2 b024-3 BRANCH
+edge b024-3 b024-4 BRANCH
+edge b024-3 m037 LOOP
 edge b025-0 b025-1 BRANCH
-edge b025-0 b026-0 LOOP
-edge b025-0 m046 BRANCH
+edge b025-0 m041 BRANCH
 edge b025-1 b025-2 BRANCH
-edge b026-0 m045 BRANCH
+edge b025-2 b025-3 BRANCH
+edge b026-0 b026-1 BRANCH
+edge b026-0 m058 BRANCH
 edge b027-0 b027-1 BRANCH
-edge b027-0 m045 BRANCH
-edge b027-0 p044 SPUR
+edge b027-0 b035-1 LOOP
+edge b027-0 m058 LOOP
+edge b027-0 m059 BRANCH
 edge b027-1 b027-2 BRANCH
+edge b027-2 b027-3 BRANCH
+edge b027-2 p042 SPUR
+edge b027-3 b037-0 LOOP
+edge b028-0 b028-1 BRANCH
+edge b028-0 m065 BRANCH
+edge b028-1 b028-2 BRANCH
+edge b028-2 b028-3 BRANCH
+edge b028-2 m066 LOOP
+edge b028-3 b028-4 BRANCH
+edge b028-3 m065 LOOP
+edge b028-3 p050 SPUR
+edge b028-4 m068 LOOP
+edge b028-4 p046 SPUR
+edge b029-0 m076 BRANCH
+edge b029-0 p048 SPUR
+edge b030-0 m069 BRANCH
+edge b031-0 b031-1 BRANCH
+edge b031-0 m072 BRANCH
+edge b031-1 b031-2 BRANCH
+edge b031-1 b033-0 LOOP
+edge b031-1 p055 SPUR
+edge b031-2 b031-3 BRANCH
+edge b031-2 b031-4 LOOP
+edge b031-3 b031-4 BRANCH
+edge b031-3 p054 SPUR
+edge b031-4 m074 LOOP
+edge b031-4 p058 SPUR
+edge b032-0 b032-1 BRANCH
+edge b032-0 m083 BRANCH
+edge b032-1 b032-2 BRANCH
+edge b032-2 b032-3 BRANCH
+edge b032-2 p040 SPUR
+edge b032-3 b032-4 BRANCH
+edge b032-4 b038-0 LOOP
+edge b033-0 b033-1 BRANCH
+edge b033-0 m070 BRANCH
+edge b033-0 p061 SPUR
+edge b033-0 p065 SPUR
+edge b034-0 m076 LOOP
+edge b034-0 m078 BRANCH
+edge b035-0 b035-1 BRANCH
+edge b035-0 m061 BRANCH
+edge b035-1 b035-2 BRANCH
+edge b035-2 b035-3 BRANCH
+edge b035-3 b035-4 BRANCH
+edge b036-0 b036-1 BRANCH
+edge b036-0 m069 BRANCH
+edge b037-0 m058 BRANCH
+edge b038-0 b038-1 BRANCH
+edge b038-0 b039-0 LOOP
+edge b038-0 m070 BRANCH
+edge b038-1 b038-2 BRANCH
+edge b038-1 m076 LOOP
+edge b038-1 p056 SPUR
+edge b038-2 m074 LOOP
+edge b039-0 b039-1 BRANCH
+edge b039-0 m073 BRANCH
+edge b039-1 p062 SPUR
+edge b039-1 p063 SPUR
 edge m000 m001 MAIN
 edge m001 m002 MAIN
 edge m002 m003 MAIN
+edge m002 p007 SPUR
 edge m003 m004 MAIN
 edge m004 m005 MAIN
+edge m004 m011 LOOP
+edge m004 p008 SPUR
 edge m005 m006 MAIN
-edge m005 m012 LOOP
-edge m005 p010 SPUR
+edge m005 m015 LOOP
 edge m006 m007 MAIN
 edge m007 m008 MAIN
-edge m007 p011 SPUR
 edge m008 m009 MAIN
 edge m009 m010 MAIN
 edge m010 m011 MAIN
-edge m010 p013 SPUR
 edge m011 m012 MAIN
 edge m012 m013 MAIN
-edge m012 p005 SPUR
+edge m012 p016 SPUR
 edge m013 m014 MAIN
 edge m014 m015 MAIN
-edge m014 m017 LOOP
+edge m014 p006 SPUR
 edge m015 m016 MAIN
-edge m015 p001 SPUR
 edge m016 m017 MAIN
 edge m017 m018 MAIN
 edge m018 m019 MAIN
 edge m019 m020 MAIN
 edge m020 m021 MAIN
 edge m021 m022 MAIN
-edge m021 p020 SPUR
+edge m021 p005 SPUR
 edge m022 m023 MAIN
 edge m023 m024 MAIN
-edge m023 p029 SPUR
 edge m024 m025 MAIN
 edge m025 m026 MAIN
 edge m026 m027 MAIN
 edge m027 m028 MAIN
 edge m028 m029 MAIN
-edge m028 p015 SPUR
-edge m028 p017 SPUR
 edge m029 m030 MAIN
-edge m029 p026 SPUR
+edge m029 m032 LOOP
+edge m029 p037 SPUR
 edge m030 m031 MAIN
 edge m031 m032 MAIN
-edge m031 p032 SPUR
+edge m031 p018 SPUR
 edge m032 m033 MAIN
 edge m033 m034 MAIN
+edge m033 p027 SPUR
 edge m034 m035 MAIN
 edge m035 m036 MAIN
+edge m035 p039 SPUR
 edge m036 m037 MAIN
+edge m036 p021 SPUR
+edge m036 p025 SPUR
 edge m037 m038 MAIN
 edge m038 m039 MAIN
 edge m039 m040 MAIN
-edge m039 p025 SPUR
 edge m040 m041 MAIN
 edge m041 m042 MAIN
 edge m042 m043 MAIN
+edge m042 p019 SPUR
 edge m043 m044 MAIN
 edge m044 m045 MAIN
-edge m044 p052 SPUR
 edge m045 m046 MAIN
-edge m045 m054 LOOP
 edge m046 m047 MAIN
 edge m047 m048 MAIN
-edge m047 m051 LOOP
-edge m047 p047 SPUR
+edge m047 p030 SPUR
 edge m048 m049 MAIN
+edge m048 p036 SPUR
 edge m049 m050 MAIN
-edge m049 p042 SPUR
-edge m049 p050 SPUR
-edge m049 p053 SPUR
 edge m050 m051 MAIN
-edge m050 p051 SPUR
 edge m051 m052 MAIN
 edge m052 m053 MAIN
-edge m052 p048 SPUR
-edge m052 p058 SPUR
 edge m053 m054 MAIN
 edge m054 m055 MAIN
 edge m055 m056 MAIN
+edge m055 p029 SPUR
 edge m056 m057 MAIN
 edge m057 m058 MAIN
-edge m057 p035 SPUR
+edge m057 p057 SPUR
 edge m058 m059 MAIN
 edge m059 m060 MAIN
-edge m060 p037 SPUR
-edge p016 p031 SPUR
-edge p017 p019 SPUR
-edge p018 p021 SPUR
-edge p027 p034 SPUR
-edge p041 p046 SPUR
-edge p044 p049 SPUR
-edge p053 p055 SPUR
+edge m059 p047 SPUR
+edge m060 m061 MAIN
+edge m061 m062 MAIN
+edge m062 m063 MAIN
+edge m063 m064 MAIN
+edge m063 p064 SPUR
+edge m064 m065 MAIN
+edge m065 m066 MAIN
+edge m066 m067 MAIN
+edge m067 m068 MAIN
+edge m067 p041 SPUR
+edge m067 p045 SPUR
+edge m068 m069 MAIN
+edge m069 m070 MAIN
+edge m070 m071 MAIN
+edge m070 p052 SPUR
+edge m071 m072 MAIN
+edge m072 m073 MAIN
+edge m073 m074 MAIN
+edge m074 m075 MAIN
+edge m075 m076 MAIN
+edge m076 m077 MAIN
+edge m077 m078 MAIN
+edge m077 p051 SPUR
+edge m077 p053 SPUR
+edge m078 m079 MAIN
+edge m079 m080 MAIN
+edge m079 p060 SPUR
+edge m080 m081 MAIN
+edge m081 m082 MAIN
+edge m082 m083 MAIN
+edge m083 m084 MAIN
+edge p001 p014 SPUR
+edge p003 p004 SPUR
+edge p008 p009 SPUR
+edge p023 p028 SPUR
+edge p040 p043 SPUR
+edge p043 p044 SPUR
+edge p043 p049 SPUR
+edge p046 p059 SPUR

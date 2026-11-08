@@ -385,9 +385,9 @@ public final class SegmentGeometry {
     static boolean isMineshaft(String segmentId, long seed, EdgeKind kind) {
         long hash = mix(seed ^ stableHash(segmentId) ^ 0x9E3779B97F4A7C15L);
         if (kind == EdgeKind.MAIN) {
-            return Math.floorMod(hash, 3) == 0;
+            return Math.floorMod(hash, 5) < 2;
         }
-        return Math.floorMod(hash, 5) < 2;
+        return Math.floorMod(hash, 2) == 0;
     }
 
     private static PassageProfile passageProfile(int index, int steps,

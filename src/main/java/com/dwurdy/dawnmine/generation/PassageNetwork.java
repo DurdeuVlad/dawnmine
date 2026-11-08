@@ -182,6 +182,89 @@ public final class PassageNetwork {
             keys.sort(Long::compare);
             for (Long key : keys) {
                 List<int[]> refs = new ArrayList<>(groups.get(key));
+                // Junction convergence: incident endpoints of one node share
+                // the node's column and original height, so group endpoints
+                // by their raw Y - same original Y means same junction. Every
+                // family with 2+ members converges to a common floor BEFORE
+                // ordinary span clustering, so a crossing sample can never
+                // wedge incident paths onto different floors (which carves
+                // corridors that start in mid-air above their own room).
+                Map<Integer, List<int[]>> endpointFamilies = new HashMap<>();
+                for (int[] r : refs) {
+                    List<TopoPos> p = work.get(ids.get(r[0]));
+                    if (r[1] == 0 || r[1] == p.size() - 1) {
+                        int origY = original.get(ids.get(r[0])).get(r[1]).y();
+                        List<int[]> family = endpointFamilies
+                                .computeIfAbsent(origY, k -> new ArrayList<>());
+                        boolean dup = false;
+                        for (int[] member : family) {
+                            if (member[0] == r[0] && member[1] == r[1]) {
+                                dup = true;
+                                break;
+                            }
+                        }
+                        if (!dup) {
+                            family.add(r);
+                        }
+                    }
+                }
+                for (List<int[]> family : endpointFamilies.values()) {
+                    if (family.size() < 2) {
+                        continue;
+                    }
+                    // Common floor: the lowest member, never below a member's
+                    // bound, legalized per member column. Members can only
+                    // move down (endpoints are fixed anchors); a junction
+                    // that would have to rise is unresolvable and fails loud.
+                    int floor = Integer.MAX_VALUE;
+                    int floorBound = Integer.MIN_VALUE;
+                    for (int[] r : family) {
+                        String segmentId = ids.get(r[0]);
+                        floor = Math.min(floor, work.get(segmentId).get(r[1]).y());
+                        floorBound = Math.max(floorBound,
+                                Math.max(bound.get(segmentId)[r[1]],
+                                        stair.get(segmentId)[r[1]]));
+                    }
+                    int snapped = floor;
+                    for (int[] r : family) {
+                        snapped = Math.min(snapped, legalFeetYAtOrBelow(
+                                work.get(ids.get(r[0])).get(r[1]), floor));
+                    }
+                    if (snapped < floorBound) {
+                        snapped = Integer.MIN_VALUE;
+                        for (int[] r : family) {
+                            snapped = Math.max(snapped, legalFeetYAtOrAbove(
+                                    work.get(ids.get(r[0])).get(r[1]), floorBound));
+                        }
+                    }
+                    floor = snapped;
+                    for (int[] r : family) {
+                        String segmentId = ids.get(r[0]);
+                        int idx = r[1];
+                        List<TopoPos> path = work.get(segmentId);
+                        TopoPos c = path.get(idx);
+                        if (c.y() == floor) {
+                            continue;
+                        }
+                        if (floor < c.y()) {
+                            requireLowerable(segmentId, idx, c, floor,
+                                    original.get(segmentId),
+                                    Math.max(bound.get(segmentId)[idx],
+                                            stair.get(segmentId)[idx]));
+                        } else {
+                            throw new IllegalStateException(
+                                    "junction convergence would raise node endpoint "
+                                            + c + " in segment " + segmentId
+                                            + " - report this fixture");
+                        }
+                        path.set(idx, new TopoPos(c.x(), floor, c.z()));
+                        changed = true;
+                        if (lastChanged.size() < 12) {
+                            lastChanged.add(segmentId + "[" + idx + "] junction "
+                                    + c + " -> " + floor);
+                        }
+                    }
+                }
                 // Sort samples by height, then merge each contiguous cluster
                 // whose heights span at most 3 - a 3-block stack puts the
                 // upper route's floor exactly on the lower route's headroom,
