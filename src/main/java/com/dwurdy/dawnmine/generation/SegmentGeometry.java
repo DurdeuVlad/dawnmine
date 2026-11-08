@@ -35,7 +35,7 @@ public final class SegmentGeometry {
     static final int MAX_CENTERLINE_STEPS = 8192;
     private static final int MAX_OPERATIONS = 250_000;
     /** Leave two untouched rock layers below the flat world's stone top (Y62). */
-    private static final int MAX_CAVE_OPEN_Y = 60;
+    static final int MAX_CAVE_OPEN_Y = 60;
 
     private static final Comparator<TopoPos> POSITION_ORDER = Comparator
             .comparingInt(TopoPos::y).thenComparingInt(TopoPos::z).thenComparingInt(TopoPos::x);
@@ -482,7 +482,7 @@ public final class SegmentGeometry {
                 && !node.has(NodeFeature.CHECKPOINT)) {
             addContainedLavaPocket(blocks, center);
         }
-        return finish("node:" + node.id(), blocks, bounds, arrival, false,
+        return finish("node:" + node.id(), blocks, bounds, arrival,
                 wholeRunFeetCells(topology, arrival));
     }
 
@@ -620,7 +620,7 @@ public final class SegmentGeometry {
         Map<TopoPos, RankedBlock> blocks = new HashMap<>();
         addPassage(blocks, path, isMineshaft(id, topology.seed(), edge.kind()),
                 topology.seed(), id);
-        return finish(id, blocks, bounds, arrival, false,
+        return finish(id, blocks, bounds, arrival,
                 wholeRunFeetCells(topology, arrival));
     }
 
@@ -662,7 +662,7 @@ public final class SegmentGeometry {
         cells = avoidGatewayApron(cells);
         return routeProtected(cells,
                 p -> inHubFootprintStrict(p) || onGatewayRow(p)
-                        || inGatewayApron(p) || landmarks.isReserved(p));
+                        || inGatewayApron(p) || insideLandmarkReserve(p, landmarks));
     }
 
     /** An edge ending at a landmark still routes its middle like a foreign
@@ -689,7 +689,15 @@ public final class SegmentGeometry {
                                                       LandmarkLayout landmarks) {
         cells = avoidHubReserve(cells);
         return routeProtected(cells,
-                p -> inHubFootprint(p) || landmarks.isReserved(p));
+                p -> inHubFootprint(p) || insideLandmarkReserve(p, landmarks));
+    }
+
+    /** A route must clear the reserve 2-high: feet inside the box is
+     * forbidden and feet one block below the box is equally forbidden -
+     * otherwise the headroom cell lands inside write-protected rock and
+     * {@code freeze} fails the whole run closed. */
+    private static boolean insideLandmarkReserve(TopoPos p, LandmarkLayout landmarks) {
+        return landmarks.isReserved(p) || landmarks.isReserved(p.offset(0, 1, 0));
     }
 
     /** The reserve footprint without the gateway-band exemption: foreign
@@ -973,7 +981,7 @@ public final class SegmentGeometry {
         List<TopoPos> path = connectorCenterline(topology, arrival);
         Map<TopoPos, RankedBlock> blocks = new HashMap<>();
         addPassage(blocks, path, false, topology.seed(), id);
-        return finish(id, blocks, bounds, arrival, true,
+        return finish(id, blocks, bounds, arrival,
                 wholeRunFeetCells(topology, arrival));
     }
 
@@ -1093,7 +1101,6 @@ public final class SegmentGeometry {
         Objects.requireNonNull(topology, "topology");
         Objects.requireNonNull(structuralId, "structuralId");
         Map<TopoPos, RankedBlock> blocks = new HashMap<>();
-        boolean preserveKeepout = false;
         if (structuralId.startsWith("edge:")) {
             TopoEdge edge = edgeFromSegmentId(topology, structuralId);
             if (edge == null) {
@@ -1116,7 +1123,6 @@ public final class SegmentGeometry {
                     wholeRunHeadCells(topology, arrival),
                     wholeRunClearance(topology, arrival),
                     wholeRunFeetCells(topology, arrival));
-            preserveKeepout = true;
         } else {
             throw new IllegalArgumentException("cannot dress unknown segment " + structuralId);
         }
@@ -1126,8 +1132,7 @@ public final class SegmentGeometry {
         Set<TopoPos> clearance = wholeRunClearance(topology, arrival);
         blocks.entrySet().removeIf(entry ->
                 clearance.contains(entry.getKey()) && isJunctionObstacle(entry.getValue()));
-        return finish("dress:" + structuralId, blocks, bounds, arrival, preserveKeepout,
-                clearance);
+        return finish("dress:" + structuralId, blocks, bounds, arrival, clearance);
     }
 
     /** Anything that would wall off a shared walk cell: posts, beams,
@@ -1553,14 +1558,12 @@ public final class SegmentGeometry {
     }
 
     private static SegmentPlan finish(String id, Map<TopoPos, RankedBlock> blocks,
-                                      TopoBounds bounds, TopoPos arrival,
-                                      boolean preserveArrivalKeepOut) {
-        return finish(id, blocks, bounds, arrival, preserveArrivalKeepOut, null);
+                                      TopoBounds bounds, TopoPos arrival) {
+        return finish(id, blocks, bounds, arrival, null);
     }
 
     private static SegmentPlan finish(String id, Map<TopoPos, RankedBlock> blocks,
                                       TopoBounds bounds, TopoPos arrival,
-                                      boolean preserveArrivalKeepOut,
                                       Set<TopoPos> feetCells) {
         if (blocks.size() > MAX_OPERATIONS) {
             throw new IllegalArgumentException("segment " + id + " exceeds " + MAX_OPERATIONS + " operations");

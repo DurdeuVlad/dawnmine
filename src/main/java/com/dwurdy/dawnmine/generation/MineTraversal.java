@@ -142,10 +142,12 @@ public final class MineTraversal {
 
     /** Every destination a prepared run must reach on foot: each topology
      * node's resolved centre (route, branch, pocket, resource field,
-     * cavern, landmark, dead end) plus the hub consoles. */
-    public static List<TopoPos> requiredTargets(TopologyPlan topology) {
+     * cavern, landmark, dead end) plus the hub consoles. Resolved against
+     * the caller's arrival, not a hard-coded landing, so a non-standard
+     * hub placement still verifies against its own geometry. */
+    public static List<TopoPos> requiredTargets(TopologyPlan topology, TopoPos arrival) {
         List<TopoPos> targets = new ArrayList<>();
-        PassageNetwork network = PassageNetwork.of(topology, HubLayout.LANDING);
+        PassageNetwork network = PassageNetwork.of(topology, arrival);
         for (TopoNode node : topology.nodes()) {
             targets.add(network.center(node.id()));
         }

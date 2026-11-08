@@ -29,6 +29,7 @@ public final class PassageNetwork {
 
     private static String cachedFingerprint = "";
     private static String cachedArrival = "";
+    private static String cachedCatalogFingerprint = "";
     private static PassageNetwork cached;
     private static LandmarkLayout resolving;
 
@@ -42,16 +43,28 @@ public final class PassageNetwork {
      * would violate the fixed hub or landmark anchors or the lowering
      * bound. */
     public static synchronized PassageNetwork of(TopologyPlan topology, TopoPos arrival) {
+        return of(topology, arrival, LandmarkCatalog.definitions());
+    }
+
+    /** Resolve against a specific landmark-definition set so a run pins
+     * the catalog snapshot it was receipted under: a reload mid-run can
+     * never swap room shapes, reserves, or connectors under it. The
+     * snapshot's fingerprint keys the cache alongside the topology. */
+    public static synchronized PassageNetwork of(TopologyPlan topology, TopoPos arrival,
+                                                 Map<String, LandmarkCatalog.Definition> defs) {
         String arrivalKey = arrival.x() + "," + arrival.y() + "," + arrival.z();
+        String catalogKey = LandmarkCatalog.fingerprint(defs);
         if (cached != null && topology.fingerprint().equals(cachedFingerprint)
-                && arrivalKey.equals(cachedArrival)) {
+                && arrivalKey.equals(cachedArrival)
+                && catalogKey.equals(cachedCatalogFingerprint)) {
             resolving = null;
             return cached;
         }
         try {
-            PassageNetwork network = new PassageNetwork(topology, arrival);
+            PassageNetwork network = new PassageNetwork(topology, arrival, defs);
             cachedFingerprint = topology.fingerprint();
             cachedArrival = arrivalKey;
+            cachedCatalogFingerprint = catalogKey;
             cached = network;
             return network;
         } finally {
@@ -84,12 +97,14 @@ public final class PassageNetwork {
         resolving = null;
         cachedFingerprint = "";
         cachedArrival = "";
+        cachedCatalogFingerprint = "";
     }
 
-    private PassageNetwork(TopologyPlan topology, TopoPos arrival) {
+    private PassageNetwork(TopologyPlan topology, TopoPos arrival,
+                           Map<String, LandmarkCatalog.Definition> defs) {
         this.topology = topology;
         this.arrival = arrival;
-        this.landmarks = placeLandmarks(topology);
+        this.landmarks = placeLandmarks(topology, defs);
         resolving = this.landmarks;
         Map<String, List<TopoPos>> raw = new HashMap<>();
         Map<String, List<TopoPos>> original = new HashMap<>();
@@ -132,8 +147,9 @@ public final class PassageNetwork {
      * {@link NodeFeature#SAFEHOUSE} gets a deterministic definition from
      * the live catalog, anchored on its authored position (its resolved
      * centre - no incident edge endpoint ever lands on its column). */
-    private static LandmarkLayout placeLandmarks(TopologyPlan topology) {
-        List<String> definitionIds = new ArrayList<>(LandmarkCatalog.definitions().keySet());
+    private static LandmarkLayout placeLandmarks(TopologyPlan topology,
+            Map<String, LandmarkCatalog.Definition> defs) {
+        List<String> definitionIds = new ArrayList<>(defs.keySet());
         java.util.Collections.sort(definitionIds);
         Map<String, TopoPos> anchors = new HashMap<>();
         Map<String, String> assignments = new HashMap<>();
@@ -153,11 +169,11 @@ public final class PassageNetwork {
                         + "to a plain checkpoint node", node.id());
                 continue;
             }
-            String chosen = chooseDefinition(topology, node, definitionIds, placed);
+            String chosen = chooseDefinition(topology, node, definitionIds, placed, defs);
             anchors.put(node.id(), node.pos());
             assignments.put(node.id(), chosen);
             placed.add(new LandmarkLayout.Placement(node.id(), chosen,
-                    node.pos().offset(0, -1, 0), LandmarkCatalog.definition(chosen)));
+                    node.pos().offset(0, -1, 0), defs.get(chosen)));
         }
         LandmarkLayout layout = LandmarkLayout.place(anchors, assignments);
         validatePlacements(topology, layout);
@@ -171,14 +187,15 @@ public final class PassageNetwork {
      * Fails closed only when no legal definition exists. */
     private static String chooseDefinition(TopologyPlan topology, TopoNode node,
                                            List<String> definitionIds,
-                                           List<LandmarkLayout.Placement> placed) {
+                                           List<LandmarkLayout.Placement> placed,
+                                           Map<String, LandmarkCatalog.Definition> defs) {
         int start = Math.floorMod(
                 (int) SegmentGeometry.stableHashPublic(node.id() + "|safehouse")
                         ^ (int) topology.seed(),
                 definitionIds.size());
         for (int step = 0; step < definitionIds.size(); step++) {
             String id = definitionIds.get((start + step) % definitionIds.size());
-            LandmarkCatalog.Definition def = LandmarkCatalog.definition(id);
+            LandmarkCatalog.Definition def = defs.get(id);
             if (def != null && fits(topology, node, def, placed)) {
                 return id;
             }
@@ -215,12 +232,18 @@ public final class PassageNetwork {
             }
         }
         // The hub's protected volume is centred on the origin; a reserve
-        // reaching it is only possible with an oversized datapack def.
+        // reaching it - or the gateway row/apron the arrival connector is
+        // spliced through - is only possible with an oversized datapack
+        // def, and a miss here would fail closed at freeze() with no
+        // definition fallback left to try.
         for (int dx = -hx; dx <= hx; dx++) {
             for (int dz = -hz; dz <= hz; dz++) {
                 for (int dy = minY; dy <= maxY; dy++) {
                     TopoPos cell = new TopoPos(anchor.x() + dx, dy, anchor.z() + dz);
-                    if (com.dwurdy.dawnmine.topology.HubLayout.isProtected(cell)) {
+                    if (com.dwurdy.dawnmine.topology.HubLayout.isProtected(cell)
+                            || SegmentGeometry.inHubFootprintStrict(cell)
+                            || SegmentGeometry.onGatewayRow(cell)
+                            || SegmentGeometry.inGatewayApron(cell)) {
                         return false;
                     }
                 }
@@ -277,6 +300,31 @@ public final class PassageNetwork {
                 }
             }
         }
+        // Symmetric cover: a mouth lives just outside its own reserve, so
+        // reserve-vs-reserve AABB tests never see it. If this candidate's
+        // reserve swallowed an already-placed mouth, that placement's
+        // splice would start inside forbidden rock and fail the run.
+        for (LandmarkLayout.Placement other : placed) {
+            LandmarkCatalog.Definition od = other.definition();
+            for (LandmarkCatalog.Connector c : od.connectors()) {
+                TopoPos door = new TopoPos(other.anchor().x() + c.x(),
+                        other.anchor().y() + c.y(), other.anchor().z() + c.z());
+                int[] step = switch (c.facing()) {
+                    case "east" -> new int[] {1, 0};
+                    case "west" -> new int[] {-1, 0};
+                    case "south" -> new int[] {0, 1};
+                    default -> new int[] {0, -1};
+                };
+                TopoPos placedMouth = door.offset(step[0], 0, step[1]);
+                while (other.insideReserve(placedMouth)) {
+                    placedMouth = placedMouth.offset(step[0], 0, step[1]);
+                }
+                if (candidate.insideReserve(placedMouth)
+                        || candidate.insideReserve(placedMouth.offset(0, 1, 0))) {
+                    return false;
+                }
+            }
+        }
         for (LandmarkLayout.Placement other : placed) {
             LandmarkCatalog.Definition od = other.definition();
             if (Math.abs(other.anchor().x() - anchor.x())
@@ -329,6 +377,14 @@ public final class PassageNetwork {
                                     + "' reserve overlaps the protected hub volume at "
                                     + cell + " - report this fixture");
                         }
+                        if (SegmentGeometry.inHubFootprintStrict(cell)
+                                || SegmentGeometry.onGatewayRow(cell)
+                                || SegmentGeometry.inGatewayApron(cell)) {
+                            throw new IllegalStateException("landmark '" + def.id()
+                                    + "' at node '" + placement.nodeId()
+                                    + "' reserve overlaps the gateway approach at "
+                                    + cell + " - report this fixture");
+                        }
                     }
                 }
             }
@@ -360,6 +416,35 @@ public final class PassageNetwork {
                     throw new IllegalStateException("landmark reserves overlap: '"
                             + a.nodeId() + "' (" + da.id() + ") and '" + b.nodeId()
                             + "' (" + db.id() + ") - report this fixture");
+                }
+            }
+        }
+        // Reserves may not cover another placement's connector mouth: the
+        // mouth is outside its own reserve so the AABB test above cannot
+        // see it, but a covered mouth strands that placement's approach.
+        for (LandmarkLayout.Placement owner : placements) {
+            LandmarkCatalog.Definition od = owner.definition();
+            for (LandmarkCatalog.Connector c : od.connectors()) {
+                TopoPos door = new TopoPos(owner.anchor().x() + c.x(),
+                        owner.anchor().y() + c.y(), owner.anchor().z() + c.z());
+                int[] step = switch (c.facing()) {
+                    case "east" -> new int[] {1, 0};
+                    case "west" -> new int[] {-1, 0};
+                    case "south" -> new int[] {0, 1};
+                    default -> new int[] {0, -1};
+                };
+                TopoPos mouth = door.offset(step[0], 0, step[1]);
+                while (owner.insideReserve(mouth)) {
+                    mouth = mouth.offset(step[0], 0, step[1]);
+                }
+                for (LandmarkLayout.Placement other : placements) {
+                    if (other != owner && (other.insideReserve(mouth)
+                            || other.insideReserve(mouth.offset(0, 1, 0)))) {
+                        throw new IllegalStateException("landmark '" + other.nodeId()
+                                + "' reserve covers the connector mouth of '"
+                                + owner.nodeId() + "' at " + mouth
+                                + " - report this fixture");
+                    }
                 }
             }
         }
@@ -428,6 +513,11 @@ public final class PassageNetwork {
                     + cells.size() + ") - report this fixture");
         }
         return cells;
+    }
+
+    /** Every resolved centerline by segment id. */
+    public Map<String, List<TopoPos>> paths() {
+        return paths;
     }
 
     /** Resolved centerline for a preparation/geometry segment id. */
@@ -510,6 +600,14 @@ public final class PassageNetwork {
                 for (int[] r : refs) {
                     List<TopoPos> p = work.get(ids.get(r[0]));
                     if (r[1] == 0 || r[1] == p.size() - 1) {
+                        // A diagonal step's swept-corner group can point at
+                        // an endpoint index, but the endpoint belongs only
+                        // to its own column's family - a corner column must
+                        // never drag it into a foreign junction merge.
+                        TopoPos endCell = p.get(r[1]);
+                        if (xzKey(endCell.x(), endCell.z()) != key) {
+                            continue;
+                        }
                         int origY = original.get(ids.get(r[0])).get(r[1]).y();
                         List<int[]> family = endpointFamilies
                                 .computeIfAbsent(origY, k -> new ArrayList<>());
@@ -805,7 +903,10 @@ public final class PassageNetwork {
     private boolean legalFeetY(TopoPos p) {
         return !HubLayout.isProtected(p) && !HubLayout.isProtected(p.offset(0, 1, 0))
                 && !landmarks.isWriteProtected(p)
-                && !landmarks.isWriteProtected(p.offset(0, 1, 0));
+                && !landmarks.isWriteProtected(p.offset(0, 1, 0))
+                // finish() drops OPEN ops above the cave ceiling, so a feet
+                // cell whose headroom exceeds it resolves unwalkable.
+                && p.y() < SegmentGeometry.MAX_CAVE_OPEN_Y;
     }
 
     /** The nearest height at or above {@code y} whose column leaves a legal

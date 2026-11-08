@@ -393,6 +393,19 @@ public final class MineMineshaftPlacer {
                 return true;
             }
         }
+        for (LandmarkLayout.Placement placement
+                : network.landmarks().placements().values()) {
+            LandmarkCatalog.Definition def = placement.definition();
+            TopoPos anchor = placement.anchor();
+            int hx = def.halfX() + def.reserveMargin();
+            int hz = def.halfZ() + def.reserveMargin();
+            if (overlaps(box, anchor.x() - hx, anchor.y() - def.reserveMargin(),
+                    anchor.z() - hz, anchor.x() + hx,
+                    anchor.y() + def.height() + def.reserveMargin() - 1,
+                    anchor.z() + hz)) {
+                return true;
+            }
+        }
         for (Map.Entry<ChunkPos, List<BlockPos>> e : oreIndex.entrySet()) {
             ChunkPos c = e.getKey();
             if (c.getMinBlockX() > box.maxX() || c.getMaxBlockX() < box.minX()

@@ -34,7 +34,7 @@ class MineTraversalTest {
                         "seed " + seed + " cannot reach " + target);
             }
             StringBuilder missing = new StringBuilder();
-            for (TopoPos target : MineTraversal.requiredTargets(plan)) {
+            for (TopoPos target : MineTraversal.requiredTargets(plan, ARRIVAL)) {
                 if (!reachable.contains(target)) {
                     missing.append(' ').append(target);
                 }

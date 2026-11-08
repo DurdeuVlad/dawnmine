@@ -89,8 +89,15 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
      * invalidate the run's saved generation plan rather than silently
      * rebuild a different room mid-run. */
     public static String fingerprint() {
+        return fingerprint(definitions);
+    }
+
+    /** Canonical form of a specific definition set - the snapshot pinned
+     * for a run's whole generation, so a catalog reload cannot swap the
+     * room shapes mid-run under a matching receipt. */
+    public static String fingerprint(Map<String, Definition> defs) {
         StringBuilder canonical = new StringBuilder();
-        definitions.values().stream()
+        defs.values().stream()
                 .sorted(java.util.Comparator.comparing(Definition::id))
                 .forEach(def -> canonical.append(def.id()).append('|')
                         .append(def.halfX()).append(',').append(def.halfZ()).append(',')
@@ -162,6 +169,22 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
                         + "' connector (" + cx + "," + cy + "," + cz
                         + ") is not on the footprint boundary");
             }
+            String expectedFacing = Math.abs(cx) == halfX
+                    ? (cx > 0 ? "east" : "west")
+                    : (cz > 0 ? "south" : "north");
+            if (!facing.equals(expectedFacing)) {
+                throw new JsonParseException("landmark '" + id
+                        + "' connector (" + cx + "," + cy + "," + cz
+                        + ") faces '" + facing + "' but sits on the "
+                        + expectedFacing + " wall - the approach tunnel "
+                        + "would bore through the interior");
+            }
+            if (cy <= 0) {
+                throw new JsonParseException("landmark '" + id
+                        + "' connector (" + cx + "," + cy + "," + cz
+                        + ") opens into the floor slab - doors must sit "
+                        + "at y >= 1 so their feet land inside the room");
+            }
             connectors.add(new Connector(cx, cy, cz, facing));
         }
 
@@ -174,8 +197,11 @@ public final class LandmarkCatalog extends SimpleJsonResourceReloadListener {
             }
             String value = slot.getValue().getAsString().trim();
             String blockId = value.contains("[") ? value.substring(0, value.indexOf('[')) : value;
-            if (ResourceLocation.tryParse(blockId) == null
-                    || (value.contains("[") && !value.endsWith("]"))) {
+            boolean statesWellFormed = !value.contains("[")
+                    || (value.endsWith("]")
+                            && value.substring(value.indexOf('[') + 1, value.length() - 1)
+                                    .matches("[a-z0-9_]+=[a-z0-9_]+(,[a-z0-9_]+=[a-z0-9_]+)*"));
+            if (ResourceLocation.tryParse(blockId) == null || !statesWellFormed) {
                 throw new JsonParseException("landmark '" + id
                         + "' slot '" + slot.getKey() + "' has invalid block state '" + value + "'");
             }

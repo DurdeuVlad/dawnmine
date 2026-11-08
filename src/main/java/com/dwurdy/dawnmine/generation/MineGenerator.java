@@ -78,7 +78,7 @@ public final class MineGenerator {
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v9-approach-splice";
+    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v10-reserve-twohigh";
 
     private static MineGenerator instance;
 
@@ -89,6 +89,12 @@ public final class MineGenerator {
     private String loadedTopologyFingerprint = "";
     private List<String> expectedSegments = List.of();
     private Set<String> placedLandmarkNodeIds = Set.of();
+    /** Catalog snapshots pinned when the run's topology loads, so every
+     * segment of this run plans against the exact content the generation
+     * fingerprint was receipted under - a datapack reload mid-carve can
+     * never interleave foreign blocks between refresh checks. */
+    private OreCatalog.OreCatalogSnapshot pinnedOres;
+    private Map<String, LandmarkCatalog.Definition> pinnedLandmarks = Map.of();
     private long lastPlanCheck = Long.MIN_VALUE;
     private long lastEncounterScan = Long.MIN_VALUE;
     private Map<String, TopoEdge> edgesBySegmentId = Map.of();
@@ -265,8 +271,10 @@ public final class MineGenerator {
                 edgesBySegmentId = indexEdges(planned);
                 nodesByChunk = indexNodes(planned);
                 ownedVolumes = List.copyOf(data.ownedVolumes());
+                pinnedOres = OreCatalog.active();
+                pinnedLandmarks = LandmarkCatalog.definitions();
                 placedLandmarkNodeIds = Set.copyOf(
-                        PassageNetwork.of(planned, ARRIVAL).landmarks()
+                        PassageNetwork.of(planned, ARRIVAL, pinnedLandmarks).landmarks()
                                 .placements().keySet());
                 expectedSegments = PreparationPlan.expectedSegments(
                         planned, placedLandmarkNodeIds);
@@ -348,8 +356,10 @@ public final class MineGenerator {
             edgesBySegmentId = indexEdges(planned);
             nodesByChunk = indexNodes(planned);
             ownedVolumes = List.copyOf(data.ownedVolumes());
+            pinnedOres = OreCatalog.active();
+            pinnedLandmarks = LandmarkCatalog.definitions();
             placedLandmarkNodeIds = Set.copyOf(
-                    PassageNetwork.of(planned, ARRIVAL).landmarks()
+                    PassageNetwork.of(planned, ARRIVAL, pinnedLandmarks).landmarks()
                             .placements().keySet());
             expectedSegments = PreparationPlan.expectedSegments(
                     planned, placedLandmarkNodeIds);
@@ -782,7 +792,7 @@ public final class MineGenerator {
             return true;
         }
         if (segmentId.startsWith(StaticLandmarkBuilder.SEGMENT_PREFIX)) {
-            LandmarkLayout.Placement placement = PassageNetwork.of(topology, ARRIVAL)
+            LandmarkLayout.Placement placement = PassageNetwork.of(topology, ARRIVAL, pinnedLandmarks)
                     .landmarks().placement(StaticLandmarkBuilder.nodeId(segmentId));
             return placement != null && placement.insideReserve(pos);
         }
@@ -801,7 +811,7 @@ public final class MineGenerator {
             return SegmentGeometry.hub(topology, topology.bounds(), ARRIVAL);
         }
         if (id.startsWith(StaticLandmarkBuilder.SEGMENT_PREFIX)) {
-            LandmarkLayout.Placement placement = PassageNetwork.of(topology, ARRIVAL)
+            LandmarkLayout.Placement placement = PassageNetwork.of(topology, ARRIVAL, pinnedLandmarks)
                     .landmarks().placement(StaticLandmarkBuilder.nodeId(id));
             if (placement == null) {
                 throw new IllegalStateException("landmark segment " + id
@@ -835,10 +845,14 @@ public final class MineGenerator {
         List<SegmentGeometry.SegmentPlan> plans = new ArrayList<>(2);
         plans.add(structural);
         plans.add(SegmentGeometry.dress(topology, structuralId, topology.bounds(), ARRIVAL));
+        PassageNetwork network = PassageNetwork.of(topology, ARRIVAL, pinnedLandmarks);
         Set<TopoPos> pads = new HashSet<>();
         for (TopoNode node : topology.nodes()) {
             if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.CHECKPOINT)) {
-                TopoPos center = PassageNetwork.of(topology, ARRIVAL).center(node.id());
+                TopoPos center = network.center(node.id());
+                if (center == null) {
+                    continue;
+                }
                 for (int dz = -2; dz <= 2; dz++) {
                     for (int dx = -2; dx <= 2; dx++) {
                         for (int dy = -1; dy <= 2; dy++) {
@@ -848,8 +862,8 @@ public final class MineGenerator {
                 }
             }
         }
-        LandmarkLayout landmarks = PassageNetwork.of(topology, ARRIVAL).landmarks();
-        return OrePlacementPlanner.planOreSegment(oreSegmentId, plans, OreCatalog.active(),
+        LandmarkLayout landmarks = network.landmarks();
+        return OrePlacementPlanner.planOreSegment(oreSegmentId, plans, pinnedOres,
                 pos -> OreCatalog.Tier.parse(regionForY(pos.y())),
                 veinTargetFor(structuralId), manager.data().seed(), topology.bounds(),
                 pos -> SegmentGeometry.isArrivalKeepOut(pos, ARRIVAL)
@@ -1062,7 +1076,7 @@ public final class MineGenerator {
         }
         if (kind == SegmentGeometry.BlockKind.ORE) {
             ResourceLocation blockId = ResourceLocation.parse(operation.blockId());
-            return OreCatalog.active().blockState(OreCatalog.active().entry(blockId)
+            return pinnedOres.blockState(pinnedOres.entry(blockId)
                     .orElseThrow(() -> new IllegalStateException("unregistered ore catalog id " + blockId)));
         }
         String region = regionForY(y);
@@ -1082,9 +1096,17 @@ public final class MineGenerator {
 
     private String regionForY(int y) {
         String found = "upper";
+        String lastKnownTier = "upper";
         for (var region : TopologyProfiles.active().regions()) {
+            if (OreCatalog.Tier.isKnown(region.id())) {
+                lastKnownTier = region.id();
+            }
             if (y <= region.topY() && y >= region.bottomY()) {
-                found = region.id();
+                // A custom interstitial band (e.g. "transition") resolves
+                // to the nearest required tier above it rather than
+                // throwing inside the ore pass mid-generation.
+                found = OreCatalog.Tier.isKnown(region.id())
+                        ? region.id() : lastKnownTier;
             }
         }
         return found;
@@ -1259,8 +1281,9 @@ public final class MineGenerator {
     }
 
     private TopoNode physicalNode(TopoNode node) {
-        TopoPos center = PassageNetwork.of(topology, ARRIVAL).center(node.id());
-        return new TopoNode(node.id(), node.kind(), node.region(), center,
+        TopoPos center = PassageNetwork.of(topology, ARRIVAL, pinnedLandmarks).center(node.id());
+        return new TopoNode(node.id(), node.kind(), node.region(),
+                center != null ? center : node.pos(),
                 node.features(), node.label());
     }
 
