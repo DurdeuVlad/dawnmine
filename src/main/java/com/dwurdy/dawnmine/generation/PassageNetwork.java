@@ -227,18 +227,54 @@ public final class PassageNetwork {
             }
         }
         // The connector openings must reach clear corridor: a door or
-        // approach tunnel inside the hub footprint, gateway row, or apron
-        // would be deflected off its declared cell (or strand the door)
-        // long before any merge can report it - reject the definition so
-        // the deterministic fallback can pick a shape that fits.
+        // approach tunnel inside the hub footprint, gateway row, apron,
+        // or an already-placed reserve would be deflected off its declared
+        // cell (or strand the door) long before any merge can report it -
+        // reject the definition so the deterministic fallback can pick a
+        // shape that fits.
         LandmarkLayout.Placement candidate = new LandmarkLayout.Placement(
                 node.id(), def.id(), anchor, def);
-        for (TopoPos opening : LandmarkLayout.openingCells(candidate,
-                new java.util.HashSet<>())) {
+        for (TopoPos opening : LandmarkLayout.openingCells(candidate)) {
             if (SegmentGeometry.inHubFootprintStrict(opening)
                     || SegmentGeometry.onGatewayRow(opening)
                     || SegmentGeometry.inGatewayApron(opening)) {
                 return false;
+            }
+            for (LandmarkLayout.Placement other : placed) {
+                if (other.insideReserve(opening)) {
+                    return false;
+                }
+            }
+        }
+        // Each tunnel mouth - the first cell outside this reserve on the
+        // connector's facing - is pinned by the approach splice. It must
+        // sit inside bounds and outside every placed reserve and hub zone,
+        // or reserve avoidance would deflect it off the splice seam.
+        for (LandmarkCatalog.Connector c : def.connectors()) {
+            TopoPos door = new TopoPos(anchor.x() + c.x(),
+                    anchor.y() + c.y(), anchor.z() + c.z());
+            int[] step = switch (c.facing()) {
+                case "east" -> new int[] {1, 0};
+                case "west" -> new int[] {-1, 0};
+                case "south" -> new int[] {0, 1};
+                default -> new int[] {0, -1};
+            };
+            TopoPos mouth = door.offset(step[0], 0, step[1]);
+            while (candidate.insideReserve(mouth)) {
+                mouth = mouth.offset(step[0], 0, step[1]);
+            }
+            for (TopoPos cell : List.of(mouth, mouth.offset(0, 1, 0))) {
+                if (!topology.bounds().contains(cell)
+                        || SegmentGeometry.inHubFootprintStrict(cell)
+                        || SegmentGeometry.onGatewayRow(cell)
+                        || SegmentGeometry.inGatewayApron(cell)) {
+                    return false;
+                }
+                for (LandmarkLayout.Placement other : placed) {
+                    if (other.insideReserve(cell)) {
+                        return false;
+                    }
+                }
             }
         }
         for (LandmarkLayout.Placement other : placed) {
@@ -347,6 +383,32 @@ public final class PassageNetwork {
                 approachA.get(0), approachB.get(0),
                 topology.seed() ^ SegmentGeometry.stableHashPublic(
                         SegmentGeometry.edgeSegmentId(edge)));
+        // Routes that do not depart the entrance skirt the gateway apron
+        // and the hub reserve with the connector row folded in, so the
+        // exclusive connector corridor can never be crossed, merged into,
+        // or trenched by a foreign carve - and no later detour can
+        // interpolate a sample back inside the clipped volume. Edges
+        // touching the entrance keep their band samples: they leave
+        // through the level junction at the floor.
+        // Avoidance runs on the middle alone, before the tails are
+        // spliced: every route sees each landmark reserve whole, so a
+        // meander can never cross a door column over the roof and
+        // merge-lock the drop beside it. The spliced approach cells are
+        // declared geometry inside their own reserve - they must bypass
+        // avoidance or the walk would deflect them off the doorway.
+        boolean entranceEdge = edge.a().equals(topology.entranceId())
+                || edge.b().equals(topology.entranceId());
+        middle = entranceEdge
+                ? SegmentGeometry.avoidEntranceLandmarkReserve(middle, landmarks)
+                : SegmentGeometry.avoidForeignReserve(middle, landmarks);
+        if (!middle.get(0).equals(approachA.get(0))
+                || !middle.get(middle.size() - 1).equals(approachB.get(0))) {
+            throw new IllegalStateException("reserve avoidance moved a "
+                    + "tunnel mouth on "
+                    + SegmentGeometry.edgeSegmentId(edge)
+                    + " - the mouth sits inside a forbidden zone; report "
+                    + "this fixture");
+        }
         List<TopoPos> cells = new ArrayList<>(
                 approachA.size() + middle.size() + approachB.size());
         for (int i = approachA.size() - 1; i >= 0; i--) {
@@ -365,31 +427,7 @@ public final class PassageNetwork {
                     + SegmentGeometry.MAX_CENTERLINE_STEPS + " steps ("
                     + cells.size() + ") - report this fixture");
         }
-        // Routes that do not depart the entrance skirt the gateway apron
-        // and the hub reserve with the connector row folded in, so the
-        // exclusive connector corridor can never be crossed, merged into,
-        // or trenched by a foreign carve - and no later detour can
-        // interpolate a sample back inside the clipped volume. Edges
-        // touching the entrance keep their band samples: they leave
-        // through the level junction at the floor. Landmark-owning edges
-        // keep their connector openings; foreign edges see the whole
-        // reserve.
-        boolean landmarkEdge = landmarks.placement(edge.a()) != null
-                || landmarks.placement(edge.b()) != null;
-        boolean entranceEdge = edge.a().equals(topology.entranceId())
-                || edge.b().equals(topology.entranceId());
-        if (landmarkEdge && entranceEdge) {
-            return SegmentGeometry.avoidEntranceLandmarkReserve(cells,
-                    landmarks.openingsFor(edge.a(), edge.b()), landmarks);
-        }
-        if (entranceEdge) {
-            return SegmentGeometry.avoidHubReserve(cells);
-        }
-        if (landmarkEdge) {
-            return SegmentGeometry.avoidLandmarkReserve(cells,
-                    landmarks.openingsFor(edge.a(), edge.b()), landmarks);
-        }
-        return SegmentGeometry.avoidForeignReserve(cells, landmarks);
+        return cells;
     }
 
     /** Resolved centerline for a preparation/geometry segment id. */

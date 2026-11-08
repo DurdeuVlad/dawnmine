@@ -665,44 +665,31 @@ public final class SegmentGeometry {
                         || inGatewayApron(p) || landmarks.isReserved(p));
     }
 
-    /** An edge ending at a landmark keeps only its own endpoints' connector
-     * openings - it may approach the doorway but every other cell of every
-     * reserve stays forbidden, and the hub rules apply unchanged. The layout
-     * is threaded in, never read from the network cache: this runs inside
-     * the PassageNetwork constructor, before any network could be cached. */
+    /** An edge ending at a landmark still routes its middle like a foreign
+     * edge - the whole reserve stays forbidden, doorway included. The only
+     * path through a declared opening is the flat approach splice appended
+     * at the endpoints; a meander that could legally cross its own door
+     * column mid-route would arrive over the roof and merge-lock the drop.
+     * The layout is threaded in, never read from the network cache: this
+     * runs inside the PassageNetwork constructor, before any network could
+     * be cached. */
     static List<TopoPos> avoidLandmarkReserve(List<TopoPos> cells,
-                                              java.util.Set<TopoPos> ownOpenings,
                                               LandmarkLayout landmarks) {
-        cells = avoidGatewayApron(cells);
-        return routeProtected(cells,
-                p -> inHubFootprintStrict(p) || onGatewayRow(p)
-                        || inGatewayApron(p)
-                        || (landmarks.isReserved(p) && !feetOpening(p, ownOpenings)));
+        return avoidForeignReserve(cells, landmarks);
     }
 
-    /** A centreline cell is a walkable approach only when it and its
-     * headroom are both sanctioned openings - a tunnel headroom cell is
-     * open air for the corridor below but can never host a feet sample,
-     * because its own headroom is reserve interior. */
-    private static boolean feetOpening(TopoPos p, java.util.Set<TopoPos> ownOpenings) {
-        return ownOpenings.contains(p) && ownOpenings.contains(p.offset(0, 1, 0));
-    }
-
-    /** An entrance-touching edge that ends at a landmark keeps the hub's
-     * band-exempt treatment - it leaves through the level junction at the
-     * floor - but still honours every landmark reserve except its own
-     * connector openings. The second pass must keep the hub predicate in
-     * its forbidden set: {@code clampYSteps}'s lateral jogs could
-     * otherwise slide a sample into the clipped hub volume that the
+    /** An entrance-touching edge keeps the hub's band-exempt treatment -
+     * it leaves through the level junction at the floor - and honours
+     * every landmark reserve whole. The second pass must keep the hub
+     * predicate in its forbidden set: {@code clampYSteps}'s lateral jogs
+     * could otherwise slide a sample into the clipped hub volume that the
      * landmark-only predicate cannot see, where {@code freeze} would then
      * refuse the resolved centreline. */
     static List<TopoPos> avoidEntranceLandmarkReserve(List<TopoPos> cells,
-                                                      java.util.Set<TopoPos> ownOpenings,
                                                       LandmarkLayout landmarks) {
         cells = avoidHubReserve(cells);
         return routeProtected(cells,
-                p -> inHubFootprint(p)
-                        || (landmarks.isReserved(p) && !feetOpening(p, ownOpenings)));
+                p -> inHubFootprint(p) || landmarks.isReserved(p));
     }
 
     /** The reserve footprint without the gateway-band exemption: foreign

@@ -78,7 +78,7 @@ public final class MineGenerator {
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v8-shared-floor";
+    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v9-approach-splice";
 
     private static MineGenerator instance;
 
@@ -88,6 +88,7 @@ public final class MineGenerator {
     private String loadedRunId = "";
     private String loadedTopologyFingerprint = "";
     private List<String> expectedSegments = List.of();
+    private Set<String> placedLandmarkNodeIds = Set.of();
     private long lastPlanCheck = Long.MIN_VALUE;
     private long lastEncounterScan = Long.MIN_VALUE;
     private Map<String, TopoEdge> edgesBySegmentId = Map.of();
@@ -264,7 +265,11 @@ public final class MineGenerator {
                 edgesBySegmentId = indexEdges(planned);
                 nodesByChunk = indexNodes(planned);
                 ownedVolumes = List.copyOf(data.ownedVolumes());
-                expectedSegments = PreparationPlan.expectedSegments(planned);
+                placedLandmarkNodeIds = Set.copyOf(
+                        PassageNetwork.of(planned, ARRIVAL).landmarks()
+                                .placements().keySet());
+                expectedSegments = PreparationPlan.expectedSegments(
+                        planned, placedLandmarkNodeIds);
                 releaseChunkRequests();
             }
             lastPlanCheck = server.getTickCount();
@@ -311,7 +316,7 @@ public final class MineGenerator {
                         data.activeGenerationSegment());
             }
         }
-        return PreparationPlan.progress(topology,
+        return PreparationPlan.progress(topology, placedLandmarkNodeIds,
                 new HashSet<>(data.completedGenerationSegments()),
                 data.pendingGenerationSegments().size(),
                 data.activeGenerationSegment());
@@ -343,7 +348,11 @@ public final class MineGenerator {
             edgesBySegmentId = indexEdges(planned);
             nodesByChunk = indexNodes(planned);
             ownedVolumes = List.copyOf(data.ownedVolumes());
-            expectedSegments = PreparationPlan.expectedSegments(planned);
+            placedLandmarkNodeIds = Set.copyOf(
+                    PassageNetwork.of(planned, ARRIVAL).landmarks()
+                            .placements().keySet());
+            expectedSegments = PreparationPlan.expectedSegments(
+                    planned, placedLandmarkNodeIds);
             resetRegionPregen(data);
             return true;
         } catch (RuntimeException e) {
@@ -706,7 +715,7 @@ public final class MineGenerator {
         if (topology == null || expectedSegments.isEmpty()) {
             return;
         }
-        if (!PreparationPlan.progress(topology,
+        if (!PreparationPlan.progress(topology, placedLandmarkNodeIds,
                 new HashSet<>(data.completedGenerationSegments()),
                 data.pendingGenerationSegments().size(), "").complete()) {
             return;

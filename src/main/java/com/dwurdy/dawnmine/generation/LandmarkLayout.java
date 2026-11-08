@@ -55,14 +55,10 @@ public final class LandmarkLayout {
      * edges may write and stand here; ore and motif writes may not. */
     private final Map<String, Set<TopoPos>> openingsByNode;
     private final Set<TopoPos> openingCells;
-    /** The declared connector cells themselves - fixed anchors that merge
-     * resolution may never move. */
-    private final Set<TopoPos> connectorCells;
 
     private LandmarkLayout(Map<String, Placement> placements,
                            Set<TopoPos> reservedCells,
-                           Map<String, Set<TopoPos>> openingsByNode,
-                           Set<TopoPos> connectorCells) {
+                           Map<String, Set<TopoPos>> openingsByNode) {
         this.placements = placements;
         this.reservedCells = reservedCells;
         this.openingsByNode = openingsByNode;
@@ -71,11 +67,10 @@ public final class LandmarkLayout {
             merged.addAll(set);
         }
         this.openingCells = Set.copyOf(merged);
-        this.connectorCells = connectorCells;
     }
 
     public static LandmarkLayout empty() {
-        return new LandmarkLayout(Map.of(), Set.of(), Map.of(), Set.of());
+        return new LandmarkLayout(Map.of(), Set.of(), Map.of());
     }
 
     /**
@@ -91,7 +86,6 @@ public final class LandmarkLayout {
         Map<String, Placement> placed = new LinkedHashMap<>();
         Set<TopoPos> reserved = new java.util.HashSet<>();
         Map<String, Set<TopoPos>> openingsByNode = new LinkedHashMap<>();
-        Set<TopoPos> connectors = new java.util.HashSet<>();
         for (Map.Entry<String, String> entry : assignments.entrySet()) {
             Definition definition = LandmarkCatalog.definition(entry.getValue());
             TopoPos feet = anchors.get(entry.getKey());
@@ -115,26 +109,24 @@ public final class LandmarkLayout {
                 }
             }
             openingsByNode.put(entry.getKey(),
-                    Set.copyOf(openingCells(placement, connectors)));
+                    Set.copyOf(openingCells(placement)));
         }
         return new LandmarkLayout(Map.copyOf(placed), Set.copyOf(reserved),
-                Map.copyOf(openingsByNode), Set.copyOf(connectors));
+                Map.copyOf(openingsByNode));
     }
 
     /** The sanctioned opening cells of a candidate placement: every
      * declared door cell, its headroom, and the straight approach tunnel
-     * outward through the margin (plus headroom). Door positions are also
-     * recorded into {@code connectorsOut}. Shared by placement and by
-     * {@code PassageNetwork.fits} so the cells a definition would claim
+     * outward through the margin (plus headroom). Shared by placement and
+     * by {@code PassageNetwork.fits} so the cells a definition would claim
      * are checked before it is ever anchored. */
-    static Set<TopoPos> openingCells(Placement placement, Set<TopoPos> connectorsOut) {
+    static Set<TopoPos> openingCells(Placement placement) {
         Definition definition = placement.definition();
         TopoPos anchor = placement.anchor();
         Set<TopoPos> openings = new java.util.HashSet<>();
         for (Connector c : definition.connectors()) {
             TopoPos door = new TopoPos(anchor.x() + c.x(), anchor.y() + c.y(),
                     anchor.z() + c.z());
-            connectorsOut.add(door);
             openings.add(door);
             openings.add(door.offset(0, 1, 0));
             // Tunnel outward through the margin so the terminating
@@ -182,12 +174,6 @@ public final class LandmarkLayout {
     public List<TopoPos> connectors(String nodeId) {
         Placement placement = placements.get(nodeId);
         return placement == null ? List.of() : placement.connectorPositions();
-    }
-
-    /** True when {@code pos} is a declared connector cell - a fixed anchor
-     * that resolution may never raise or lower. */
-    public boolean isConnectorCell(TopoPos pos) {
-        return connectorCells.contains(pos);
     }
 
     /** True when {@code pos} is any sanctioned opening: a door, its

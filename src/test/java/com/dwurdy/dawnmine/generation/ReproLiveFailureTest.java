@@ -72,7 +72,7 @@ class ReproLiveFailureTest {
             cells.add(new TopoPos(x, 10, 400));
         }
         List<TopoPos> routed = SegmentGeometry.avoidLandmarkReserve(
-                cells, Set.of(), layout);
+                cells, layout);
         for (TopoPos cell : routed) {
             assertFalse(layout.isReserved(cell),
                     "routed cell still inside the reserve: " + cell);
@@ -88,7 +88,7 @@ class ReproLiveFailureTest {
             cells.add(new TopoPos(x, 10, 400));
         }
         List<TopoPos> routed = SegmentGeometry.avoidEntranceLandmarkReserve(
-                cells, Set.of(), layout);
+                cells, layout);
         for (TopoPos cell : routed) {
             assertFalse(layout.isReserved(cell),
                     "entrance-landmark routed cell still inside the reserve: " + cell);
@@ -143,11 +143,14 @@ class ReproLiveFailureTest {
         LandmarkCatalog.installForTest(Map.of(
                 "prospect_shelter", LandmarkCatalog.parse(json)));
         try {
-            TopologyPlan plan = TopologyPlanner.plan(-2856163543928830103L,
-                    TopologyProfile.builtin(), BOUNDS);
-            PassageNetwork network = PassageNetwork.of(plan, ARRIVAL);
-            assertFalse(network.landmarks().placements().isEmpty(),
-                    "live seed expects placed safehouses");
+            for (long seed : new long[] {-2856163543928830103L, -5038305720449563874L}) {
+                PassageNetwork.clearCache();
+                TopologyPlan plan = TopologyPlanner.plan(seed,
+                        TopologyProfile.builtin(), BOUNDS);
+                PassageNetwork network = PassageNetwork.of(plan, ARRIVAL);
+                assertFalse(network.landmarks().placements().isEmpty(),
+                        "live seed " + seed + " expects placed safehouses");
+            }
         } finally {
             LandmarkCatalog.installForTest(Map.of());
         }
