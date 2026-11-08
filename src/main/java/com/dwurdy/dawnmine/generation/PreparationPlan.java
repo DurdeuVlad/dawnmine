@@ -21,8 +21,9 @@ import java.util.Set;
  */
 public final class PreparationPlan {
 
-    /** Which phase a segment belongs to; structural before dress before ore. */
-    public enum Phase { STRUCTURAL, DRESS, ORE }
+    /** Which phase a segment belongs to: structural, then dress, then
+     * motif decoration, then ore last so no later write buries a vein. */
+    public enum Phase { STRUCTURAL, DRESS, MOTIF, ORE }
 
     private PreparationPlan() { }
 
@@ -52,6 +53,11 @@ public final class PreparationPlan {
         for (String id : structural) {
             expected.add(dressSegmentId(id));
         }
+        // Motifs run after dressing so they can see floors/supports, and
+        // before ore so a motif-embedded vein never buries a catalog vein.
+        for (String id : structural) {
+            expected.add(motifSegmentId(id));
+        }
         for (String id : structural) {
             expected.add(oreSegmentId(id));
         }
@@ -75,6 +81,10 @@ public final class PreparationPlan {
         return "dress:" + structuralId;
     }
 
+    public static String motifSegmentId(String structuralId) {
+        return "motif:" + structuralId;
+    }
+
     public static String oreSegmentId(String structuralId) {
         return "ores:" + structuralId;
     }
@@ -83,13 +93,18 @@ public final class PreparationPlan {
         return segmentId.startsWith("dress:");
     }
 
+    public static boolean isMotifSegment(String segmentId) {
+        return segmentId.startsWith("motif:");
+    }
+
     public static boolean isOreSegment(String segmentId) {
         return segmentId.startsWith("ores:");
     }
 
-    /** The structural id a dressing or ore segment decorates. */
+    /** The structural id a dressing, motif, or ore segment decorates. */
     public static String structuralIdFor(String segmentId) {
-        if (isDressSegment(segmentId) || isOreSegment(segmentId)) {
+        if (isDressSegment(segmentId) || isOreSegment(segmentId)
+                || isMotifSegment(segmentId)) {
             return segmentId.substring(segmentId.indexOf(':') + 1);
         }
         return segmentId;
@@ -98,6 +113,9 @@ public final class PreparationPlan {
     public static Phase phaseOf(String segmentId) {
         if (isOreSegment(segmentId)) {
             return Phase.ORE;
+        }
+        if (isMotifSegment(segmentId)) {
+            return Phase.MOTIF;
         }
         return isDressSegment(segmentId) ? Phase.DRESS : Phase.STRUCTURAL;
     }

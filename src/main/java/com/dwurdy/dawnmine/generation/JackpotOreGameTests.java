@@ -70,8 +70,12 @@ public final class JackpotOreGameTests {
             String segId = "node:" + cavern.id();
             SegmentGeometry.SegmentPlan structural =
                     SegmentGeometry.node(topology, cavern, topology.bounds(), ARRIVAL);
+            // Match the generator's plan stack: motif cells count as
+            // occupied so a replayed vein never expects ore where a motif
+            // actually wrote.
             List<SegmentGeometry.SegmentPlan> plans = List.of(structural,
-                    SegmentGeometry.dress(topology, segId, topology.bounds(), ARRIVAL));
+                    SegmentGeometry.dress(topology, segId, topology.bounds(), ARRIVAL),
+                    MotifPlanner.planSegment(topology, segId, ARRIVAL));
             int target = jackpotIds.contains(cavern.id())
                     ? OrePlacementPlanner.jackpotVeinTarget(OrePlacementPlanner.RESOURCE_FIELD_VEINS)
                     : OrePlacementPlanner.ORDINARY_VEINS;

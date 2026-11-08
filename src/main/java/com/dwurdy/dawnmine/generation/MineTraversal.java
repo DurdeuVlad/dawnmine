@@ -17,11 +17,12 @@ import java.util.Set;
 /**
  * Final-merged-voxel traversal verification: replays the whole preparation
  * in real order (connector, nodes, edges, hub build, then every dressing
- * pass, then ores - which cannot change walkability) into one operation map
- * and proves a supported two-high walk exists from the hub landing to every
- * main-route node and checkpoint. Walkable = an open/rail cell with an open
- * cell above and a solid cell below; movement may step up or down at most
- * one block, matching the real game's movement.
+ * and motif pass; ores are deliberately not replayed because catalog ore
+ * ops only target rock cells and cannot change walkability) into one
+ * operation map and proves a supported two-high walk exists from the hub
+ * landing to every main-route node and checkpoint. Walkable = an open/rail
+ * cell with an open cell above and a solid cell below; movement may step
+ * up or down at most one block, matching the real game's movement.
  */
 public final class MineTraversal {
 
@@ -52,6 +53,9 @@ public final class MineTraversal {
         }
         for (String id : ids) {
             apply(world, SegmentGeometry.dress(topology, id, bounds, arrival));
+        }
+        for (String id : ids) {
+            apply(world, MotifPlanner.planSegment(topology, id, arrival));
         }
         return world;
     }
@@ -142,9 +146,7 @@ public final class MineTraversal {
 
     /** Every destination a prepared run must reach on foot: each topology
      * node's resolved centre (route, branch, pocket, resource field,
-     * cavern, landmark, dead end) plus the hub consoles. Resolved against
-     * the caller's arrival, not a hard-coded landing, so a non-standard
-     * hub placement still verifies against its own geometry. */
+     * cavern, landmark, dead end) plus the hub consoles. */
     public static List<TopoPos> requiredTargets(TopologyPlan topology, TopoPos arrival) {
         List<TopoPos> targets = new ArrayList<>();
         PassageNetwork network = PassageNetwork.of(topology, arrival);
