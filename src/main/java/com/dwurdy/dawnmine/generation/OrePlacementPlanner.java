@@ -1,6 +1,8 @@
 package com.dwurdy.dawnmine.generation;
 
+import com.dwurdy.dawnmine.topology.NodeKind;
 import com.dwurdy.dawnmine.topology.TopoBounds;
+import com.dwurdy.dawnmine.topology.TopoNode;
 import com.dwurdy.dawnmine.topology.TopoPos;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,6 +30,10 @@ public final class OrePlacementPlanner {
     public static final int ORDINARY_VEINS = 3;
     /** Veins per resource field - richer, not the sole source of ore. */
     public static final int RESOURCE_FIELD_VEINS = 8;
+    /** Jackpot cavern nodes chosen per region - rare on purpose. */
+    public static final int JACKPOT_NODES_PER_REGION = 1;
+    /** Jackpot vein target as a multiple of the resource-field target. */
+    public static final int JACKPOT_VEIN_MULTIPLIER = 4;
     /** Roughly one vein per this many centerline blocks in passages. */
     public static final int VEIN_PATH_SPACING = 12;
     /** Wall heights (blocks above the local carved floor) that may host ore. */
@@ -42,6 +48,50 @@ public final class OrePlacementPlanner {
     /** Vein target for a passage segment, scaled with its centerline length. */
     public static int passageVeinTarget(int centerlineLength) {
         return Math.max(ORDINARY_VEINS, centerlineLength / VEIN_PATH_SPACING);
+    }
+
+    /** Vein target for a jackpot node - a multiple of the resource-field
+     * budget so the moment reads as visibly richer, never a marginal bump. */
+    public static int jackpotVeinTarget(int base) {
+        return base * JACKPOT_VEIN_MULTIPLIER;
+    }
+
+    /**
+     * Selects the jackpot nodes for one run: exactly
+     * {@link #JACKPOT_NODES_PER_REGION} {@link NodeKind#CAVERN} nodes per
+     * region, ranked by a seeded hash of each node id the same way
+     * {@code SegmentGeometry} splits mineshaft vs. natural passage style.
+     * Pure function of the node set and the seed - deterministic replay.
+     */
+    public static Set<String> jackpotNodeIds(java.util.Collection<TopoNode> nodes, long seed) {
+        Map<String, List<TopoNode>> byRegion = new java.util.TreeMap<>();
+        for (TopoNode node : nodes) {
+            if (node.kind() == NodeKind.CAVERN) {
+                byRegion.computeIfAbsent(node.region(), k -> new ArrayList<>()).add(node);
+            }
+        }
+        Set<String> ids = new HashSet<>();
+        for (Map.Entry<String, List<TopoNode>> region : byRegion.entrySet()) {
+            region.getValue().stream()
+                    .sorted(Comparator.comparingLong(
+                            (TopoNode n) -> jackpotScore(seed, region.getKey(), n.id())).reversed()
+                            .thenComparing(TopoNode::id))
+                    .limit(JACKPOT_NODES_PER_REGION)
+                    .forEach(node -> ids.add(node.id()));
+        }
+        return ids;
+    }
+
+    private static long jackpotScore(long seed, String regionId, String nodeId) {
+        return mix(seed ^ stableHash("jackpot:" + regionId + ":" + nodeId));
+    }
+
+    private static long mix(long value) {
+        value ^= value >>> 30;
+        value *= 0xBF58476D1CE4E5B9L;
+        value ^= value >>> 27;
+        value *= 0x94D049BB133111EBL;
+        return value ^ (value >>> 31);
     }
 
     /**
