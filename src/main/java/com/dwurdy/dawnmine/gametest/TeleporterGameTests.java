@@ -223,16 +223,20 @@ public final class TeleporterGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 400, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void surfaceConsoleEnterThenHubLeavePhysical(
+            GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                TeleporterGameTests::runSurfaceConsoleEnterThenHubLeavePhysical);
+    }
+
+    private static void runSurfaceConsoleEnterThenHubLeavePhysical(
             GameTestHelper helper) {
         // End-to-end physical round trip through the handler: bound surface
         // lodestone -> enter -> hub console -> leave, inventory unchanged.
         ServerLevel overworld = helper.getLevel().getServer().overworld();
         ServerPlayer player = MockServerPlayers.inLevel(helper, overworld);
         MineManager manager = MineManager.get(player.getServer());
-        helper.assertTrue(manager.preparationComplete(),
-                "fixture requires a prepared mine - run after geometry work");
         TeleporterData data = TeleporterData.get(player.getServer());
         data.unbind();
         BlockPos lodestone = prepareLodestone(helper, overworld, new BlockPos(9, 2, 9));
@@ -279,11 +283,14 @@ public final class TeleporterGameTests {
         });
     }
 
-    @GameTest(template = "empty", timeoutTicks = 400, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void hubDispatchConsoleOpensPrivateLockers(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                TeleporterGameTests::runHubDispatchConsoleOpensPrivateLockers);
+    }
+
+    private static void runHubDispatchConsoleOpensPrivateLockers(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = mineLevel(helper);
         BlockPos console = new BlockPos(HubLayout.DISPATCH_CONSOLE.x(),
                 HubLayout.DISPATCH_CONSOLE.y(), HubLayout.DISPATCH_CONSOLE.z());

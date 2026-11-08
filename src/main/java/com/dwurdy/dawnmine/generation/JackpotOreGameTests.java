@@ -1,5 +1,6 @@
 package com.dwurdy.dawnmine.generation;
 
+import com.dwurdy.dawnmine.gametest.PreparedFixture;
 import com.dwurdy.dawnmine.run.MineManager;
 import com.dwurdy.dawnmine.topology.HubLayout;
 import com.dwurdy.dawnmine.topology.MineTopology;
@@ -31,11 +32,14 @@ public final class JackpotOreGameTests {
 
     private JackpotOreGameTests() { }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void jackpotCavernsCarryElevatedOreCounts(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                JackpotOreGameTests::runJackpotCavernsCarryElevatedOreCounts);
+    }
+
+    private static void runJackpotCavernsCarryElevatedOreCounts(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         helper.assertTrue(mine != null, "mine dimension not loaded");
         var data = MineManager.get(server).data();

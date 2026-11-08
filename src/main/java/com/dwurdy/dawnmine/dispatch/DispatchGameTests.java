@@ -3,6 +3,7 @@ package com.dwurdy.dawnmine.dispatch;
 import com.mojang.logging.LogUtils;
 import com.dwurdy.dawnmine.config.DawnmineConfig;
 import com.dwurdy.dawnmine.gametest.MockServerPlayers;
+import com.dwurdy.dawnmine.gametest.PreparedFixture;
 import com.dwurdy.dawnmine.run.MineManager;
 import com.dwurdy.dawnmine.run.MineRunData;
 import com.dwurdy.dawnmine.run.MineRunDataTestSupport;
@@ -37,11 +38,15 @@ public final class DispatchGameTests {
             UUID.fromString("7c1f6f2a-9f6b-4e2a-8d3c-1a5e6b7c8d9f");
     private DispatchGameTests() {}
 
-    @GameTest(template = "empty", timeoutTicks = 600, batch = "m5b_travel_cursor")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "m5b_travel_cursor")
     public static void fullInventoryCursorReachesSurfaceOnLeave(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                DispatchGameTests::runFullInventoryCursorReachesSurfaceOnLeave);
+    }
+
+    private static void runFullInventoryCursorReachesSurfaceOnLeave(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         MineManager mineManager = MineManager.get(server);
-        helper.assertTrue(mineManager.preparationComplete(), "fixture requires a prepared mine");
         ServerLevel mine = mineManager.mineLevel();
         MineRunData run = mineManager.data();
         CompoundTag snapshot = MineRunDataTestSupport.snapshot(run, server.registryAccess());

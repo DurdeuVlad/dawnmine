@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.dwurdy.dawnmine.config.DawnmineConfig;
 import com.dwurdy.dawnmine.dispatch.DispatchManager;
 import com.dwurdy.dawnmine.gametest.MockServerPlayers;
+import com.dwurdy.dawnmine.gametest.PreparedFixture;
 import com.dwurdy.dawnmine.topology.HubLayout;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -53,11 +54,15 @@ public final class MineDailyResetGameTests {
 
     private MineDailyResetGameTests() { }
 
-    @GameTest(template = "empty", timeoutTicks = 600, batch = "m7_cancelled_evacuation")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "m7_cancelled_evacuation")
     public static void cancelledEvacuationBlocksCleanup(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                MineDailyResetGameTests::runCancelledEvacuationBlocksCleanup);
+    }
+
+    private static void runCancelledEvacuationBlocksCleanup(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         MineManager manager = MineManager.get(server);
-        helper.assertTrue(manager.preparationComplete(), "fixture requires a prepared mine");
         MineRunData data = manager.data();
         CompoundTag snapshot = MineRunDataTestSupport.snapshot(data, server.registryAccess());
         ServerLevel mine = manager.mineLevel();

@@ -43,15 +43,18 @@ public final class OreBreakGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void generatedOresArePresentAndExposedOnWalls(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                OreBreakGameTests::runGeneratedOresArePresentAndExposedOnWalls);
+    }
+
+    private static void runGeneratedOresArePresentAndExposedOnWalls(GameTestHelper helper) {
         // Runtime wall audit on the finished world: every ore block the
         // generator recorded must still be in place, and the majority must
         // have at least one face opening onto cave air (visible while
         // walking the passages) - the original "I don't see any ores" defect.
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         helper.assertTrue(mine != null, "mine dimension not loaded");
         List<MineRunData.MineOreOrigin> origins =

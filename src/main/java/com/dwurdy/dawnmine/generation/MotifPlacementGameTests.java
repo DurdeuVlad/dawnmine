@@ -1,5 +1,6 @@
 package com.dwurdy.dawnmine.generation;
 
+import com.dwurdy.dawnmine.gametest.PreparedFixture;
 import com.dwurdy.dawnmine.run.MineManager;
 import com.dwurdy.dawnmine.topology.MineTopology;
 import com.dwurdy.dawnmine.topology.TopoPos;
@@ -26,8 +27,6 @@ public final class MotifPlacementGameTests {
 
     private static TopologyPlan preparedTopology(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         helper.assertTrue(mine != null, "mine dimension not loaded");
         return MineTopology.plan(MineManager.get(server).data(), mine);
@@ -38,8 +37,13 @@ public final class MotifPlacementGameTests {
         return ids.subList(0, Math.min(SAMPLE, ids.size()));
     }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void motifPlacementReplaysIdentically(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                MotifPlacementGameTests::runMotifPlacementReplaysIdentically);
+    }
+
+    private static void runMotifPlacementReplaysIdentically(GameTestHelper helper) {
         TopologyPlan topology = preparedTopology(helper);
         int compared = 0;
         for (String id : sampleStructuralIds(topology)) {
@@ -53,8 +57,13 @@ public final class MotifPlacementGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void motifOpsNeverBlockWalkCells(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                MotifPlacementGameTests::runMotifOpsNeverBlockWalkCells);
+    }
+
+    private static void runMotifOpsNeverBlockWalkCells(GameTestHelper helper) {
         TopologyPlan topology = preparedTopology(helper);
         Set<TopoPos> clearance = SegmentGeometry.wholeRunClearance(topology, ARRIVAL);
         int ops = 0;
@@ -72,8 +81,13 @@ public final class MotifPlacementGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void motifOreSlotsAndSupportsStayLegal(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                MotifPlacementGameTests::runMotifOreSlotsAndSupportsStayLegal);
+    }
+
+    private static void runMotifOreSlotsAndSupportsStayLegal(GameTestHelper helper) {
         TopologyPlan topology = preparedTopology(helper);
         OreCatalog.OreCatalogSnapshot catalog = OreCatalog.active();
         int oreOps = 0;

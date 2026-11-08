@@ -1,5 +1,6 @@
 package com.dwurdy.dawnmine.generation;
 
+import com.dwurdy.dawnmine.gametest.PreparedFixture;
 import com.dwurdy.dawnmine.run.MineManager;
 import com.dwurdy.dawnmine.topology.MineTopology;
 import com.dwurdy.dawnmine.topology.NodeFeature;
@@ -27,11 +28,14 @@ public final class LandmarkGameTests {
 
     private LandmarkGameTests() { }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void safehouseEdgesTerminateAtDeclaredConnectors(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                LandmarkGameTests::runSafehouseEdgesTerminateAtDeclaredConnectors);
+    }
+
+    private static void runSafehouseEdgesTerminateAtDeclaredConnectors(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         helper.assertTrue(mine != null, "mine dimension not loaded");
         TopologyPlan topology = MineTopology.plan(MineManager.get(server).data(), mine);
@@ -113,11 +117,14 @@ public final class LandmarkGameTests {
         return new int[] {0, 0};
     }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void safehouseReserveBlocksForeignWrites(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                LandmarkGameTests::runSafehouseReserveBlocksForeignWrites);
+    }
+
+    private static void runSafehouseReserveBlocksForeignWrites(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         helper.assertTrue(mine != null, "mine dimension not loaded");
         TopologyPlan topology = MineTopology.plan(MineManager.get(server).data(), mine);
@@ -192,11 +199,14 @@ public final class LandmarkGameTests {
         return y >= -80 ? "middle" : "chaos";
     }
 
-    @GameTest(template = "empty", timeoutTicks = 1200, batch = "dawnmine_hub_prepared")
+    @GameTest(template = "empty", timeoutTicks = 6000, batch = "dawnmine_hub_prepared")
     public static void safehouseSegmentsReplayIdentically(GameTestHelper helper) {
+        PreparedFixture.awaitPrepared(helper,
+                LandmarkGameTests::runSafehouseSegmentsReplayIdentically);
+    }
+
+    private static void runSafehouseSegmentsReplayIdentically(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        helper.assertTrue(MineManager.get(server).preparationComplete(),
-                "fixture requires a prepared mine");
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         helper.assertTrue(mine != null, "mine dimension not loaded");
         TopologyPlan topology = MineTopology.plan(MineManager.get(server).data(), mine);
