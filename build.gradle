@@ -154,6 +154,9 @@ if (System.getenv('CURSEFORGE_TOKEN') && findProperty('curseforge_project_id')) 
             addGameVersion '1.21.1'
             addGameVersion 'NeoForge'
             addGameVersion 'Java 21'
+            // CurseForge requires a selection from the environment group
+            // (error 1021); gameplay is server-side by design.
+            addGameVersion 'Server'
             mainArtifact(jar) {
                 displayName = "${mod_id}-${mod_version}.jar"
             }
