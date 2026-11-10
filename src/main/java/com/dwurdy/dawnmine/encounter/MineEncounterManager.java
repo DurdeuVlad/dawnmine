@@ -90,8 +90,8 @@ public final class MineEncounterManager {
                 .count();
         int currentPopulation = (int) data.mineEntities().stream()
                 .filter(origin -> origin.runId().equals(data.runId())).count();
-        if (currentRegionPopulation + composition.population() > region.populationCap()
-                || currentPopulation + composition.population() > profile.totalPopulationCap()) {
+        if (currentRegionPopulation + composition.maxPopulation() > region.populationCap()
+                || currentPopulation + composition.maxPopulation() > profile.totalPopulationCap()) {
             return;
         }
 
@@ -147,19 +147,33 @@ public final class MineEncounterManager {
                     TopologyProfiles.activeProfileId());
             return;
         }
-        List<ResourceLocation> missing = profile.regions().values().stream()
+        List<ResourceLocation> missingBase = profile.regions().values().stream()
                 .flatMap(region -> region.compositions().stream())
                 .flatMap(composition -> composition.entities().stream())
                 .map(MineEncounterCatalog.EntityCount::entityId)
                 .distinct()
                 .filter(id -> BuiltInRegistries.ENTITY_TYPE.getOptional(id).isEmpty())
                 .toList();
-        if (missing.isEmpty()) {
-            LOGGER.info("[dawnmine] Encounter profile '{}' resolved all configured entities against the runtime registry.",
+        List<ResourceLocation> missingBonus = profile.regions().values().stream()
+                .flatMap(region -> region.compositions().stream())
+                .flatMap(composition -> composition.bonusEntities().stream())
+                .map(MineEncounterCatalog.EntityCount::entityId)
+                .distinct()
+                .filter(id -> BuiltInRegistries.ENTITY_TYPE.getOptional(id).isEmpty())
+                .toList();
+        if (missingBase.isEmpty()) {
+            LOGGER.info("[dawnmine] Encounter profile '{}' resolved all base entities against the runtime registry.",
                     profile.id());
         } else {
-            LOGGER.error("[dawnmine] Encounter profile '{}' references unavailable entities {}; those compositions will fail closed.",
-                    profile.id(), missing);
+            LOGGER.error("[dawnmine] Encounter profile '{}' references unavailable BASE entities {}; those "
+                    + "compositions will fail closed.", profile.id(), missingBase);
+        }
+        if (missingBonus.isEmpty()) {
+            LOGGER.info("[dawnmine] Encounter profile '{}' resolved all bonus entities; optional packs are present.",
+                    profile.id());
+        } else {
+            LOGGER.info("[dawnmine] Encounter profile '{}' is missing optional bonus entities {} (pack not "
+                    + "installed); compositions will spawn without them.", profile.id(), missingBonus);
         }
     }
 
@@ -336,23 +350,37 @@ public final class MineEncounterManager {
             MineEncounterCatalog.Composition composition) {
         List<SpawnRequest> result = new ArrayList<>();
         for (MineEncounterCatalog.EntityCount entry : composition.entities()) {
-            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(entry.entityId()).orElse(null);
-            if (type == null) {
-                LOGGER.error("[dawnmine] Encounter '{}' requires missing entity {}; no substitute will spawn.",
-                        composition.id(), entry.entityId());
+            List<SpawnRequest> resolved = resolveHostileEntries(level, entry, entry.count());
+            if (resolved == null) {
+                LOGGER.error("[dawnmine] Encounter '{}' requires base entity {}, which this server cannot "
+                        + "spawn as a hostile mob; site skipped.", composition.id(), entry.entityId());
                 return null;
             }
-            for (int i = 0; i < entry.count(); i++) {
-                Entity probe = type.create(level);
-                if (!(probe instanceof Mob mob) || !(mob instanceof Enemy)) {
-                    if (probe != null) probe.discard();
-                    LOGGER.error("[dawnmine] Encounter '{}' entity {} is not a hostile Mob; no substitute will spawn.",
-                            composition.id(), entry.entityId());
-                    return null;
-                }
-                probe.discard();
-                result.add(new SpawnRequest(type, entry.entityId()));
+            result.addAll(resolved);
+        }
+        // Bonus entities (e.g. Born in Chaos) are additive extras: skip any that
+        // this server can't resolve instead of failing the whole composition.
+        for (MineEncounterCatalog.EntityCount entry : composition.bonusEntities()) {
+            List<SpawnRequest> resolved = resolveHostileEntries(level, entry, entry.count());
+            if (resolved == null) continue;
+            result.addAll(resolved);
+        }
+        return result;
+    }
+
+    private static List<SpawnRequest> resolveHostileEntries(ServerLevel level,
+            MineEncounterCatalog.EntityCount entry, int count) {
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(entry.entityId()).orElse(null);
+        if (type == null) return null;
+        List<SpawnRequest> result = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Entity probe = type.create(level);
+            if (!(probe instanceof Mob mob) || !(mob instanceof Enemy)) {
+                if (probe != null) probe.discard();
+                return null;
             }
+            probe.discard();
+            result.add(new SpawnRequest(type, entry.entityId()));
         }
         return result;
     }
