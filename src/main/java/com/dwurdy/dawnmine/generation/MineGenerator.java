@@ -401,6 +401,10 @@ public final class MineGenerator {
         }
         try {
             if (activePlan == null || !activePlan.id().equals(segmentId)) {
+                if (segmentId.equals("hub") && SpawnStructure.placeIfSaved(mine)) {
+                    finishSegment(data, segmentId);
+                    return;
+                }
                 activePlan = createPlan(segmentId);
                 profiledSegmentId = segmentId;
                 segmentElapsedNanos = 0;

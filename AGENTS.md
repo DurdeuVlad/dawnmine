@@ -13,7 +13,7 @@ This repository is a collaborative server-mod project. Before work on every issu
 - Target Minecraft 1.21.1, NeoForge 21.1.248, and Java 21 unless the owner changes the target.
 - Keep gameplay server-side. Do not introduce client-only class loads on a dedicated server.
 - The mine is shared by all players in one daily run, randomized from one shared run seed, and must not interfere with the factions mine.
-- Generate the environment from code and block layouts; the product does not depend on prefab structures or authored building files.
+- Generate the environment from code and block layouts; the product does not depend on prefab structures or authored building files. Exception (owner-approved, 2026-11-10): the spawn/hub area only may be authored in-game and saved as a vanilla structure-block structure (`dawnmine:spawn_hub`), loaded persistently if present with a procedural fallback when it is not. The mine itself, and every other system, stays fully procedural - this exception does not extend to anything else.
 - Include all ores in the actual Rustic Craft 2 pack. Use common tags where present and explicitly catalog missing/unconventionally tagged ores.
 - Integrate Born in Chaos using verified facts from the pack's exact artifact. Do not change its global spawn, AI, or loot behavior for entities outside the mine.
 - Checkpoint storage is personal and persistent. Daily mine resets must not erase player inventories or personal Dispatch contents.
