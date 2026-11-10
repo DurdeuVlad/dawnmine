@@ -58,9 +58,10 @@ public final class MineEncounterManager {
 
     /** Called exactly after a topology room is completely generated. */
     public static void onNodeGenerated(MinecraftServer server, TopoNode node) {
-        if (node == null || node.has(NodeFeature.CHECKPOINT)
-                || !(node.kind() == NodeKind.CAVERN || node.kind() == NodeKind.CAVE
-                || node.has(NodeFeature.DEAD_END))) return;
+        // Owner asked for mobs throughout the entire mine, not just
+        // cavern/cave/dead-end rooms - every room kind is now eligible.
+        // Checkpoints stay exempt: they're the deliberate safe rest points.
+        if (node == null || node.has(NodeFeature.CHECKPOINT)) return;
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
         if (mine == null) return;
         MineManager manager = MineManager.get(server);
