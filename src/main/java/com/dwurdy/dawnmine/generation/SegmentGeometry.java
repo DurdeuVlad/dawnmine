@@ -1656,9 +1656,20 @@ public final class SegmentGeometry {
         // stub outside the wall (an entrance foyer, not a flat hole in
         // rock), stopping the instant it would re-enter the hub's own
         // footprint, which the interior-air loop already carved open.
-        int doorY = fy + 2;
-        carveStubCorridor(put, new TopoPos(-hi - 1, doorY, 0), new TopoPos(-hi - 9, doorY, 0));
-        carveStubCorridor(put, new TopoPos(0, doorY, hi + 1), new TopoPos(0, doorY, hi + 9));
+        //
+        // Starts exactly AT the wall (x=-hi / z=hi), not one block beyond
+        // it: the wall-opening loop above only skips placing a wall
+        // marker there, it never carves that exact cell open itself - the
+        // real east gateway only works because entryConnector's own path
+        // happens to carve through that same cell as a side effect. These
+        // two doors have no such segment, so the stub must cover it
+        // directly or the "opening" stays solid, uncarved default fill
+        // behind an undecorated patch of wall. doorY matches FEET_Y (feet
+        // at fy+1, head at fy+2), the same convention the rest of the hub
+        // and the door gap itself (fy+1..fy+4) already use.
+        int doorY = fy + 1;
+        carveStubCorridor(put, new TopoPos(-hi, doorY, 0), new TopoPos(-hi - 8, doorY, 0));
+        carveStubCorridor(put, new TopoPos(0, doorY, hi), new TopoPos(0, doorY, hi + 8));
 
         // Consoles: lodestone return console, Dispatch barrel, teleporter sign.
         TopoPos console = HubLayout.TELEPORTER_CONSOLE;
