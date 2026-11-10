@@ -593,25 +593,44 @@ public final class SegmentGeometry {
     }
 
     /** A continuous, smoothly-varying perturbation of the ellipsoid cutoff
-     * (vanilla's own caves threshold noise instead of a hard geometric
-     * boundary, which is why they read as irregular rock instead of a clean
-     * carved sphere). Closed-form sine blend instead of a lattice-noise
-     * class: same "threshold a continuous field" idea, no external API. */
-    private record WallRoughness(double[] phase, double[] freq, double amplitude) {
+     * (vanilla's own caves, and YUNG's Better Caves, threshold noise
+     * instead of a hard geometric boundary - which is why both read as
+     * irregular rock instead of a clean carved sphere). Two independently
+     * seeded fields, each a closed-form sine sum rather than a
+     * lattice-noise class (same "threshold a continuous field" idea, no
+     * external API to get wrong from memory), combined so BOTH must agree
+     * before the perturbation grows - Better Caves' actual technique is
+     * carving only where every sampled noise layer clears its own
+     * threshold, not one blended average. */
+    private record WallRoughness(double[] phaseA, double[] freqA,
+                                 double[] phaseB, double[] freqB, double amplitude) {
         static WallRoughness forNode(Random rng) {
-            double[] phase = new double[4];
-            double[] freq = new double[4];
-            for (int i = 0; i < 4; i++) {
-                phase[i] = rng.nextDouble() * Math.PI * 2;
-                freq[i] = 0.12 + rng.nextDouble() * 0.18;
+            double[] phaseA = new double[3];
+            double[] freqA = new double[3];
+            double[] phaseB = new double[3];
+            double[] freqB = new double[3];
+            for (int i = 0; i < 3; i++) {
+                phaseA[i] = rng.nextDouble() * Math.PI * 2;
+                freqA[i] = 0.10 + rng.nextDouble() * 0.15;
+                phaseB[i] = rng.nextDouble() * Math.PI * 2;
+                freqB[i] = 0.25 + rng.nextDouble() * 0.35; // finer-grained second layer
             }
-            return new WallRoughness(phase, freq, 0.22);
+            return new WallRoughness(phaseA, freqA, phaseB, freqB, 0.26);
+        }
+
+        private static double layer(int dx, int dy, int dz, double[] phase, double[] freq) {
+            return (Math.sin(dx * freq[0] + phase[0]) + Math.sin(dy * freq[1] + phase[1])
+                    + Math.sin(dz * freq[2] + phase[2])) / 3.0;
         }
 
         double sample(int dx, int dy, int dz) {
-            double v = Math.sin(dx * freq[0] + phase[0]) + Math.sin(dy * freq[1] + phase[1])
-                    + Math.sin(dz * freq[2] + phase[2]) + Math.sin((dx + dz) * freq[3] + phase[3]);
-            return v * (amplitude / 4.0);
+            double a = layer(dx, dy, dz, phaseA, freqA);
+            double b = layer(dx, dy, dz, phaseB, freqB);
+            if (Math.signum(a) != Math.signum(b)) {
+                return 0.0; // the two layers disagree - no perturbation here
+            }
+            double sign = a >= 0 ? 1.0 : -1.0;
+            return sign * Math.min(Math.abs(a), Math.abs(b)) * amplitude;
         }
     }
 

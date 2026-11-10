@@ -764,6 +764,104 @@ public final class MineGenerator {
                 LOGGER.error("[dawnmine] Mineshaft placement failed for run {} (non-fatal).",
                         data.runId(), e);
             }
+            try {
+                int sealed = mine != null ? sealUnreachablePockets(mine, topology) : 0;
+                LOGGER.info("[dawnmine] Run {} unreachable-pocket seal finished: {} cells sealed.",
+                        data.runId(), sealed);
+            } catch (RuntimeException e) {
+                LOGGER.error("[dawnmine] Unreachable-pocket seal failed for run {} (non-fatal; "
+                        + "any standable trap it would have closed is left as-is).",
+                        data.runId(), e);
+            }
+        }
+    }
+
+    /** Closes standable pockets the carve left unreachable from the arrival
+     * point without placing a block, per node, in up to three passes
+     * (sealing one round can expose new floor support that unlocks more
+     * cells to re-check - diminishing but real gains past the first pass,
+     * verified empirically up to three). Runs once, here, after every
+     * segment (node, edge, hub, landmarks, dress, motifs) is already
+     * placed in the real world - this is deliberate: an earlier attempt
+     * ran inside a single segment's own local plan, before doorways from
+     * neighboring edges existed yet, and mistook legitimate not-yet-carved
+     * connections for traps. Reuses {@link MineTraversal}'s own walk model
+     * and {@link UnreachablePocketSealer}'s own batch-safe algorithm
+     * unchanged (via a read-through adapter over the real level) rather
+     * than a second, divergent implementation. */
+    private int sealUnreachablePockets(ServerLevel mine, TopologyPlan topology) {
+        RealWorldBlocks world = new RealWorldBlocks(mine);
+        PassageNetwork network = PassageNetwork.of(topology, ARRIVAL);
+        int totalSealed = 0;
+        for (int pass = 0; pass < 3; pass++) {
+            Set<TopoPos> reachable = MineTraversal.reachableFrom(ARRIVAL, world, 5_000_000);
+            Set<TopoPos> toSeal = new HashSet<>();
+            for (TopoNode node : topology.nodes()) {
+                TopoPos center = network.center(node.id());
+                if (center == null) {
+                    center = node.pos();
+                }
+                int hw = SegmentGeometry.roomCarveHalfWidth(node.kind());
+                int hh = SegmentGeometry.roomCarveHalfHeight(node.kind());
+                TopoPos min = center.offset(-hw, -hh, -hw);
+                TopoPos max = center.offset(hw, hh, hw);
+                toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable, min, max));
+            }
+            if (toSeal.isEmpty()) {
+                break;
+            }
+            for (TopoPos pos : toSeal) {
+                BlockPos real = new BlockPos(pos.x(), pos.y(), pos.z());
+                SegmentGeometry.BlockOperation op =
+                        new SegmentGeometry.BlockOperation(pos, SegmentGeometry.BlockKind.WALL_SKIN);
+                mine.setBlock(real, blockFor(op, real, pos.y()), Block.UPDATE_CLIENTS);
+                world.markSealed(pos);
+            }
+            totalSealed += toSeal.size();
+        }
+        return totalSealed;
+    }
+
+    /** Read-through view of a real level's blocks as the {@code
+     * BlockKind}-keyed map {@link MineTraversal} and {@link
+     * UnreachablePocketSealer} already operate on, so the exact same,
+     * already-verified algorithm runs against real blocks with no second,
+     * divergent implementation. Caches reads (and seal writes) per pass;
+     * only {@code get} is used by either algorithm. */
+    private static final class RealWorldBlocks extends java.util.AbstractMap<TopoPos, SegmentGeometry.BlockKind> {
+        private final ServerLevel mine;
+        private final Map<TopoPos, SegmentGeometry.BlockKind> cache = new HashMap<>();
+
+        RealWorldBlocks(ServerLevel mine) {
+            this.mine = mine;
+        }
+
+        void markSealed(TopoPos pos) {
+            cache.put(pos, SegmentGeometry.BlockKind.WALL_SKIN);
+        }
+
+        @Override
+        public SegmentGeometry.BlockKind get(Object keyObj) {
+            if (!(keyObj instanceof TopoPos pos)) {
+                return null;
+            }
+            return cache.computeIfAbsent(pos, p -> {
+                BlockPos real = new BlockPos(p.x(), p.y(), p.z());
+                if (!mine.hasChunkAt(real)) {
+                    return null;
+                }
+                BlockState state = mine.getBlockState(real);
+                if (state.is(Blocks.RAIL)) {
+                    return SegmentGeometry.BlockKind.RAIL;
+                }
+                return state.isAir() ? SegmentGeometry.BlockKind.OPEN : null;
+            });
+        }
+
+        @Override
+        public Set<Entry<TopoPos, SegmentGeometry.BlockKind>> entrySet() {
+            throw new UnsupportedOperationException(
+                    "RealWorldBlocks is a read-through view over live chunks; only get() is supported");
         }
     }
 
