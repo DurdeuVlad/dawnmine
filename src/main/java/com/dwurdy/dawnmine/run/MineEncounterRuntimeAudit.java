@@ -88,7 +88,7 @@ public final class MineEncounterRuntimeAudit {
         var missingEntityComposition = new MineEncounterCatalog.Composition("m4a_missing_entity_audit", 1,
                 "unknown entity fixture", "skip the composition", 1, List.of(
                         new MineEncounterCatalog.EntityCount(ResourceLocation.parse(
-                                "dawnmine:m4a_audit_entity_that_does_not_exist"), 1)));
+                                "dawnmine:m4a_audit_entity_that_does_not_exist"), 1)), List.of());
         if (!MineEncounterManager.canResolveRequests(mine, missingEntityComposition)) {
             evidence.add("missing runtime entity: composition rejected without substitute");
         } else {

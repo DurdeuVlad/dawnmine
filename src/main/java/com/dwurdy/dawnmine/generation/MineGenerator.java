@@ -1046,7 +1046,8 @@ public final class MineGenerator {
         return block == Blocks.STONE || block == Blocks.DEEPSLATE || block == Blocks.BLACKSTONE
                 || block == Blocks.BASALT || block == Blocks.NETHERRACK || block == Blocks.TUFF
                 || block == Blocks.ANDESITE || block == Blocks.DIORITE || block == Blocks.GRANITE
-                || block == Blocks.GRAVEL;
+                || block == Blocks.GRAVEL || block == Blocks.COBBLESTONE || block == Blocks.MOSSY_COBBLESTONE
+                || block == Blocks.COBBLED_DEEPSLATE;
     }
 
     private void recordOreOrigin(ServerLevel mine, BlockPos pos, BlockState expected,
@@ -1121,7 +1122,26 @@ public final class MineGenerator {
                 default -> Blocks.DEEPSLATE.defaultBlockState();
             };
         }
-        return y < 0 ? Blocks.DEEPSLATE.defaultBlockState() : Blocks.STONE.defaultBlockState();
+        if ("middle".equals(region)) {
+            // Deepslate layer: host rock must match the depth the ore catalog
+            // already treats as "middle" tier, not a hardcoded y<0 cutoff that
+            // drifted from the topology profile's actual tier boundary.
+            int palette = Math.floorMod(blockHash(pos), 10);
+            return switch (palette) {
+                case 0, 1, 2, 3, 4, 5, 6 -> Blocks.DEEPSLATE.defaultBlockState();
+                case 7, 8 -> Blocks.COBBLED_DEEPSLATE.defaultBlockState();
+                default -> Blocks.TUFF.defaultBlockState();
+            };
+        }
+        int palette = Math.floorMod(blockHash(pos), 13);
+        return switch (palette) {
+            case 0, 1, 2, 3, 4, 5, 6 -> Blocks.STONE.defaultBlockState();
+            case 7, 8 -> Blocks.COBBLESTONE.defaultBlockState();
+            case 9 -> Blocks.MOSSY_COBBLESTONE.defaultBlockState();
+            case 10 -> Blocks.ANDESITE.defaultBlockState();
+            case 11 -> Blocks.DIORITE.defaultBlockState();
+            default -> Blocks.GRANITE.defaultBlockState();
+        };
     }
 
     private String regionForY(int y) {
@@ -1198,7 +1218,9 @@ public final class MineGenerator {
         return block == Blocks.STONE || block == Blocks.DEEPSLATE || block == Blocks.BASALT
                 || block == Blocks.BLACKSTONE || block == Blocks.NETHERRACK || block == Blocks.LAVA
                 || block == Blocks.CAVE_AIR
-                || block == Blocks.AIR || block == Blocks.COBBLED_DEEPSLATE;
+                || block == Blocks.AIR || block == Blocks.COBBLED_DEEPSLATE || block == Blocks.TUFF
+                || block == Blocks.COBBLESTONE || block == Blocks.MOSSY_COBBLESTONE
+                || block == Blocks.ANDESITE || block == Blocks.DIORITE || block == Blocks.GRANITE;
     }
 
     private void finishSegment(MineRunData data, String segmentId) {

@@ -1,36 +1,53 @@
 {
   "id": "standard",
-  "totalPopulationCap": 28,
+  "totalPopulationCap": 48,
   "regions": [
     {
       "id": "upper",
-      "populationCap": 8,
+      "populationCap": 12,
       "compositions": [
         {
           "id": "upper_lone_pursuer",
           "weight": 3,
           "level": 1,
-          "threat": "One Born in Chaos melee pursuer pressures players who stop to mine.",
+          "threat": "One melee pursuer pressures players who stop to mine.",
           "counterplay": "Keep a clear retreat lane and use corners to break pursuit.",
           "entities": [
+            { "id": "minecraft:zombie", "count": 1 }
+          ],
+          "bonusEntities": [
             { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 1 }
           ]
         },
         {
           "id": "upper_two_pursuers",
-          "weight": 1,
+          "weight": 2,
           "level": 2,
           "threat": "Two melee pursuers make a narrow dead end costly to hold.",
           "counterplay": "Retreat through a wider junction and avoid letting both close together.",
           "entities": [
+            { "id": "minecraft:zombie", "count": 2 }
+          ],
+          "bonusEntities": [
             { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 2 }
           ]
+        },
+        {
+          "id": "upper_ranged_harasser",
+          "weight": 1,
+          "level": 2,
+          "threat": "A ranged attacker forces players to break line of sight while mining.",
+          "counterplay": "Use pillars and corners to block shots, then close the distance.",
+          "entities": [
+            { "id": "minecraft:skeleton", "count": 1 }
+          ],
+          "bonusEntities": []
         }
       ]
     },
     {
       "id": "middle",
-      "populationCap": 12,
+      "populationCap": 18,
       "compositions": [
         {
           "id": "middle_melee_pair",
@@ -39,25 +56,44 @@
           "threat": "A quicker armored melee fighter contests space alongside a pursuer.",
           "counterplay": "Focus one target, kite around a junction, and avoid being cornered.",
           "entities": [
+            { "id": "minecraft:zombie", "count": 1 },
+            { "id": "minecraft:vindicator", "count": 1 }
+          ],
+          "bonusEntities": [
             { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 1 },
             { "id": "born_in_chaos_v1:bone_imp", "count": 1 }
           ]
         },
         {
           "id": "middle_two_imp_push",
-          "weight": 1,
+          "weight": 2,
           "level": 5,
           "threat": "Two fast melee attackers can close from different angles.",
           "counterplay": "Use the room perimeter, keep moving, and regroup before re-engaging.",
           "entities": [
+            { "id": "minecraft:vindicator", "count": 2 }
+          ],
+          "bonusEntities": [
             { "id": "born_in_chaos_v1:bone_imp", "count": 2 }
           ]
+        },
+        {
+          "id": "middle_cave_swarm",
+          "weight": 2,
+          "level": 4,
+          "threat": "A small swarm of climbers and crawlers presses from multiple directions.",
+          "counterplay": "Back into a corridor so only one can reach you at a time.",
+          "entities": [
+            { "id": "minecraft:cave_spider", "count": 2 },
+            { "id": "minecraft:spider", "count": 1 }
+          ],
+          "bonusEntities": []
         }
       ]
     },
     {
       "id": "chaos",
-      "populationCap": 16,
+      "populationCap": 24,
       "compositions": [
         {
           "id": "chaos_imp_and_pursuers",
@@ -66,19 +102,37 @@
           "threat": "An armored, faster attacker and two pursuers divide attention in a large chamber.",
           "counterplay": "Coordinate target focus, keep the exit visible, and use distance to reset the fight.",
           "entities": [
+            { "id": "minecraft:vindicator", "count": 1 },
+            { "id": "minecraft:zombie", "count": 2 }
+          ],
+          "bonusEntities": [
             { "id": "born_in_chaos_v1:bone_imp", "count": 1 },
             { "id": "born_in_chaos_v1:decrepit_skeleton", "count": 2 }
           ]
         },
         {
           "id": "chaos_imp_surge",
-          "weight": 1,
+          "weight": 2,
           "level": 8,
-          "threat": "Three fast armored attackers create a mobile swarm rather than a stationary damage race.",
+          "threat": "A mobile swarm of fast armored attackers replaces a stationary damage race.",
           "counterplay": "Fight from open space, call focus targets, and peel attackers off teammates.",
           "entities": [
-            { "id": "born_in_chaos_v1:bone_imp", "count": 3 }
+            { "id": "minecraft:vindicator", "count": 3 }
+          ],
+          "bonusEntities": [
+            { "id": "born_in_chaos_v1:bone_imp", "count": 1 }
           ]
+        },
+        {
+          "id": "chaos_wither_patrol",
+          "weight": 1,
+          "level": 8,
+          "threat": "Armored skeletal patrol that shrugs off weak gear in the deepest chamber.",
+          "counterplay": "Bring upgraded gear from earlier depths before engaging; retreat to a chokepoint.",
+          "entities": [
+            { "id": "minecraft:wither_skeleton", "count": 2 }
+          ],
+          "bonusEntities": []
         }
       ]
     }

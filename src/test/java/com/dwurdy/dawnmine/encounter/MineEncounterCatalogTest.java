@@ -27,7 +27,7 @@ class MineEncounterCatalogTest {
     void bundledProfileHasDepthSpecificBoundedCounterplayTables() throws Exception {
         MineEncounterCatalog.Profile profile = bundled();
         assertEquals("standard", profile.id());
-        assertEquals(28, profile.totalPopulationCap());
+        assertEquals(48, profile.totalPopulationCap());
         assertEquals(List.of("upper", "middle", "chaos"),
                 List.of("upper", "middle", "chaos").stream()
                         .filter(id -> profile.region(id) != null).toList());
@@ -37,7 +37,9 @@ class MineEncounterCatalogTest {
             for (MineEncounterCatalog.Composition composition : region.compositions()) {
                 assertTrue(!composition.threat().isBlank());
                 assertTrue(!composition.counterplay().isBlank());
-                assertTrue(composition.population() <= region.populationCap());
+                assertTrue(composition.maxPopulation() <= region.populationCap());
+                assertTrue(!composition.entities().isEmpty(),
+                        "composition " + composition.id() + " has no always-available base entities");
             }
         }
     }
@@ -80,6 +82,28 @@ class MineEncounterCatalogTest {
                         .getAsJsonObject()));
         assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
                 JsonParser.parseString(profile.replace("\"level\":3", "\"level\":\"high\""))
+                        .getAsJsonObject()));
+    }
+
+    @Test
+    void bonusEntitiesAreOptionalAndCountTowardTheCap() {
+        String composition = "{\"id\":\"x\",\"weight\":1,\"level\":1,\"threat\":\"t\",\"counterplay\":\"c\","
+                + "\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":1}],"
+                + "\"bonusEntities\":[{\"id\":\"born_in_chaos_v1:bone_imp\",\"count\":1}]}";
+        String profile = "{\"id\":\"standard\",\"totalPopulationCap\":4,\"regions\":["
+                + "{\"id\":\"upper\",\"populationCap\":2,\"compositions\":[" + composition + "]},"
+                + "{\"id\":\"middle\",\"populationCap\":2,\"compositions\":[" + composition + "]},"
+                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + composition + "]}]}";
+        MineEncounterCatalog.Composition parsed = MineEncounterCatalog.parse(
+                JsonParser.parseString(profile).getAsJsonObject())
+                .region("upper").compositions().get(0);
+        assertEquals(1, parsed.population());
+        assertEquals(2, parsed.maxPopulation());
+        // Base + bonus population must still respect the region cap (2 here).
+        assertThrows(JsonParseException.class, () -> MineEncounterCatalog.parse(
+                JsonParser.parseString(profile.replace(
+                        "\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":1}]",
+                        "\"entities\":[{\"id\":\"minecraft:zombie\",\"count\":2}]"))
                         .getAsJsonObject()));
     }
 

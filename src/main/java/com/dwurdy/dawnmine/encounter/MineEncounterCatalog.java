@@ -24,13 +24,23 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
     private static volatile Map<String, Profile> profiles = Map.of();
 
     public record EntityCount(ResourceLocation entityId, int count) { }
+    /**
+     * {@code entities} are the always-available base spawn set (vanilla, so a
+     * composition never fails closed). {@code bonusEntities} are optional
+     * extras from entity packs like Born in Chaos; any that don't resolve on
+     * this server are skipped individually instead of failing the composition.
+     */
     public record Composition(String id, int weight, String threat, String counterplay,
-                              int level, List<EntityCount> entities) {
+                              int level, List<EntityCount> entities, List<EntityCount> bonusEntities) {
         public Composition {
             entities = List.copyOf(entities);
+            bonusEntities = List.copyOf(bonusEntities);
         }
         public int population() {
             return entities.stream().mapToInt(EntityCount::count).sum();
+        }
+        public int maxPopulation() {
+            return population() + bonusEntities.stream().mapToInt(EntityCount::count).sum();
         }
     }
     public record Region(String id, int populationCap, List<Composition> compositions) {
@@ -119,12 +129,31 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
                     population += count;
                     entities.add(new EntityCount(entityId, count));
                 }
+                List<EntityCount> bonusEntities = new ArrayList<>();
+                if (compositionJson.has("bonusEntities")) {
+                    JsonArray bonusArray = requiredArray(compositionJson, "bonusEntities");
+                    if (bonusArray.size() > 16) {
+                        throw new JsonParseException("composition '" + compositionId
+                                + "' has more than 16 bonus entity entries");
+                    }
+                    for (JsonElement entityElement : bonusArray) {
+                        JsonObject entityJson = entityElement.getAsJsonObject();
+                        ResourceLocation entityId = ResourceLocation.tryParse(requiredString(entityJson, "id"));
+                        if (entityId == null) {
+                            throw new JsonParseException("composition '" + compositionId
+                                    + "' has an invalid bonus entity id");
+                        }
+                        int count = integer(entityJson, "count", 1, 8);
+                        population += count;
+                        bonusEntities.add(new EntityCount(entityId, count));
+                    }
+                }
                 if (population > regionCap) {
                     throw new JsonParseException("composition '" + compositionId
                             + "' exceeds region population cap " + regionCap);
                 }
                 compositions.add(new Composition(compositionId, weight, threat, counterplay,
-                        level, entities));
+                        level, entities, bonusEntities));
             }
             if (regions.putIfAbsent(regionId, new Region(regionId, regionCap, compositions)) != null) {
                 throw new JsonParseException("duplicate region id '" + regionId + "'");
