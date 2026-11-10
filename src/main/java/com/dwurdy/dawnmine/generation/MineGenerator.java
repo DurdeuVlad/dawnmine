@@ -777,10 +777,13 @@ public final class MineGenerator {
     }
 
     /** Closes standable pockets the carve left unreachable from the arrival
-     * point without placing a block, per node, in up to three passes
+     * point without placing a block, per node, in up to six passes
      * (sealing one round can expose new floor support that unlocks more
-     * cells to re-check - diminishing but real gains past the first pass,
-     * verified empirically up to three). Runs once, here, after every
+     * cells to re-check - diminishing but real gains past the first pass;
+     * the three-layer-noise cavern carving added more, finer pockets than
+     * the original two-layer carve, so three passes stopped closing a
+     * large majority and six was re-measured empirically to be enough).
+     * Runs once, here, after every
      * segment (node, edge, hub, landmarks, dress, motifs) is already
      * placed in the real world - this is deliberate: an earlier attempt
      * ran inside a single segment's own local plan, before doorways from
@@ -793,7 +796,7 @@ public final class MineGenerator {
         RealWorldBlocks world = new RealWorldBlocks(mine);
         PassageNetwork network = PassageNetwork.of(topology, ARRIVAL);
         int totalSealed = 0;
-        for (int pass = 0; pass < 3; pass++) {
+        for (int pass = 0; pass < 6; pass++) {
             Set<TopoPos> reachable = MineTraversal.reachableFrom(ARRIVAL, world, 5_000_000);
             Set<TopoPos> toSeal = new HashSet<>();
             for (TopoNode node : topology.nodes()) {

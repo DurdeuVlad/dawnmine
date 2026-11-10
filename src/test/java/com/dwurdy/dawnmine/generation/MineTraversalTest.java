@@ -109,7 +109,7 @@ class MineTraversalTest {
 
         PassageNetwork network = PassageNetwork.of(plan, ARRIVAL);
         Set<TopoPos> reachable = MineTraversal.reachableFrom(ARRIVAL, world, 5_000_000);
-        for (int pass = 0; pass < 3; pass++) {
+        for (int pass = 0; pass < 6; pass++) {
             Set<TopoPos> toSeal = new java.util.HashSet<>();
             for (var node : plan.nodes()) {
                 TopoPos center = network.center(node.id());
