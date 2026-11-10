@@ -547,6 +547,50 @@ public final class SegmentGeometry {
         };
     }
 
+    /** Max passage half-width (natural tunnels widen up to 6; mineshaft
+     * pieces stay narrower) plus a margin for the wall-skin roughening
+     * band, and max passage height likewise - the same keep-out-box
+     * sizing idea as {@link #roomCarveHalfWidth} / {@link
+     * #roomCarveHalfHeight}, but for edges instead of nodes. */
+    private static final int EDGE_SEAL_HALF_WIDTH = 6 + 2;
+    private static final int EDGE_SEAL_HALF_HEIGHT = 8 + 2;
+
+    /** {@link UnreachablePocketSealer} originally only scanned each node's
+     * own bounding box, because the sealer predates mineshaft corridors
+     * and natural wall roughening both being able to leave a standable,
+     * disconnected pocket inside an EDGE's own passage - not just inside a
+     * room. That left every edge entirely unscanned: confirmed empirically
+     * by running the sealer to full convergence (no cap) and finding it
+     * stopped making progress (toSeal went empty) while hundreds of
+     * trapped cells per seed still remained reachable from nowhere.
+     * Returns a window of [min,max] box pairs along the edge's centerline,
+     * strided so consecutive windows always overlap - a single box sized
+     * to the whole edge's endpoint bounding box was considered and
+     * rejected: a long diagonal edge's endpoint bbox can be far larger
+     * than the actual carved corridor, which would turn an affordable
+     * windowed scan into an unaffordable one across most of the dimension. */
+    static List<TopoPos[]> edgeSealWindows(List<TopoPos> path) {
+        List<TopoPos[]> windows = new ArrayList<>();
+        if (path.isEmpty()) {
+            return windows;
+        }
+        int stride = Math.max(1, EDGE_SEAL_HALF_WIDTH); // guarantees window overlap
+        for (int i = 0; i < path.size(); i += stride) {
+            TopoPos p = path.get(i);
+            windows.add(new TopoPos[] {
+                    p.offset(-EDGE_SEAL_HALF_WIDTH, -EDGE_SEAL_HALF_HEIGHT, -EDGE_SEAL_HALF_WIDTH),
+                    p.offset(EDGE_SEAL_HALF_WIDTH, EDGE_SEAL_HALF_HEIGHT, EDGE_SEAL_HALF_WIDTH)});
+        }
+        TopoPos last = path.get(path.size() - 1);
+        TopoPos[] lastWindow = windows.get(windows.size() - 1);
+        if (!lastWindow[1].equals(last.offset(EDGE_SEAL_HALF_WIDTH, EDGE_SEAL_HALF_HEIGHT, EDGE_SEAL_HALF_WIDTH))) {
+            windows.add(new TopoPos[] {
+                    last.offset(-EDGE_SEAL_HALF_WIDTH, -EDGE_SEAL_HALF_HEIGHT, -EDGE_SEAL_HALF_WIDTH),
+                    last.offset(EDGE_SEAL_HALF_WIDTH, EDGE_SEAL_HALF_HEIGHT, EDGE_SEAL_HALF_WIDTH)});
+        }
+        return windows;
+    }
+
     /** A connected cluster of overlapping ellipsoid lobes around the center
      * with a handful of un-carved rock pillars left standing. Extent reaches
      * roughly 36+ blocks horizontally and 16+ vertically. */

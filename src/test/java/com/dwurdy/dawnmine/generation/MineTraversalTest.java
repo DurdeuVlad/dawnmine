@@ -8,6 +8,7 @@ import com.dwurdy.dawnmine.topology.TopoPos;
 import com.dwurdy.dawnmine.topology.TopologyPlan;
 import com.dwurdy.dawnmine.topology.TopologyPlanner;
 import com.dwurdy.dawnmine.topology.TopologyProfile;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -85,21 +86,28 @@ class MineTraversalTest {
      * per seed on the raw carve, out of ~135,000-140,000 total reachable
      * cells - this is not a rare edge case, it is a property of carving
      * rooms as unions of overlapping implicit shapes). {@link
-     * UnreachablePocketSealer}, run in up to three passes exactly as
-     * {@link com.dwurdy.dawnmine.generation.MineGenerator} runs it in
-     * production, closes the large majority of that (~90%+, down to
-     * ~400-1,100 residual per seed in this harness) without ever costing a
-     * single required target - the two were tried as one change first and
-     * caught two real bugs before this: sealing without first freezing one
-     * consistent reachable snapshot cascaded into destroying the mine
-     * (every node's BFS re-run against a world an earlier node had already
-     * mutated), and sealing without a standability filter on the candidate
-     * cell removed harmless open-air headroom, not just floor-level traps
-     * (700k+ cells sealed, reachable area collapsed from ~135k to ~1k).
-     * Both are asserted here so neither can silently reappear. */
+     * UnreachablePocketSealer}, run exactly as {@link
+     * com.dwurdy.dawnmine.generation.MineGenerator} runs it in production
+     * (node boxes, edge-centerline windows, and the hub's own fixed
+     * footprint, in up to 25 passes), closes ALL of it - zero residual
+     * standable-but-unreachable cells, confirmed across five fuzzed seeds -
+     * without ever costing a single required target.
+     *
+     * <p>Getting to zero took three real bugs caught and fixed, in order:
+     * sealing without first freezing one consistent reachable snapshot
+     * cascaded into destroying the mine (every node's BFS re-run against a
+     * world an earlier node had already mutated); sealing without a
+     * standability filter on the candidate cell removed harmless open-air
+     * headroom, not just floor-level traps (700k+ cells sealed, reachable
+     * area collapsed from ~135k to ~1k); and scanning only topology NODES
+     * converged (stopped finding anything new to seal) while still leaving
+     * hundreds of real trapped cells per seed sitting inside edge passage
+     * corridors and the hub - neither is a topology node, so neither was
+     * ever scanned. All three are asserted here so none can silently
+     * reappear. */
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(longs = {1, 7, 42, 99, 256})
-    void sealerClosesTheLargeMajorityOfTrappedPocketsWithoutLosingRequiredTargets(long seed) {
+    void noStandableCellIsATrapOutsideTheRequiredRoute(long seed) {
         TopologyPlan plan = TopologyPlanner.plan(seed, TopologyProfile.builtin(), BOUNDS);
         Map<TopoPos, SegmentGeometry.BlockKind> world = MineTraversal.mergedWorld(plan, BOUNDS, ARRIVAL);
         int trappedBefore = countStandableTrapped(world, MineTraversal.reachableFrom(ARRIVAL, world, 5_000_000));
@@ -109,7 +117,7 @@ class MineTraversalTest {
 
         PassageNetwork network = PassageNetwork.of(plan, ARRIVAL);
         Set<TopoPos> reachable = MineTraversal.reachableFrom(ARRIVAL, world, 5_000_000);
-        for (int pass = 0; pass < 6; pass++) {
+        for (int pass = 0; pass < 25; pass++) {
             Set<TopoPos> toSeal = new java.util.HashSet<>();
             for (var node : plan.nodes()) {
                 TopoPos center = network.center(node.id());
@@ -119,6 +127,15 @@ class MineTraversalTest {
                 toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable,
                         center.offset(-hw, -hh, -hw), center.offset(hw, hh, hw)));
             }
+            for (var edge : plan.edges()) {
+                List<TopoPos> path = SegmentGeometry.passageCenterline(plan, edge);
+                for (TopoPos[] window : SegmentGeometry.edgeSealWindows(path)) {
+                    toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable,
+                            window[0], window[1]));
+                }
+            }
+            toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable,
+                    HubLayout.SAFE_MIN.offset(-10, -2, -10), HubLayout.SAFE_MAX.offset(10, 2, 10)));
             if (toSeal.isEmpty()) break;
             for (TopoPos pos : toSeal) {
                 world.put(pos, SegmentGeometry.BlockKind.WALL_SKIN);
@@ -134,8 +151,8 @@ class MineTraversalTest {
                 + " sealing cost a required target:" + missing);
 
         int trappedAfter = countStandableTrapped(world, reachable);
-        assertTrue(trappedAfter < trappedBefore / 5, "seed " + seed
-                + " sealing did not close at least 80% of the raw trapped cells: "
+        assertTrue(trappedAfter == 0, "seed " + seed
+                + " left standable traps outside the required route: "
                 + trappedBefore + " -> " + trappedAfter);
     }
 
