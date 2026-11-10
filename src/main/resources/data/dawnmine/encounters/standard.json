@@ -1,10 +1,10 @@
 {
   "id": "standard",
-  "totalPopulationCap": 48,
+  "totalPopulationCap": 64,
   "regions": [
     {
       "id": "upper",
-      "populationCap": 12,
+      "populationCap": 16,
       "compositions": [
         {
           "id": "upper_lone_pursuer",
@@ -47,7 +47,7 @@
     },
     {
       "id": "middle",
-      "populationCap": 18,
+      "populationCap": 24,
       "compositions": [
         {
           "id": "middle_melee_pair",
@@ -93,7 +93,7 @@
     },
     {
       "id": "chaos",
-      "populationCap": 24,
+      "populationCap": 32,
       "compositions": [
         {
           "id": "chaos_imp_and_pursuers",
