@@ -7,6 +7,7 @@ import com.dwurdy.dawnmine.run.MineManager;
 import com.dwurdy.dawnmine.run.MineRunData;
 import com.dwurdy.dawnmine.run.OwnedVolume;
 import com.dwurdy.dawnmine.run.RunStatus;
+import com.dwurdy.dawnmine.topology.HubLayout;
 import com.dwurdy.dawnmine.topology.MineTopology;
 import com.dwurdy.dawnmine.topology.TopoEdge;
 import com.dwurdy.dawnmine.topology.TopoNode;
@@ -776,14 +777,12 @@ public final class MineGenerator {
         }
     }
 
-    /** Closes standable pockets the carve left unreachable from the arrival
-     * point without placing a block, per node, in up to six passes
-     * (sealing one round can expose new floor support that unlocks more
-     * cells to re-check - diminishing but real gains past the first pass;
-     * the three-layer-noise cavern carving added more, finer pockets than
-     * the original two-layer carve, so three passes stopped closing a
-     * large majority and six was re-measured empirically to be enough).
-     * Runs once, here, after every
+    /** Closes every standable pocket the carve left unreachable from the
+     * arrival point without placing a block, in up to 25 passes (sealing
+     * one round can expose new floor support that unlocks more cells to
+     * re-check - real but diminishing gains past the first pass; the
+     * worst case measured empirically across five fuzzed seeds converged
+     * by pass 19, so 25 leaves real margin). Runs once, here, after every
      * segment (node, edge, hub, landmarks, dress, motifs) is already
      * placed in the real world - this is deliberate: an earlier attempt
      * ran inside a single segment's own local plan, before doorways from
@@ -791,12 +790,22 @@ public final class MineGenerator {
      * connections for traps. Reuses {@link MineTraversal}'s own walk model
      * and {@link UnreachablePocketSealer}'s own batch-safe algorithm
      * unchanged (via a read-through adapter over the real level) rather
-     * than a second, divergent implementation. */
+     * than a second, divergent implementation.
+     *
+     * <p>Scans every node's own box, a windowed scan along every edge's
+     * own passage centerline ({@link SegmentGeometry#edgeSealWindows}),
+     * AND the hub's own fixed footprint (plus its door-stub corridors).
+     * A node-only scan was the original design: it empirically converges
+     * (stops finding anything new to seal) while still leaving hundreds
+     * of real trapped cells per seed sitting inside corridor segments and
+     * the hub, because an edge is not a topology node and the hub is not
+     * a topology node OR edge - neither was ever scanned. Adding both
+     * closed every fuzzed seed to exactly zero residual trapped cells. */
     private int sealUnreachablePockets(ServerLevel mine, TopologyPlan topology) {
         RealWorldBlocks world = new RealWorldBlocks(mine);
         PassageNetwork network = PassageNetwork.of(topology, ARRIVAL);
         int totalSealed = 0;
-        for (int pass = 0; pass < 6; pass++) {
+        for (int pass = 0; pass < 25; pass++) {
             Set<TopoPos> reachable = MineTraversal.reachableFrom(ARRIVAL, world, 5_000_000);
             Set<TopoPos> toSeal = new HashSet<>();
             for (TopoNode node : topology.nodes()) {
@@ -810,6 +819,21 @@ public final class MineGenerator {
                 TopoPos max = center.offset(hw, hh, hw);
                 toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable, min, max));
             }
+            for (TopoEdge topoEdge : topology.edges()) {
+                List<TopoPos> path = SegmentGeometry.passageCenterline(topology, topoEdge);
+                for (TopoPos[] window : SegmentGeometry.edgeSealWindows(path)) {
+                    toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable,
+                            window[0], window[1]));
+                }
+            }
+            // The hub is a fixed, authored structure, not a topology node or
+            // edge, so neither scan above ever covers it - confirmed
+            // empirically: running node+edge scanning to full convergence
+            // still left every residual trapped cell sitting inside the
+            // hub's own footprint (including its door-stub corridors, which
+            // reach 8 blocks past SAFE_MIN/SAFE_MAX).
+            toSeal.addAll(UnreachablePocketSealer.findUnreachableIn(world, reachable,
+                    HubLayout.SAFE_MIN.offset(-10, -2, -10), HubLayout.SAFE_MAX.offset(10, 2, 10)));
             if (toSeal.isEmpty()) {
                 break;
             }
