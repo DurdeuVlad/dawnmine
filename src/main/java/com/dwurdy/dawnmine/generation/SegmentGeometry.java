@@ -489,11 +489,11 @@ public final class SegmentGeometry {
         Random rng = new Random(topology.seed() ^ stableHash(node.id()) ^ 0x165667B19E3779F9L);
 
         switch (node.kind()) {
-            case CAVERN -> addLobedCavern(blocks, center, rng);
-            case ENTRANCE -> addRoom(blocks, center, rng, 3, 6, 9, 4, 6);
-            case ROUTE -> addRoom(blocks, center, rng, 2, 5, 8, 3, 5);
-            case CAVE -> addRoom(blocks, center, rng, 2, 4, 7, 3, 5);
-            case POCKET -> addRoom(blocks, center, rng, 2, 3, 5, 2, 4);
+            case CAVERN -> addLobedCavern(blocks, center, rng, node.region());
+            case ENTRANCE -> addRoom(blocks, center, rng, 3, 6, 9, 4, 6, node.region());
+            case ROUTE -> addRoom(blocks, center, rng, 2, 5, 8, 3, 5, node.region());
+            case CAVE -> addRoom(blocks, center, rng, 2, 4, 7, 3, 5, node.region());
+            case POCKET -> addRoom(blocks, center, rng, 2, 3, 5, 2, 4, node.region());
         }
 
         if (node.has(NodeFeature.LANDMARK)) {
@@ -551,7 +551,7 @@ public final class SegmentGeometry {
      * with a handful of un-carved rock pillars left standing. Extent reaches
      * roughly 36+ blocks horizontally and 16+ vertically. */
     private static void addLobedCavern(Map<TopoPos, RankedBlock> blocks,
-                                       TopoPos center, Random rng) {
+                                       TopoPos center, Random rng, String region) {
         int lobes = 3 + rng.nextInt(3); // 3-5 lobes
         List<int[]> pillarOffsets = new ArrayList<>();
         int pillars = 1 + rng.nextInt(3); // 1-3 standing pillars
@@ -562,7 +562,7 @@ public final class SegmentGeometry {
                     (int) Math.round(Math.cos(angle) * dist),
                     (int) Math.round(Math.sin(angle) * dist), 2});
         }
-        WallRoughness wallRoughness = WallRoughness.forNode(rng);
+        WallRoughness wallRoughness = WallRoughness.forNode(rng, region);
         int[] previous = {0, 0, 0};
         for (int l = 0; l < lobes; l++) {
             double angle = rng.nextDouble() * Math.PI * 2;
@@ -595,27 +595,41 @@ public final class SegmentGeometry {
     /** A continuous, smoothly-varying perturbation of the ellipsoid cutoff
      * (vanilla's own caves, and YUNG's Better Caves, threshold noise
      * instead of a hard geometric boundary - which is why both read as
-     * irregular rock instead of a clean carved sphere). Two independently
+     * irregular rock instead of a clean carved sphere). Three independently
      * seeded fields, each a closed-form sine sum rather than a
      * lattice-noise class (same "threshold a continuous field" idea, no
-     * external API to get wrong from memory), combined so BOTH must agree
-     * before the perturbation grows - Better Caves' actual technique is
-     * carving only where every sampled noise layer clears its own
-     * threshold, not one blended average. */
+     * external API to get wrong from memory), combined so ALL THREE must
+     * agree before the perturbation grows - Better Caves' actual technique
+     * is carving only where every sampled noise layer clears its own
+     * threshold, not one blended average. Amplitude is region-ramped: the
+     * owner asked for this to read like a per-Y threshold table that gets
+     * rougher "near the surface" - the "upper" region is this mine's
+     * shallow band, so it gets the strongest perturbation, with "chaos"
+     * (the deepest region) the tightest. */
     private record WallRoughness(double[] phaseA, double[] freqA,
-                                 double[] phaseB, double[] freqB, double amplitude) {
-        static WallRoughness forNode(Random rng) {
+                                 double[] phaseB, double[] freqB,
+                                 double[] phaseC, double[] freqC, double amplitude) {
+        static WallRoughness forNode(Random rng, String region) {
             double[] phaseA = new double[3];
             double[] freqA = new double[3];
             double[] phaseB = new double[3];
             double[] freqB = new double[3];
+            double[] phaseC = new double[3];
+            double[] freqC = new double[3];
             for (int i = 0; i < 3; i++) {
                 phaseA[i] = rng.nextDouble() * Math.PI * 2;
                 freqA[i] = 0.10 + rng.nextDouble() * 0.15;
                 phaseB[i] = rng.nextDouble() * Math.PI * 2;
                 freqB[i] = 0.25 + rng.nextDouble() * 0.35; // finer-grained second layer
+                phaseC[i] = rng.nextDouble() * Math.PI * 2;
+                freqC[i] = 0.45 + rng.nextDouble() * 0.35; // finest third layer
             }
-            return new WallRoughness(phaseA, freqA, phaseB, freqB, 0.26);
+            double amplitude = switch (region == null ? "" : region) {
+                case "upper" -> 0.34;
+                case "chaos" -> 0.20;
+                default -> 0.26; // "middle" and any unrecognized region
+            };
+            return new WallRoughness(phaseA, freqA, phaseB, freqB, phaseC, freqC, amplitude);
         }
 
         private static double layer(int dx, int dy, int dz, double[] phase, double[] freq) {
@@ -626,11 +640,13 @@ public final class SegmentGeometry {
         double sample(int dx, int dy, int dz) {
             double a = layer(dx, dy, dz, phaseA, freqA);
             double b = layer(dx, dy, dz, phaseB, freqB);
-            if (Math.signum(a) != Math.signum(b)) {
-                return 0.0; // the two layers disagree - no perturbation here
+            double c = layer(dx, dy, dz, phaseC, freqC);
+            if (Math.signum(a) != Math.signum(b) || Math.signum(a) != Math.signum(c)) {
+                return 0.0; // the three layers disagree - no perturbation here
             }
             double sign = a >= 0 ? 1.0 : -1.0;
-            return sign * Math.min(Math.abs(a), Math.abs(b)) * amplitude;
+            double magnitude = Math.min(Math.abs(a), Math.min(Math.abs(b), Math.abs(c)));
+            return sign * magnitude * amplitude;
         }
     }
 
@@ -657,7 +673,8 @@ public final class SegmentGeometry {
     /** Small-to-medium irregular room of 2-3 overlapping lobes. */
     private static void addRoom(Map<TopoPos, RankedBlock> blocks, TopoPos center,
                                 Random rng, int lobeCount, int rxMin, int rxMax,
-                                int ryMin, int ryMax) {
+                                int ryMin, int ryMax, String region) {
+        WallRoughness wallRoughness = WallRoughness.forNode(rng, region);
         int[] previous = {0, 0, 0};
         for (int l = 0; l < lobeCount; l++) {
             double angle = rng.nextDouble() * Math.PI * 2;
@@ -674,7 +691,7 @@ public final class SegmentGeometry {
                 connectLobes(blocks, center, previous, new int[] {ox, oy, oz}, List.of(),
                         Math.max(2, rxMin - 1), Math.max(2, ryMin - 1));
             }
-            addEllipsoid(blocks, center.offset(ox, oy, oz), rx, ry, List.of());
+            addEllipsoid(blocks, center.offset(ox, oy, oz), rx, ry, List.of(), wallRoughness);
             previous = new int[] {ox, oy, oz};
         }
     }
