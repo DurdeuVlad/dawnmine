@@ -1597,13 +1597,20 @@ public final class SegmentGeometry {
                     "minecraft:deepslate_bricks"));
         }
         // Shell walls y42..57: stone bricks with deepslate pilasters and an
-        // oak beam course at the top; east wall leaves the 5-wide gateway.
+        // oak beam course at the top. Three of the four walls leave a
+        // 5-wide gateway opening (east: the real topology-connected
+        // gateway; west and south: cosmetic doors carved out to the same
+        // connector corridor below) - the north wall, where the portal
+        // frame stands, stays fully solid.
         for (int y = fy + 1; y <= gy - 2; y++) {
             for (int v = -hi; v <= hi; v++) {
                 for (int[] w : new int[][] {{hi, v}, {-hi, v}, {v, hi}, {v, -hi}}) {
                     TopoPos pos = new TopoPos(w[0], y, w[1]);
-                    if (w[0] == hi && y >= fy + 1 && y <= fy + 4 && Math.abs(w[1]) <= 2)
-                        continue; // east gateway opening
+                    if (y >= fy + 1 && y <= fy + 4) {
+                        if (w[0] == hi && Math.abs(w[1]) <= 2) continue; // east gateway
+                        if (w[0] == -hi && Math.abs(w[1]) <= 2) continue; // west door
+                        if (w[1] == hi && Math.abs(w[0]) <= 2) continue; // south door
+                    }
                     boolean pilaster = Math.floorMod(v, 8) == 0;
                     String block = y == gy - 2 ? "minecraft:oak_log"
                             : pilaster ? "minecraft:deepslate_bricks"
@@ -1641,6 +1648,29 @@ public final class SegmentGeometry {
         for (int x = 8; x <= 18; x += 3) for (int x2 = x; x2 <= x + 1; x2++)
             put.accept(new TopoPos(x2, fy + 1, 19),
                     marker(x2, fy + 1, 19, "minecraft:oak_slab"));
+        // West and south doors are cosmetic extra routes into the mine
+        // (owner's request for 3 visible paths off the spawn room): all
+        // three doors lead into the exact same single open hub interior,
+        // which already connects to the real east gateway - no separate
+        // routing is needed or wanted. Each gets a short straight approach
+        // stub outside the wall (an entrance foyer, not a flat hole in
+        // rock), stopping the instant it would re-enter the hub's own
+        // footprint, which the interior-air loop already carved open.
+        //
+        // Starts exactly AT the wall (x=-hi / z=hi), not one block beyond
+        // it: the wall-opening loop above only skips placing a wall
+        // marker there, it never carves that exact cell open itself - the
+        // real east gateway only works because entryConnector's own path
+        // happens to carve through that same cell as a side effect. These
+        // two doors have no such segment, so the stub must cover it
+        // directly or the "opening" stays solid, uncarved default fill
+        // behind an undecorated patch of wall. doorY matches FEET_Y (feet
+        // at fy+1, head at fy+2), the same convention the rest of the hub
+        // and the door gap itself (fy+1..fy+4) already use.
+        int doorY = fy + 1;
+        carveStubCorridor(put, new TopoPos(-hi, doorY, 0), new TopoPos(-hi - 8, doorY, 0));
+        carveStubCorridor(put, new TopoPos(0, doorY, hi), new TopoPos(0, doorY, hi + 8));
+
         // Consoles: lodestone return console, Dispatch barrel, teleporter sign.
         TopoPos console = HubLayout.TELEPORTER_CONSOLE;
         put.accept(console, marker(console.x(), console.y(), console.z(),
@@ -1656,6 +1686,49 @@ public final class SegmentGeometry {
                 .thenComparingInt(o -> o.position().z())
                 .thenComparingInt(o -> o.position().x()));
         return new SegmentPlan("hub", operations);
+    }
+
+
+    /** A short, straight, single-file tunnel (floor, ceiling, and both side
+     * walls solid - a 1-wide, 2-tall open column through the center,
+     * matching the step-1 walk model exactly) with a textured wall skin
+     * (same tiered palette as the rest of the mine), carved purely
+     * additively from {@code from} to {@code to} - never overwrites
+     * anything, since every written cell is either already open (the door
+     * gap) or previously-untouched rock. */
+    private static void carveStubCorridor(java.util.function.BiConsumer<TopoPos, BlockOperation> put,
+            TopoPos from, TopoPos to) {
+        double dx = to.x() - from.x();
+        double dy = to.y() - from.y();
+        double dz = to.z() - from.z();
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        int steps = Math.max(1, (int) Math.ceil(dist));
+        int ii = HubLayout.INTERIOR_HALF;
+        for (int s = 0; s <= steps; s++) {
+            double t = (double) s / steps;
+            int cx = from.x() + (int) Math.round(dx * t);
+            int cy = from.y() + (int) Math.round(dy * t);
+            int cz = from.z() + (int) Math.round(dz * t);
+            if (Math.abs(cx) <= ii && Math.abs(cz) <= ii) {
+                // Inside the hub's own footprint, which the interior-air
+                // loop already carved fully open - writing a WALL_SKIN
+                // shell here would wall straight through the middle of the
+                // room instead of just connecting to it. Stop as soon as
+                // the straight line enters the hub; the already-open
+                // interior carries the rest of the way to the console.
+                break;
+            }
+            for (int ddy = -1; ddy <= 2; ddy++) {
+                for (int ddx = -1; ddx <= 1; ddx++) {
+                    for (int ddz = -1; ddz <= 1; ddz++) {
+                        TopoPos pos = new TopoPos(cx + ddx, cy + ddy, cz + ddz);
+                        boolean open = (ddy == 0 || ddy == 1) && ddx == 0 && ddz == 0;
+                        put.accept(pos, new BlockOperation(pos,
+                                open ? BlockKind.OPEN : BlockKind.WALL_SKIN));
+                    }
+                }
+            }
+        }
     }
 
     private static BlockOperation marker(int x, int y, int z, String blockId) {
