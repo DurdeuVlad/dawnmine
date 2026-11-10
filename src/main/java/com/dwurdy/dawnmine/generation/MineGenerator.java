@@ -1072,13 +1072,15 @@ public final class MineGenerator {
             return Blocks.LAVA.defaultBlockState();
         }
         if (kind == SegmentGeometry.BlockKind.TIMBER) {
-            return Blocks.OAK_LOG.defaultBlockState();
+            // Mineshaft-only kind (see SegmentGeometry.dressEdge): spruce
+            // reads as mine-support timber, matching the owner's ask.
+            return Blocks.SPRUCE_LOG.defaultBlockState();
         }
         if (kind == SegmentGeometry.BlockKind.PLANKS) {
-            return Blocks.OAK_PLANKS.defaultBlockState();
+            return Blocks.SPRUCE_PLANKS.defaultBlockState();
         }
         if (kind == SegmentGeometry.BlockKind.FENCE) {
-            return Blocks.OAK_FENCE.defaultBlockState();
+            return Blocks.SPRUCE_FENCE.defaultBlockState();
         }
         if (kind == SegmentGeometry.BlockKind.RAIL) {
             return Blocks.RAIL.defaultBlockState();
