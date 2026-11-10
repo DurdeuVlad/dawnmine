@@ -85,18 +85,21 @@ public final class MineEncounterManager {
         MineEncounterCatalog.Composition composition = selectComposition(
                 data.seed(), siteId, region.compositions());
         if (composition == null) return;
+        List<SpawnRequest> requests = resolveRequests(mine, composition);
+        if (requests == null) return;
         int currentRegionPopulation = (int) data.mineEntities().stream()
                 .filter(origin -> origin.runId().equals(data.runId()) && origin.region().equals(node.region()))
                 .count();
         int currentPopulation = (int) data.mineEntities().stream()
                 .filter(origin -> origin.runId().equals(data.runId())).count();
-        if (currentRegionPopulation + composition.maxPopulation() > region.populationCap()
-                || currentPopulation + composition.maxPopulation() > profile.totalPopulationCap()) {
+        // Budget by what this server can actually spawn (base + whatever bonus
+        // entities resolve), not the composition's worst-case maxPopulation -
+        // otherwise a server without the bonus pack reserves headroom for mobs
+        // that will never spawn and admits fewer encounters than it could.
+        if (currentRegionPopulation + requests.size() > region.populationCap()
+                || currentPopulation + requests.size() > profile.totalPopulationCap()) {
             return;
         }
-
-        List<SpawnRequest> requests = resolveRequests(mine, composition);
-        if (requests == null) return;
         List<BlockPos> positions = findSpawnPositions(mine, manager, data, node, requests.size());
         if (positions.size() != requests.size()) {
             LOGGER.warn("[dawnmine] No safe surface for encounter '{}' at {} in {}; site skipped.",
