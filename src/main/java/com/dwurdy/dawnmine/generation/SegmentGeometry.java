@@ -536,6 +536,7 @@ public final class SegmentGeometry {
                     (int) Math.round(Math.cos(angle) * dist),
                     (int) Math.round(Math.sin(angle) * dist), 2});
         }
+        WallRoughness wallRoughness = WallRoughness.forNode(rng);
         int[] previous = {0, 0, 0};
         for (int l = 0; l < lobes; l++) {
             double angle = rng.nextDouble() * Math.PI * 2;
@@ -555,11 +556,36 @@ public final class SegmentGeometry {
                 // pocket a player can fall into and never climb out of
                 // without placing a block. A generous connecting throat
                 // guarantees real walkable clearance instead of leaving it
-                // to ellipsoid-boundary luck.
+                // to ellipsoid-boundary luck. The throat stays a clean,
+                // unroughened shape so it keeps the exact clearance the
+                // connectivity fix depends on.
                 connectLobes(blocks, center, previous, new int[] {ox, oy, oz}, pillarOffsets, 4, 3);
             }
-            addEllipsoid(blocks, center.offset(ox, oy, oz), rx, ry, pillarOffsets);
+            addEllipsoid(blocks, center.offset(ox, oy, oz), rx, ry, pillarOffsets, wallRoughness);
             previous = new int[] {ox, oy, oz};
+        }
+    }
+
+    /** A continuous, smoothly-varying perturbation of the ellipsoid cutoff
+     * (vanilla's own caves threshold noise instead of a hard geometric
+     * boundary, which is why they read as irregular rock instead of a clean
+     * carved sphere). Closed-form sine blend instead of a lattice-noise
+     * class: same "threshold a continuous field" idea, no external API. */
+    private record WallRoughness(double[] phase, double[] freq, double amplitude) {
+        static WallRoughness forNode(Random rng) {
+            double[] phase = new double[4];
+            double[] freq = new double[4];
+            for (int i = 0; i < 4; i++) {
+                phase[i] = rng.nextDouble() * Math.PI * 2;
+                freq[i] = 0.12 + rng.nextDouble() * 0.18;
+            }
+            return new WallRoughness(phase, freq, 0.22);
+        }
+
+        double sample(int dx, int dy, int dz) {
+            double v = Math.sin(dx * freq[0] + phase[0]) + Math.sin(dy * freq[1] + phase[1])
+                    + Math.sin(dz * freq[2] + phase[2]) + Math.sin((dx + dz) * freq[3] + phase[3]);
+            return v * (amplitude / 4.0);
         }
     }
 
@@ -613,11 +639,25 @@ public final class SegmentGeometry {
     private static void addEllipsoid(Map<TopoPos, RankedBlock> blocks,
                                      TopoPos center, int rx, int ry,
                                      List<int[]> pillars) {
+        addEllipsoid(blocks, center, rx, ry, pillars, null);
+    }
+
+    private static void addEllipsoid(Map<TopoPos, RankedBlock> blocks,
+                                     TopoPos center, int rx, int ry,
+                                     List<int[]> pillars, WallRoughness roughness) {
         for (int dy = -ry - 1; dy <= ry + 1; dy++) {
             for (int dz = -rx - 1; dz <= rx + 1; dz++) {
                 for (int dx = -rx - 1; dx <= rx + 1; dx++) {
                     double n = normalized(dx, rx) + normalized(dy, ry) + normalized(dz, rx);
-                    if (n > 1.0) {
+                    double threshold = 1.0;
+                    // Roughen only the upper half of the lobe (walls and
+                    // ceiling). The floor band below keeps the exact clean
+                    // shape MineTraversal's step-1 walk model, and the M10c
+                    // connectivity fix, already proved fully connected.
+                    if (roughness != null && dy > -ry / 2) {
+                        threshold += roughness.sample(dx, dy, dz);
+                    }
+                    if (n > threshold) {
                         continue;
                     }
                     if (dy < -1 && insidePillar(pillars, center, dx, dz)) {

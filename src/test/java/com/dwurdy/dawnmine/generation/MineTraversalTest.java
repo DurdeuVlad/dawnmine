@@ -93,7 +93,9 @@ class MineTraversalTest {
             + "caused by the standing-pillar carve-out (addLobedCavern's pillarOffsets/insidePillar) "
             + "rather than between lobes; one trapped cell near the entrance (-1,51,-21 in that "
             + "run) is not open at all until the hub/landmark/dress/motif stage, a second, separate "
-            + "source. Re-enable once both are addressed.")
+            + "source. Verified the M10d wall-roughness change (SegmentGeometry.WallRoughness) adds "
+            + "no new trapped cells - this exact list is unchanged with or without it. Re-enable "
+            + "once both residual sources above are addressed.")
     void noStandableCellIsATrapOutsideTheRequiredRoute() {
         // Players roam the full carved cavern/room volume, not just the
         // guaranteed main-route centerline. Any standable cell (one that
