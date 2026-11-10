@@ -432,8 +432,26 @@ public final class SegmentGeometry {
         return Math.floorMod(hash, 2) == 0;
     }
 
+    /** Corridor cells per discrete mineshaft piece before the cross-section
+     * is re-rolled - Better Mineshafts' own corridor pieces are built at
+     * roughly this scale (its BigTunnel/SmallTunnel pieces run 5-9 cells). */
+    private static final int MINESHAFT_PIECE_LENGTH = 7;
+
     private static PassageProfile passageProfile(int index, int steps,
                                                  boolean mineshaft, long seed, String segmentId) {
+        if (mineshaft) {
+            // Discrete piece steps, not a smooth continuous tube: each
+            // piece holds a fixed cross-section for its whole length, then
+            // jumps abruptly to the next piece's roll - the actual reason
+            // Better Mineshafts reads as built from distinct pieces rather
+            // than one poured tunnel.
+            int pieceIndex = index / MINESHAFT_PIECE_LENGTH;
+            Random pieceRng = new Random(seed ^ stableHash(segmentId)
+                    ^ (pieceIndex * 0xA24BAED4963EE407L) ^ 0xC2B2AE3D27D4EB4FL);
+            int hw = 2 + pieceRng.nextInt(2); // 2-3
+            int h = 3 + pieceRng.nextInt(2);  // 3-4
+            return new PassageProfile(hw, h, true);
+        }
         Random rng = new Random(seed ^ stableHash(segmentId) ^ 0xC2B2AE3D27D4EB4FL);
         double phaseA = rng.nextDouble() * Math.PI * 2;
         double phaseB = rng.nextDouble() * Math.PI * 2;
@@ -443,11 +461,6 @@ public final class SegmentGeometry {
         double n = 0.5 + 0.28 * Math.sin(index * 0.11 + phaseA)
                 + 0.22 * Math.sin(index * 0.033 + phaseB);
         n = Math.max(0.0, Math.min(1.0, n));
-        if (mineshaft) {
-            int hw = 2 + (n > 0.62 ? 1 : 0);
-            int h = 3 + (n > 0.45 ? 1 : 0);
-            return new PassageProfile(hw, h, true);
-        }
         int hw = 3 + (int) Math.round(n * 3.0); // 3..6 interior halfwidth
         int h = 4 + (int) Math.round(n * 4.0);  // 4..8 blocks tall
         return new PassageProfile(hw, h, false);
@@ -1470,9 +1483,27 @@ public final class SegmentGeometry {
             for (int dy = -1; dy <= h + 1; dy++) {
                 for (int dz = -reach; dz <= reach; dz++) {
                     for (int dx = -reach; dx <= reach; dx++) {
-                        double n = normalized(dx, hw) + normalized(dz, hw);
                         boolean openBand = dy >= 0 && dy < h;
-                        if (n > 1.0) {
+                        boolean inside;
+                        boolean nearSkin;
+                        if (profile.mineshaft()) {
+                            // Boxy, piece-like cross-section (the actual
+                            // technique YUNG's Better Mineshafts uses:
+                            // rectangular pieces with probability-rolled
+                            // edge fill) instead of a smooth ellipse - a
+                            // rectangle with a per-cell roughened edge so
+                            // it reads as dug and timbered, not poured.
+                            boolean inBox = Math.abs(dx) <= hw && Math.abs(dz) <= hw;
+                            boolean onEdge = Math.abs(dx) == hw || Math.abs(dz) == hw;
+                            inside = inBox && (!onEdge
+                                    || roughenKeepsOpen(cell, dx, dy, dz, seed, segmentId));
+                            nearSkin = !inside && Math.abs(dx) <= hw + 1 && Math.abs(dz) <= hw + 1;
+                        } else {
+                            double n = normalized(dx, hw) + normalized(dz, hw);
+                            inside = n <= 1.0;
+                            nearSkin = !inside && n <= 1.0 + WALL_SKIN_MARGIN;
+                        }
+                        if (!inside) {
                             // Side-wall skin just outside the carved
                             // cross-section: otherwise nothing ever writes
                             // it and it stays whatever the dimension's
@@ -1480,7 +1511,7 @@ public final class SegmentGeometry {
                             // same gap the dressing pass's floor write
                             // doesn't cover. Low priority so an overlapping
                             // carve elsewhere always wins.
-                            if (openBand && n <= 1.0 + WALL_SKIN_MARGIN) {
+                            if (openBand && nearSkin) {
                                 put(blocks, cell.offset(dx, dy, dz), BlockKind.WALL_SKIN, 1);
                             }
                             continue;
@@ -1497,6 +1528,20 @@ public final class SegmentGeometry {
                 }
             }
         }
+    }
+
+    /** Deterministic per-cell roll: most of a mineshaft box's edge cells
+     * stay open, a minority stay solid, roughening an otherwise perfectly
+     * boxy cross-section into something that reads as dug rather than
+     * extruded. The exact center column (dx=dz=0) is never an edge cell,
+     * so the walkable path itself is never affected by this roll. */
+    private static boolean roughenKeepsOpen(TopoPos cell, int dx, int dy, int dz,
+                                            long seed, String segmentId) {
+        long hash = mix(seed ^ stableHash(segmentId)
+                ^ ((long) (cell.x() + dx) * 0x9E3779B97F4A7C15L)
+                ^ ((long) (cell.y() + dy) * 0xC2B2AE3D27D4EB4FL)
+                ^ ((long) (cell.z() + dz) * 0x165667B19E3779F9L));
+        return Math.floorMod(hash, 10) < 7;
     }
 
     // ------------------------------------------------------------------
