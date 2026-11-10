@@ -536,6 +536,7 @@ public final class SegmentGeometry {
                     (int) Math.round(Math.cos(angle) * dist),
                     (int) Math.round(Math.sin(angle) * dist), 2});
         }
+        int[] previous = {0, 0, 0};
         for (int l = 0; l < lobes; l++) {
             double angle = rng.nextDouble() * Math.PI * 2;
             double dist = l == 0 ? 0.0 : 4.0 + rng.nextDouble() * 7.0;
@@ -546,7 +547,39 @@ public final class SegmentGeometry {
             int oy = l == 0 ? 0 : -5 + rng.nextInt(11);
             int rx = 12 + rng.nextInt(7);  // 12-18 horizontal lobe radius
             int ry = 7 + rng.nextInt(4);   // 7-10 lobe half-height
+            if (l > 0) {
+                // Two large ellipsoids at a modest center distance almost
+                // always overlap in raw volume, but a vertically offset
+                // lobe can still meet the rest of the cavern at a seam too
+                // thin or short for a two-high step-1 walk - a standable
+                // pocket a player can fall into and never climb out of
+                // without placing a block. A generous connecting throat
+                // guarantees real walkable clearance instead of leaving it
+                // to ellipsoid-boundary luck.
+                connectLobes(blocks, center, previous, new int[] {ox, oy, oz}, pillarOffsets, 4, 3);
+            }
             addEllipsoid(blocks, center.offset(ox, oy, oz), rx, ry, pillarOffsets);
+            previous = new int[] {ox, oy, oz};
+        }
+    }
+
+    /** Carves a chain of overlapping spheres between two lobe centers,
+     * purely additive, so it can only widen a connection and never removes
+     * carved volume another pass (doorways, landmarks) may depend on. */
+    private static void connectLobes(Map<TopoPos, RankedBlock> blocks, TopoPos center,
+                                     int[] from, int[] to, List<int[]> pillars,
+                                     int throatRx, int throatRy) {
+        double dx = to[0] - from[0];
+        double dy = to[1] - from[1];
+        double dz = to[2] - from[2];
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        int steps = Math.max(1, (int) Math.ceil(dist / Math.max(2, throatRx - 1)));
+        for (int s = 0; s <= steps; s++) {
+            double t = (double) s / steps;
+            int px = from[0] + (int) Math.round(dx * t);
+            int py = from[1] + (int) Math.round(dy * t);
+            int pz = from[2] + (int) Math.round(dz * t);
+            addEllipsoid(blocks, center.offset(px, py, pz), throatRx, throatRy, pillars);
         }
     }
 
@@ -554,6 +587,7 @@ public final class SegmentGeometry {
     private static void addRoom(Map<TopoPos, RankedBlock> blocks, TopoPos center,
                                 Random rng, int lobeCount, int rxMin, int rxMax,
                                 int ryMin, int ryMax) {
+        int[] previous = {0, 0, 0};
         for (int l = 0; l < lobeCount; l++) {
             double angle = rng.nextDouble() * Math.PI * 2;
             double dist = l == 0 ? 0.0 : 2.0 + rng.nextDouble() * 4.0;
@@ -562,7 +596,15 @@ public final class SegmentGeometry {
             int oy = l == 0 ? 0 : -2 + rng.nextInt(5);
             int rx = rxMin + rng.nextInt(Math.max(1, rxMax - rxMin + 1));
             int ry = ryMin + rng.nextInt(Math.max(1, ryMax - ryMin + 1));
+            // Same unguaranteed-overlap gap as addLobedCavern's lobes: see
+            // connectLobes for why a vertically offset lobe needs a real
+            // connecting throat, not just ellipsoid-boundary luck.
+            if (l > 0) {
+                connectLobes(blocks, center, previous, new int[] {ox, oy, oz}, List.of(),
+                        Math.max(2, rxMin - 1), Math.max(2, ryMin - 1));
+            }
             addEllipsoid(blocks, center.offset(ox, oy, oz), rx, ry, List.of());
+            previous = new int[] {ox, oy, oz};
         }
     }
 
