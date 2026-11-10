@@ -149,7 +149,11 @@ public final class MotifPlanner {
                 if (operation.kind() == BlockKind.OPEN) {
                     open.add(pos);
                     floorY.merge(columnKey(pos.x(), pos.z()), pos.y() - 1, Math::min);
-                } else {
+                } else if (operation.kind() != BlockKind.WALL_SKIN) {
+                    // A wall/ceiling/pillar skin is cosmetic default-rock
+                    // texture, not a structural claim on the cell - ore and
+                    // motifs must stay free to embed into it exactly as if
+                    // it were untouched natural rock.
                     occupied.add(pos);
                 }
             }

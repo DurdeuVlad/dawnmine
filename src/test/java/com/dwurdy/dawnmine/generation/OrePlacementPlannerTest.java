@@ -147,7 +147,10 @@ class OrePlacementPlannerTest {
         for (var p : List.of(structural, dress)) {
             for (var op : p.operations()) {
                 if (op.kind() == SegmentGeometry.BlockKind.OPEN) open.add(op.position());
-                else decorated.add(op.position());
+                // A wall/ceiling/pillar skin is cosmetic default-rock
+                // texture, not real decoration - ore must stay free to
+                // embed into it exactly as if it were untouched rock.
+                else if (op.kind() != SegmentGeometry.BlockKind.WALL_SKIN) decorated.add(op.position());
             }
         }
         SegmentGeometry.SegmentPlan ores = plan("edge:" + edge.a() + ":" + edge.b(),

@@ -1014,6 +1014,14 @@ public final class MineGenerator {
             // when an interrupted operation is replayed.
             return false;
         }
+        if (operation.kind() == SegmentGeometry.BlockKind.WALL_SKIN && existing.isAir()) {
+            // A wall/ceiling/pillar skin is only ever a guess at where
+            // solid rock belongs - unlike ROCK's floor-bridging writes, it
+            // must never reseal a cell another segment (an edge passage, an
+            // overlapping lobe, a doorway) already legitimately carved
+            // open, regardless of which segment happened to apply first.
+            return false;
+        }
         if (operation.kind() == SegmentGeometry.BlockKind.ORE) {
             // Ore only ever lands on exposed natural wall rock: the cell
             // must still be natural rock and touch real air. Intersecting
