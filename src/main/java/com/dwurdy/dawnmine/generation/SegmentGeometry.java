@@ -34,6 +34,13 @@ import java.util.Set;
 public final class SegmentGeometry {
     static final int MAX_CENTERLINE_STEPS = 8192;
     private static final int MAX_OPERATIONS = 250_000;
+
+    /** Normalized-distance margin beyond an ellipsoid carve's threshold
+     * that still gets an explicit wall-skin ROCK write. Near a lobe's
+     * radius (12-18), this covers roughly a 1-2 block shell - deeper cells
+     * are never visible to a player anyway (Minecraft only renders faces
+     * touching air), so writing further than this has no benefit. */
+    private static final double WALL_SKIN_MARGIN = 0.22;
     /** Leave two untouched rock layers below the flat world's stone top (Y62). */
     static final int MAX_CAVE_OPEN_Y = 60;
 
@@ -45,6 +52,12 @@ public final class SegmentGeometry {
     /** Block palette-independent intent for a single deterministic write. */
     public enum BlockKind {
         ROCK,
+        /** Cosmetic wall/ceiling/pillar skin: resolves through the same
+         * natural-rock palette as ROCK, but the apply step must never let
+         * it overwrite a cell another segment already carved open - unlike
+         * ROCK's floor-bridging writes, this one is only a guess at where
+         * solid rock belongs, never a structural guarantee. */
+        WALL_SKIN,
         OPEN,
         ORE,
         HAZARD_BOUNDARY,
@@ -658,12 +671,26 @@ public final class SegmentGeometry {
                         threshold += roughness.sample(dx, dy, dz);
                     }
                     if (n > threshold) {
-                        continue;
-                    }
-                    if (dy < -1 && insidePillar(pillars, center, dx, dz)) {
+                        // Just outside the carve: the wall/ceiling skin a
+                        // player actually sees. Without this, nothing ever
+                        // writes these cells and they stay whatever the
+                        // dimension's default fill is (plain, untextured
+                        // stone) - the palette/roughness above only ever
+                        // decided what to CARVE, never what the solid rock
+                        // bordering the carve looks like. Low priority (1,
+                        // below OPEN's 2) so a legitimate open cell from an
+                        // overlapping lobe or throat, processed in any
+                        // order, always wins over this cosmetic skin.
+                        if (n <= threshold + WALL_SKIN_MARGIN) {
+                            put(blocks, center.offset(dx, dy, dz), BlockKind.WALL_SKIN, 1);
+                        }
                         continue;
                     }
                     if (insidePillar(pillars, center, dx, dz)) {
+                        // A standing pillar is solid, player-visible rock,
+                        // not empty space left untouched - give it the same
+                        // palette/texture write as the wall skin above.
+                        put(blocks, center.offset(dx, dy, dz), BlockKind.WALL_SKIN, 1);
                         continue;
                     }
                     put(blocks, center.offset(dx, dy, dz), BlockKind.OPEN, 2);
@@ -1444,11 +1471,27 @@ public final class SegmentGeometry {
                 for (int dz = -reach; dz <= reach; dz++) {
                     for (int dx = -reach; dx <= reach; dx++) {
                         double n = normalized(dx, hw) + normalized(dz, hw);
+                        boolean openBand = dy >= 0 && dy < h;
                         if (n > 1.0) {
+                            // Side-wall skin just outside the carved
+                            // cross-section: otherwise nothing ever writes
+                            // it and it stays whatever the dimension's
+                            // default fill is (plain, untextured stone),
+                            // same gap the dressing pass's floor write
+                            // doesn't cover. Low priority so an overlapping
+                            // carve elsewhere always wins.
+                            if (openBand && n <= 1.0 + WALL_SKIN_MARGIN) {
+                                put(blocks, cell.offset(dx, dy, dz), BlockKind.WALL_SKIN, 1);
+                            }
                             continue;
                         }
-                        if (dy >= 0 && dy < h) {
+                        if (openBand) {
                             put(blocks, cell.offset(dx, dy, dz), BlockKind.OPEN, 2);
+                        } else if (dy == h) {
+                            // Ceiling skin: the loop reaches dy==h but the
+                            // open band excludes it, so it was never
+                            // written either.
+                            put(blocks, cell.offset(dx, dy, dz), BlockKind.WALL_SKIN, 1);
                         }
                     }
                 }

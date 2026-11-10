@@ -74,6 +74,13 @@ public final class MineTraversal {
     private static void apply(Map<TopoPos, SegmentGeometry.BlockKind> world,
                               SegmentGeometry.SegmentPlan plan) {
         for (SegmentGeometry.BlockOperation op : plan.operations()) {
+            // Mirrors MineGenerator.applyOperation's real-world guard: a
+            // cosmetic wall/ceiling/pillar skin must never reseal a cell a
+            // different, already-applied segment legitimately carved open.
+            if (op.kind() == SegmentGeometry.BlockKind.WALL_SKIN
+                    && world.get(op.position()) == SegmentGeometry.BlockKind.OPEN) {
+                continue;
+            }
             world.put(op.position(), op.kind());
         }
     }
@@ -90,7 +97,7 @@ public final class MineTraversal {
         // A cell with no operation is untouched natural rock - solid ground.
         SegmentGeometry.BlockKind floor = world.get(pos.offset(0, -1, 0));
         return floor == null || switch (floor) {
-            case ROCK, ORE, TIMBER, PLANKS, HAZARD_BOUNDARY, MARKER -> true;
+            case ROCK, WALL_SKIN, ORE, TIMBER, PLANKS, HAZARD_BOUNDARY, MARKER -> true;
             default -> false;
         };
     }
