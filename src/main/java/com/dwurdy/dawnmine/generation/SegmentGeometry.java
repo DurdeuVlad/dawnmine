@@ -1505,15 +1505,19 @@ public final class SegmentGeometry {
                 }
             }
         }
-        // Portal-arch dressing on the north wall behind the return console:
-        // a 7-wide x 9-high crying-obsidian/copper frame.
+        // Free-standing portal frame around the teleporter console (M10e):
+        // a 7-wide x 9-high crying-obsidian/copper ring players walk through
+        // to reach it, instead of just a lodestone sitting in the open.
+        // TeleporterManager's interaction is purely position-based (it
+        // matches HubLayout.TELEPORTER_CONSOLE exactly, not a block type),
+        // so dressing the console this way needs no change there.
+        int portalZ = HubLayout.TELEPORTER_CONSOLE.z();
         for (int x = -4; x <= 4; x++) for (int y = fy + 1; y <= fy + 9; y++) {
             boolean frame = Math.abs(x) == 4 || y == fy + 9;
-            String block = frame
-                    ? (Math.floorMod(x + y, 2) == 0 ? "minecraft:crying_obsidian"
-                            : "minecraft:copper_block")
-                    : "minecraft:polished_deepslate";
-            put.accept(new TopoPos(x, y, -ii), marker(x, y, -ii, block));
+            if (!frame) continue; // leave the interior open to walk through
+            String block = Math.floorMod(x + y, 2) == 0
+                    ? "minecraft:crying_obsidian" : "minecraft:copper_block";
+            put.accept(new TopoPos(x, y, portalZ), marker(x, y, portalZ, block));
         }
         // Timber columns with lanterns on top, placed away from the lanes.
         for (int[] c : new int[][] {{14, 14}, {-14, 14}, {14, -10}, {-14, -10}}) {
