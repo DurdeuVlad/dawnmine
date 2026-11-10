@@ -100,7 +100,8 @@ class MineTraversalTest {
         // itself passes the movement model's own walkable() check) that the
         // main-route BFS cannot reach is a pocket a player can fall into and
         // never climb back out of without placing a block.
-        for (long seed : new long[] {1, 7, 42, 99, 256, 1337, 2026, 9001, 31337, 777777}) {
+        for (long seed : new long[] {1, 7, 42, 99, 256, 1337, 2026, 9001, 31337, 777777,
+                4, 13, 500, 8675309, 2024, 65536, 111111, 20260101, 999983, 42424242}) {
             TopologyPlan plan = TopologyPlanner.plan(seed, TopologyProfile.builtin(), BOUNDS);
             Map<TopoPos, SegmentGeometry.BlockKind> world =
                     MineTraversal.mergedWorld(plan, BOUNDS, ARRIVAL);
