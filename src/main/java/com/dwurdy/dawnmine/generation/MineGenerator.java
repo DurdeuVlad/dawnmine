@@ -847,9 +847,16 @@ public final class MineGenerator {
             }
             return cache.computeIfAbsent(pos, p -> {
                 BlockPos real = new BlockPos(p.x(), p.y(), p.z());
-                if (!mine.hasChunkAt(real)) {
-                    return null;
-                }
+                // Generation releases each chunk's ticket as its window
+                // moves past it (see requestUpcomingChunks), so by the time
+                // this runs - after the whole run is placed - most of the
+                // mine's chunks may no longer be resident. Treating an
+                // unloaded chunk as solid would falsely wall off exactly
+                // the thing this pass exists to fix. The chunk is already
+                // fully generated at this point, so forcing it back into
+                // memory is a resident-cache/disk read, never a
+                // regeneration.
+                mine.getChunk(real.getX() >> 4, real.getZ() >> 4);
                 BlockState state = mine.getBlockState(real);
                 if (state.is(Blocks.RAIL)) {
                     return SegmentGeometry.BlockKind.RAIL;
