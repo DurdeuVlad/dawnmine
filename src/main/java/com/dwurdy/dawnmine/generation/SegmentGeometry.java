@@ -1255,10 +1255,16 @@ public final class SegmentGeometry {
             TopoPos cell = path.get(i);
             PassageProfile profile = passageProfile(i, path.size(), true, topology.seed(), id);
             if ((i + offset) % spacing == 0 && i > 0 && i < path.size() - 1) {
+                // Posts sit to the sides and the beam overhead (see
+                // addTimberFrame), never on the centerline floor cell, so a
+                // support frame never breaks the rail passing under it.
                 addTimberFrame(blocks, path, i, profile, clearance, landmarks);
-            } else if (i % 2 == 0 && !landmarks.isReserved(cell)) {
-                // Rails sit on the plank walkway; the apply-side support
-                // check drops any that would float. Rails are walk-through
+            }
+            if (!landmarks.isReserved(cell)) {
+                // Every centerline cell gets a rail: a real minecart line is
+                // one continuous track, not alternating rail/gap tiles. Rails
+                // sit on the plank walkway; the apply-side support check
+                // drops any that would float. Rails are walk-through
                 // decoration, so shared junction cells may carry them too.
                 // Landmark reserves are off-limits even where the corridor
                 // carves through an opening - the room owns its doorway.
