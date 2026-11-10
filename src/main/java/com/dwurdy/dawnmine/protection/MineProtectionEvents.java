@@ -112,14 +112,33 @@ public final class MineProtectionEvents {
 
         BlockState placed = event.getPlacedBlock();
         boolean torch = placed.is(Blocks.TORCH) || placed.is(Blocks.SOUL_TORCH);
-        BlockPos supportPos = event.getPos().below();
-        boolean floorSupport = level.getBlockState(supportPos)
-                .isFaceSturdy(level, supportPos, Direction.UP);
-        if (!torch || !floorSupport || !placed.canSurvive(level, event.getPos())) {
-            event.setCanceled(true);
-            sendDenial(player, Action.BLOCK_PLACE,
-                    "Only ordinary or soul torches may be placed on the floor in the mine.");
+        boolean ladder = placed.is(Blocks.LADDER);
+        if (torch) {
+            BlockPos supportPos = event.getPos().below();
+            boolean floorSupport = level.getBlockState(supportPos)
+                    .isFaceSturdy(level, supportPos, Direction.UP);
+            if (!floorSupport || !placed.canSurvive(level, event.getPos())) {
+                event.setCanceled(true);
+                sendDenial(player, Action.BLOCK_PLACE,
+                        "Only ordinary or soul torches may be placed on the floor in the mine.");
+            }
+            return;
         }
+        if (ladder) {
+            // Players can't place blocks, so a generation gap can trap
+            // them with no way out; a ladder against a solid wall is an
+            // escape hatch, not a way to cheese mobs or wall off a route -
+            // vanilla's own canSurvive already requires a real wall behind it.
+            if (!placed.canSurvive(level, event.getPos())) {
+                event.setCanceled(true);
+                sendDenial(player, Action.BLOCK_PLACE,
+                        "Ladders must be placed against a solid wall in the mine.");
+            }
+            return;
+        }
+        event.setCanceled(true);
+        sendDenial(player, Action.BLOCK_PLACE,
+                "Only ordinary/soul torches and ladders may be placed in the mine.");
     }
 
     @SubscribeEvent
