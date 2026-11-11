@@ -165,4 +165,38 @@ class CensusAnalyzerTest {
         assertEquals(4, r.standable());
         assertEquals(0, r.unreachable());
     }
+    @Test
+    void fluidIsNotAFloorAndNegativeCoordinatesWalkFine() {
+        CensusSnapshot s = flat();
+        corridor(s, -5, -1, 10, -3);          // walkable at negative x and z
+        s.addOpen(0, 10, -3); s.addOpen(0, 11, -3);
+        s.addFluid(0, 9, -3);                 // water below this cell: cannot stand on it
+        CensusReport r = CensusAnalyzer.analyze(s, -5, 10, -3, CensusAnalyzer.Params.DEFAULT);
+        assertEquals(5, r.standable());
+        assertEquals(5, r.reachable());
+    }
+
+    @Test
+    void routeOfJustTheStartCellHasZeroStepsAndFullEmptyStretch() {
+        CensusSnapshot s = flat();
+        corridor(s, 0, 0, 10, 0);
+        CensusReport r = CensusAnalyzer.analyze(s, 0, 10, 0, CensusAnalyzer.Params.DEFAULT);
+        assertEquals(0, r.routeSteps());
+        assertEquals(1, r.emptyAny());
+    }
+
+    @Test
+    void bandsSplitStandableAndRouteStepsByY() {
+        CensusSnapshot s = new CensusSnapshot(List.of(
+                new CensusSnapshot.Band("a", 8, 10), new CensusSnapshot.Band("b", 5, 7)));
+        corridor(s, 0, 3, 10, 0);
+        s.addOpen(4, 9, 0); s.addOpen(4, 10, 0); s.addOpen(4, 11, 0);
+        s.addOpen(5, 8, 0); s.addOpen(5, 9, 0); s.addOpen(5, 10, 0);
+        s.addOpen(6, 7, 0); s.addOpen(6, 8, 0); s.addOpen(6, 9, 0);
+        CensusReport r = CensusAnalyzer.analyze(s, 0, 10, 0, CensusAnalyzer.Params.DEFAULT);
+        assertEquals(7, r.standable());
+        assertEquals(0, r.unreachable());
+        assertEquals(6, r.routeStepsPerBand()[0] + r.routeStepsPerBand()[1] - 1 + 0 * 1);
+        assertEquals(1, r.routeStepsPerBand()[1]);
+    }
 }

@@ -44,6 +44,11 @@ public final class CensusService {
     /** Abort rather than risk the server: minimum heap headroom while scanning. */
     private static final long MIN_FREE_HEAP_BYTES = 768L * 1024 * 1024;
     private static Job current;
+    /** Holds a column loaded for the whole time it is scanned (block entities are dropped
+     * when a chunk unloads); released immediately after the scan. */
+    private static final net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> CENSUS_TICKET =
+            net.minecraft.server.level.TicketType.create("dawnmine_census",
+                    java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong));
     private static java.util.concurrent.ExecutorService analysisExecutor;
 
     private static synchronized java.util.concurrent.ExecutorService executor() {
@@ -59,6 +64,10 @@ public final class CensusService {
 
     /** Drops any running job and the analysis thread (server stopping). */
     public static synchronized void clear() {
+        if (current != null) {
+            current.cancelled = true;
+            current.releaseAll();
+        }
         current = null;
         if (analysisExecutor != null) {
             analysisExecutor.shutdownNow();
@@ -95,12 +104,22 @@ public final class CensusService {
             return;
         }
         if (job.analysing) {
-            return; // current stays set until the analysis has reported
+            // current stays set until the analysis has reported, but a reset or low heap
+            // while analysing discards the result instead of posting a dead run's report
+            String abort = job.abortReason();
+            if (abort != null && !job.cancelled) {
+                job.cancelled = true;
+                current = null;
+                LOGGER.warn("[dawnmine] census aborted: {}", abort);
+                job.source.sendFailure(Component.literal("Census aborted: " + abort));
+            }
+            return;
         }
         try {
             String abort = job.abortReason();
             if (abort != null) {
                 current = null;
+                job.releaseAll();
                 LOGGER.warn("[dawnmine] census aborted: {}", abort);
                 job.source.sendFailure(Component.literal("Census aborted: " + abort));
                 return;
@@ -111,7 +130,7 @@ public final class CensusService {
             }
         } catch (RuntimeException | OutOfMemoryError e) {
             current = null;
-            job.pending.clear();
+            job.releaseAll();
             LOGGER.error("[dawnmine] census failed", e);
             job.source.sendFailure(Component.literal("Census failed: " + e));
         }
@@ -127,8 +146,13 @@ public final class CensusService {
         final CensusSnapshot snapshot;
         final Set<Block> oreBlocks = new HashSet<>();
         final Map<Block, String> oreIds = new HashMap<>();
-        final java.util.ArrayDeque<CompletableFuture<net.minecraft.server.level.ChunkResult<ChunkAccess>>> pending =
-                new java.util.ArrayDeque<>();
+        record Pending(net.minecraft.world.level.ChunkPos pos,
+                CompletableFuture<net.minecraft.server.level.ChunkResult<ChunkAccess>> future) { }
+
+        final java.util.ArrayDeque<Pending> pending = new java.util.ArrayDeque<>();
+        final int bandMinY;
+        final int bandMaxY;
+        volatile boolean cancelled;
         final String runId;
         volatile boolean analysing;
         int nextIndex;
@@ -147,6 +171,8 @@ public final class CensusService {
                 bands.add(new CensusSnapshot.Band(region.id(), region.bottomY(), region.topY()));
             }
             this.snapshot = new CensusSnapshot(bands);
+            this.bandMinY = bands.stream().mapToInt(CensusSnapshot.Band::minY).min().orElse(0);
+            this.bandMaxY = bands.stream().mapToInt(CensusSnapshot.Band::maxY).max().orElse(-1);
             this.runId = MineManager.get(server).data().runId();
             OreCatalog.active().entries().forEach((id, entry) -> {
                 Block block = BuiltInRegistries.BLOCK.get(id);
@@ -185,28 +211,46 @@ public final class CensusService {
         boolean step() {
             long deadline = System.nanoTime() + TICK_BUDGET_NANOS;
             int issued = 0;
-            while (nextIndex < total && pending.size() < WINDOW && issued++ < ISSUE_PER_TICK) {
+            while (nextIndex < total && pending.size() < WINDOW && issued++ < ISSUE_PER_TICK
+                    && System.nanoTime() < deadline) {
                 int cx = nextIndex % width - radius;
                 int cz = nextIndex / width - radius;
-                pending.add(level.getChunkSource().getChunkFuture(cx, cz, ChunkStatus.FULL, true));
+                var pos = new net.minecraft.world.level.ChunkPos(cx, cz);
+                level.getChunkSource().addRegionTicket(CENSUS_TICKET, pos, 0, pos);
+                pending.add(new Pending(pos,
+                        level.getChunkSource().getChunkFuture(cx, cz, ChunkStatus.FULL, true)));
                 nextIndex++;
             }
-            while (!pending.isEmpty() && pending.peek().isDone() && System.nanoTime() < deadline) {
+            while (!pending.isEmpty() && pending.peek().future().isDone()
+                    && System.nanoTime() < deadline) {
+                Pending done = pending.poll();
                 ChunkAccess chunk = null;
                 try {
-                    var result = pending.poll().getNow(null);
+                    var result = done.future().getNow(null);
                     chunk = result == null ? null : result.orElse(null);
-                } catch (java.util.concurrent.CompletionException | java.util.concurrent.CancellationException e) {
+                    if (chunk == null) {
+                        missing++;
+                    } else {
+                        scanChunk(chunk);
+                    }
+                } catch (java.util.concurrent.CompletionException
+                        | java.util.concurrent.CancellationException e) {
                     LOGGER.warn("[dawnmine] census could not load a chunk column: {}", e.toString());
-                }
-                if (chunk == null) {
                     missing++;
-                } else {
-                    scanChunk(chunk);
+                } finally {
+                    level.getChunkSource().removeRegionTicket(CENSUS_TICKET, done.pos(), 0, done.pos());
                 }
                 index++;
             }
             return index >= total;
+        }
+
+        /** Releases every ticket still held by unscanned columns. */
+        void releaseAll() {
+            for (Pending p : pending) {
+                level.getChunkSource().removeRegionTicket(CENSUS_TICKET, p.pos(), 0, p.pos());
+            }
+            pending.clear();
         }
 
         private void scanChunk(ChunkAccess chunk) {
@@ -217,10 +261,11 @@ public final class CensusService {
             int minSection = level.getMinSection();
             for (int i = 0; i < sections.length; i++) {
                 LevelChunkSection section = sections[i];
-                if (section == null || !section.maybeHas(this::interesting)) {
-                    continue;
-                }
                 int baseY = (minSection + i) << 4;
+                if (section == null || baseY + 15 < bandMinY || baseY > bandMaxY
+                        || !section.maybeHas(this::interesting)) {
+                    continue; // air above or below the mine's bands is not mine space
+                }
                 for (int yy = 0; yy < 16; yy++) {
                     for (int zz = 0; zz < 16; zz++) {
                         for (int xx = 0; xx < 16; xx++) {
@@ -272,14 +317,21 @@ public final class CensusService {
         }
 
         void finish() {
-            BlockPos start = MineManager.ARRIVAL;
+            BlockPos recorded = MineManager.get(server).data().mineArrival();
+            BlockPos start = recorded != null ? recorded : MineManager.ARRIVAL;
+            Job self = this;
             int missingChunks = missing;
             source.sendSuccess(() -> Component.literal("Census scan done; analysing..."), false);
             CompletableFuture.supplyAsync(() -> CensusAnalyzer.analyze(snapshot,
                             start.getX(), start.getY(), start.getZ(), CensusAnalyzer.Params.DEFAULT),
                             executor())
                     .whenComplete((report, error) -> server.execute(() -> {
-                        current = null;
+                        if (current == self) {
+                            current = null;
+                        }
+                        if (cancelled) {
+                            return; // aborted (reset, low heap, shutdown): never post a stale report
+                        }
                         if (error != null) {
                             LOGGER.error("[dawnmine] census analysis failed", error);
                             source.sendFailure(Component.literal("Census analysis failed: " + error));
