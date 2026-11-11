@@ -213,6 +213,9 @@ public final class MineDailyReset {
         // records and consumes it during FINALIZING.
         data.armPendingSeed(data.computeNextSeed(
                 server.getWorldData().worldGenOptions().seed()));
+        // Plan the incoming run's caves in the background so the first restore does not stall a tick.
+        com.dwurdy.dawnmine.generation.CaveTerrain.prepareAsync(data.pendingSeed(),
+                com.dwurdy.dawnmine.config.DawnmineConfig.mineRegionRadiusChunks());
         data.beginDailyReset(dueKey);
         evacuees += evacuateOccupants();
         MineMessages.notifyAdmins(server, Commands.LEVEL_GAMEMASTERS,

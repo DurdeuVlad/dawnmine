@@ -22,7 +22,7 @@ public final class DawnmineConfig {
     public static final int NETHERRACK_CLUSTER_MAX_BLOCKS = 3;
 
     /** Bounds for the active mine region, in 16x16 chunk columns. */
-    public static final int REGION_RADIUS_MIN = 16;
+    public static final int REGION_RADIUS_MIN = 48; // the cave stack is planned and tested for 48..96 chunks
     public static final int REGION_RADIUS_MAX = 96; // the cave layer planner is sized for up to 96 chunks
 
     /** Bounds for advance reset warnings, in minutes before the reset. */

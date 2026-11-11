@@ -42,8 +42,30 @@ public final class CensusAnalyzer {
 
     private CensusAnalyzer() { }
 
+    /** A named feet position whose walking distance from the start is reported. */
+    public record Waypoint(String name, int x, int y, int z) { }
+
     public static CensusReport analyze(CensusSnapshot s, int startX, int startY, int startZ,
             Params params) {
+        return analyze(s, startX, startY, startZ, params, java.util.List.of());
+    }
+
+    /** Horizontal length of the route from the start to a cell, diagonal steps counted as sqrt 2. */
+    private static double routeBlocks(Long2LongOpenHashMap parent, long cell, long start) {
+        double total = 0;
+        long cur = cell;
+        while (cur != start) {
+            long prev = parent.get(cur);
+            int dx = Math.abs(x(cur) - x(prev));
+            int dz = Math.abs(z(cur) - z(prev));
+            total += (dx != 0 && dz != 0) ? Math.sqrt(2) : (dx != 0 || dz != 0 ? 1 : 0);
+            cur = prev;
+        }
+        return total;
+    }
+
+    public static CensusReport analyze(CensusSnapshot s, int startX, int startY, int startZ,
+            Params params, java.util.List<Waypoint> waypoints) {
         int bandCount = s.bands().size();
         long start = pack(startX, startY, startZ);
 
@@ -138,6 +160,21 @@ public final class CensusAnalyzer {
             }
             java.util.Collections.reverse(route);
         }
+        double routeBlocks = startWalkable ? routeBlocks(parent, end, start) : 0;
+        java.util.List<String> waypointLines = new java.util.ArrayList<>();
+        for (Waypoint w : waypoints) {
+            long cell = pack(w.x(), w.y(), w.z());
+            if (!startWalkable || !dist.containsKey(cell)) {
+                waypointLines.add(String.format(java.util.Locale.ROOT,
+                        "waypoint %s (%d,%d,%d): not reachable", w.name(), w.x(), w.y(), w.z()));
+            } else {
+                double blocks = routeBlocks(parent, cell, start);
+                waypointLines.add(String.format(java.util.Locale.ROOT,
+                        "waypoint %s (%d,%d,%d): steps=%d blocks=%.0f at %.1f min",
+                        w.name(), w.x(), w.y(), w.z(), dist.get(cell), blocks,
+                        blocks / params.walkBlocksPerSecond() / 60.0));
+            }
+        }
         int[] routeStepsPerBand = new int[bandCount];
         for (long p : route) {
             int b = s.bandIndex(y(p));
@@ -179,7 +216,7 @@ public final class CensusAnalyzer {
                 startWalkable, Math.max(0, route.size() - 1), routeStepsPerBand,
                 new int[] {x(end), y(end), z(end)}, params.walkBlocksPerSecond(),
                 routeOre, routeMob, routeLoot, routeLand,
-                emptyAny, emptyOre, emptyMob, emptyLoot, emptyLand, samples);
+                emptyAny, emptyOre, emptyMob, emptyLoot, emptyLand, samples, routeBlocks, waypointLines);
     }
 
     // ---- walking ----

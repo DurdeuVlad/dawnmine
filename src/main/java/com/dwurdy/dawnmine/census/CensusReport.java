@@ -18,11 +18,11 @@ public record CensusReport(
         int[] routeOrePerBand, int[] routeMobsPerBand, int[] routeLootPerBand,
         int[] routeLandmarksPerBand,
         int emptyAny, int emptyOre, int emptyMob, int emptyLoot, int emptyLandmark,
-        List<int[]> unreachableSamples) {
+        List<int[]> unreachableSamples, double routeBlocks, List<String> waypointLines) {
 
     public int unreachable() { return standable - reachable; }
 
-    public double rushSeconds() { return routeSteps / walkBlocksPerSecond; }
+    public double rushSeconds() { return routeBlocks / walkBlocksPerSecond; }
 
     private static double per100(int count, int steps) {
         return steps == 0 ? 0 : 100.0 * count / steps;
@@ -61,8 +61,8 @@ public record CensusReport(
             return out;
         }
         out.add(String.format(Locale.ROOT,
-                "route(rush, hub to deepest reachable): steps=%d end=(%d,%d,%d) rush=%.1f min at %.1f blocks/s",
-                routeSteps, routeEnd[0], routeEnd[1], routeEnd[2], rushSeconds() / 60.0,
+                "route(rush, hub to deepest reachable): steps=%d blocks=%.0f end=(%d,%d,%d) rush=%.1f min at %.1f blocks/s",
+                routeSteps, routeBlocks, routeEnd[0], routeEnd[1], routeEnd[2], rushSeconds() / 60.0,
                 walkBlocksPerSecond));
         for (int i = 0; i < bandIds.size(); i++) {
             int s = routeStepsPerBand[i];
@@ -71,6 +71,7 @@ public record CensusReport(
                     bandIds.get(i), s, per100(routeOrePerBand[i], s), per100(routeMobsPerBand[i], s),
                     per100(routeLootPerBand[i], s), per100(routeLandmarksPerBand[i], s)));
         }
+        out.addAll(waypointLines);
         out.add(String.format(Locale.ROOT,
                 "longestEmptyStretch(steps, interest radius): any=%d ore=%d mob=%d loot=%d landmark=%d",
                 emptyAny, emptyOre, emptyMob, emptyLoot, emptyLandmark));
