@@ -79,9 +79,17 @@ public final class MineEncounterManager {
         synchronized (UNPLACEABLE) {
             if (!data.runId().equals(unplaceableRun)) {
                 UNPLACEABLE.clear();
+                RETRY.clear();
                 unplaceableRun = data.runId();
             }
             if (UNPLACEABLE.contains(siteId)) return false;
+            int[] retry = RETRY.get(siteId);
+            if (retry != null && server.getTickCount() < retry[1]) return false;
+        }
+        // wait until the whole neighbourhood is loaded: a missing chunk is not a failure of the site
+        if (!mine.hasChunkAt(center.offset(radius, 0, radius)) || !mine.hasChunkAt(center.offset(-radius, 0, -radius))
+                || !mine.hasChunkAt(center.offset(radius, 0, -radius)) || !mine.hasChunkAt(center.offset(-radius, 0, radius))) {
+            return false;
         }
         MineEncounterCatalog.Profile profile = MineEncounterCatalog.forProfile(
                 TopologyProfiles.activeProfileId());
@@ -104,7 +112,7 @@ public final class MineEncounterManager {
         if (composition == null) return false;
         List<SpawnRequest> requests = resolveRequests(mine, composition);
         if (requests == null) {
-            markUnplaceable(siteId);
+            markUnplaceable(server, siteId);
             return false;
         }
         int currentRegionPopulation = (int) data.mineEntities().stream()
@@ -121,7 +129,7 @@ public final class MineEncounterManager {
         if (positions.size() != requests.size()) {
             LOGGER.warn("[dawnmine] No safe surface for encounter '{}' at {} in {}; site skipped.",
                     composition.id(), siteId, regionId);
-            markUnplaceable(siteId);
+            markUnplaceable(server, siteId);
             return false;
         }
         if (!data.claimEncounterSite(siteId)) return false;
@@ -161,13 +169,29 @@ public final class MineEncounterManager {
     }
 
     private static long preparedSeed;
+    private static int missingSites;
+    private static int lastNoticeTick = -1000;
     /** Sites that can never be placed this run (no standing room, unresolvable mobs): not retried every second. */
     private static final java.util.Set<String> UNPLACEABLE = new java.util.HashSet<>();
     private static String unplaceableRun = "";
 
-    private static void markUnplaceable(String siteId) {
+    private static final java.util.Map<String, int[]> RETRY = new java.util.HashMap<>(); // {failures, retryAtTick}
+    private static final int RETRY_DELAY_TICKS = 600;
+    private static final int MAX_FAILURES = 3;
+
+    /** A structural failure: retried after a delay, given up for the run after {@link #MAX_FAILURES}. */
+    private static void markUnplaceable(MinecraftServer server, String siteId) {
         synchronized (UNPLACEABLE) {
-            UNPLACEABLE.add(siteId);
+            if (siteId.startsWith("node:")) { // v1 callers ask once; their site was always final
+                UNPLACEABLE.add(siteId);
+                return;
+            }
+            int[] state = RETRY.computeIfAbsent(siteId, k -> new int[2]);
+            state[0]++;
+            state[1] = server.getTickCount() + RETRY_DELAY_TICKS;
+            if (state[0] >= MAX_FAILURES) {
+                UNPLACEABLE.add(siteId);
+            }
         }
     }
     /** Players wake sites within this distance (blocks, x/z) and this height difference. */
@@ -187,14 +211,18 @@ public final class MineEncounterManager {
         com.dwurdy.dawnmine.cave.EncounterSites sites =
                 com.dwurdy.dawnmine.generation.CaveTerrain.sitesIfReady(data.seed(), shell);
         if (sites == null) {
-            if (preparedSeed != data.seed()) {
+            if (preparedSeed != data.seed() || ++missingSites % 30 == 0) {
                 preparedSeed = data.seed();
-                com.dwurdy.dawnmine.generation.CaveTerrain.prepareAsync(data.seed(), shell);
+                com.dwurdy.dawnmine.generation.CaveTerrain.prepareAsync(data.seed(), shell); // cached: cheap to repeat
             }
             return;
         }
+        missingSites = 0;
         int woken = 0;
-        for (ServerPlayer player : mine.players()) {
+        List<ServerPlayer> players = new ArrayList<>(mine.players());
+        int start = (server.getTickCount() / 20) % players.size();
+        for (int p = 0; p < players.size(); p++) {
+            ServerPlayer player = players.get((start + p) % players.size());
             if (player.isSpectator()) continue;
             for (var site : sites.near(player.getBlockX(), player.getBlockZ(), WAKE_RADIUS)) {
                 if (Math.abs(site.y() - player.getBlockY()) > WAKE_HEIGHT
@@ -407,6 +435,12 @@ public final class MineEncounterManager {
         Entity.RemovalReason reason = entity.getRemovalReason();
         if (reason == Entity.RemovalReason.UNLOADED_TO_CHUNK
                 || reason == Entity.RemovalReason.UNLOADED_WITH_PLAYER) {
+            // Woken-site mobs stay in their saved chunk but stop counting against the caps while unloaded;
+            // they register again when the chunk loads (onEntityJoinMine), so the caps bound what is loaded.
+            MineRunData.MineEntityOrigin origin = data.mineEntity(entity.getUUID());
+            if (origin != null && origin.sourceId().contains(":site:")) {
+                data.unregisterMineEntity(entity.getUUID());
+            }
             return;
         }
         data.unregisterMineEntity(entity.getUUID());
@@ -464,21 +498,28 @@ public final class MineEncounterManager {
                 {-radius + 1, 0}, {radius - 1, 0}, {0, -radius + 1}, {0, radius - 1},
                 {-2, -2}, {-2, 2}, {2, -2}, {2, 2}, {-2, 0}, {2, 0}, {0, -2}, {0, 2}
         };
+        int[] heights = {0, 1, -1, 2, -2};
         for (int[] offset : offsets) {
-            BlockPos pos = center.offset(offset[0], 0, offset[1]);
-            if (!mine.hasChunkAt(pos) || !manager.isOwned(mine, pos)
-                    || data.isInSafeZone(mine, pos) || data.isInSafeZone(mine, pos.above())) continue;
-            BlockState floor = mine.getBlockState(pos.below());
-            if (!floor.isFaceSturdy(mine, pos.below(), net.minecraft.core.Direction.UP)
-                    || !mine.getBlockState(pos).isAir() || !mine.getBlockState(pos.above()).isAir()) continue;
-            if (candidates.stream().anyMatch(other -> other.distSqr(pos) < 4.0)) continue;
-            candidates.add(pos);
+            for (int dy : heights) {
+                BlockPos pos = center.offset(offset[0], dy, offset[1]);
+                if (!mine.hasChunkAt(pos) || !manager.isOwned(mine, pos)
+                        || data.isInSafeZone(mine, pos) || data.isInSafeZone(mine, pos.above())) continue;
+                BlockState floor = mine.getBlockState(pos.below());
+                if (!floor.isFaceSturdy(mine, pos.below(), net.minecraft.core.Direction.UP)
+                        || !mine.getBlockState(pos).isAir() || !mine.getBlockState(pos.above()).isAir()) continue;
+                if (candidates.stream().anyMatch(other -> other.distSqr(pos) < 4.0)) break;
+                candidates.add(pos);
+                break;
+            }
             if (candidates.size() >= count) break;
         }
         return candidates;
     }
 
     private static void notifyNearbyPlayers(ServerLevel mine, BlockPos center) {
+        int now = mine.getServer().getTickCount();
+        if (now - lastNoticeTick < 200) return; // one notice per ten seconds, not one per woken site
+        lastNoticeTick = now;
         double x = center.getX() + 0.5;
         double y = center.getY();
         double z = center.getZ() + 0.5;
