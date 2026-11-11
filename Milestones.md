@@ -169,3 +169,6 @@ The desired experience is specified in [Progression.md](Progression.md), with du
 
 ## Dawnmine 0.3
 The 0.3 product/design contract is `docs/Dawnmine-0.3-adventure-contract.md` (Dawnmine identity, whole-run pre-generation, underground hub arrival, lodestone teleporter). It supersedes the exploration/frontier generation approach: the mine is fully prepared before admission, players spawn inside a generated 45x45 underground hub, and travel is by right-clicking a staff-bound surface lodestone. Historical Public Mines reports in `docs/reports/` are legacy 0.2 evidence only.
+
+## M11 - Mine v2 rebuild (2026-11-11)
+Owner-approved rebuild of the mine generation: vanilla-style caves, 3 layers with multiple routes down, landmarks, ore/mob/loot systems, builder tooling. Concept: `docs/Mine-Concept-v2.md`. Plan and issue drafts: `docs/issues/M11-mine-v2-rebuild.md` (M11-0 ready; M11-1..9 draft pending baseline numbers).
