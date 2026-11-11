@@ -49,7 +49,7 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 **Acceptance criteria.**
 1. Command reports every metric above for each region, in-game and to the log, and is read-only (no block, entity or SavedData change).
 2. The same seed gives byte-identical output twice.
-3. A baseline report for v1 on 5 fixed seeds is committed to `docs/reports/M11-0-v1-baseline.md` and states the v1 values for ore share, encounters, loot and longest empty stretch.
+3. A baseline report for the current v1 mine is committed to `docs/reports/M11-0-v1-baseline.md` and states the v1 values for ore share, encounters, loot and longest empty stretch. (Amended at delivery: one live run, not 5 seeds, because v1 is being replaced; M11-1 onward use a fixed multi-seed set.)
 4. Unreachable-cell count equals an independent flood-fill result on a hand-built fixture with known traps.
 5. Non-operators cannot run it. Running it during preparation reports "not ready" instead of partial data.
 
