@@ -102,7 +102,9 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 
 **Dependencies.** After M11-1.
 
-## M11-3 - Landmark (POI) framework and vanilla-style landmark set  [draft]
+## M11-3 - Landmark (POI) framework and vanilla-style landmark set  [in delivery]
+
+**Delivered design (2026-11-11).** `cave/Landmarks` plans, from the stack and run seed alone, nine types: spawner dungeon, geode, fossil, buried ruin, flooded pool, mineshaft stub, collapsed shaft, Foreman's Office (flagged `safe`), miner camp. Each (except the wall fossil) is a side chamber cut into solid rock beside an open cave column, reached by a 3-block, 3x4 doorway with a floor level with the cave floor; the footprint plus a one-block rock shell must be solid, so landmarks never open into caves, tunnels, the hub or each other (any layer) and cannot change what is walkable outside themselves. Each lists hooks (encounter, loot) for M11-4/5 and an unused `authoredOverride` slot for M11-8. Edits are applied after caves and ore in both chunk generation and the reset baseline. No block-entity blocks yet (loot containers arrive with M11-5). Live census (local test server, one reset): 2,406 landmarks, 21 unreachable (same old hub decorations), landmarks per 100 route steps 0.5 / 0.6 / 0.3 (about one per 200 steps; longest landmark-free stretch 585 steps), so the proposed "one per 60-100 route blocks" is **not met**; reset 808 s. Not done: Foreman's Office safe-zone enforcement (needs the checkpoint rules), ravine bridge (no chasms exist).
 
 **Intent.** The owner wants occasional landmarks from vanilla gameplay in the player's path. A framework lets us add them one by one, and later lets a builder replace any of them.
 
