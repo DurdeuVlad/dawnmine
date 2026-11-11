@@ -328,11 +328,11 @@ public final class CensusService {
             int shell = DawnmineConfig.mineRegionRadiusChunks();
             CompletableFuture.supplyAsync(() -> {
                         List<CensusAnalyzer.Waypoint> waypoints = new ArrayList<>();
-                        for (var w : com.dwurdy.dawnmine.generation.CaveTerrain.stack(seed, shell).waypoints()) {
+                        var stackPlan = com.dwurdy.dawnmine.generation.CaveTerrain.stack(seed, shell);
+                        for (var w : stackPlan.waypoints()) {
                             waypoints.add(new CensusAnalyzer.Waypoint(w.name(), w.x(), w.y(), w.z()));
                         }
                         // landmarks are read from the plan (they have no block signature); the walk is still real blocks
-                        var stackPlan = com.dwurdy.dawnmine.generation.CaveTerrain.stack(seed, shell);
                         for (var lm : com.dwurdy.dawnmine.generation.CaveTerrain.landmarks(stackPlan, seed).placements()) {
                             snapshot.addLandmark(lm.x(), lm.y(), lm.z());
                         }

@@ -272,8 +272,9 @@ public final class Landmarks {
                 }
             }
             case MINESHAFT_STUB, COLLAPSED_SHAFT -> {
+                String rail = f.dx != 0 ? "minecraft:rail[shape=east_west]" : "minecraft:rail";
                 for (int t = 1; t <= lastT; t++) {
-                    f.set(t, 0, 1, "minecraft:rail");
+                    f.set(t, 0, 1, rail);
                 }
                 for (int t = DOOR + 2; t <= lastT; t += 4) {
                     for (int s = -hw; s <= hw; s++) {
@@ -303,18 +304,18 @@ public final class Landmarks {
                     }
                 }
                 f.set(DOOR + 1, -hw, 1, "minecraft:crafting_table");
-                f.set(DOOR + 1, hw, 1, "minecraft:furnace");
-                f.set(lastT, -hw, 1, "minecraft:barrel");
-                f.set(lastT, hw, 1, "minecraft:barrel");
+                f.set(DOOR + 1, hw, 1, "minecraft:stonecutter");
+                f.set(lastT, -hw, 1, "minecraft:composter");
+                f.set(lastT, hw, 1, "minecraft:composter");
                 f.set(DOOR + 1, 0, h, "minecraft:lantern[hanging=true]");
                 f.set(lastT, 0, h, "minecraft:lantern[hanging=true]");
             }
             case MINER_CAMP -> {
-                f.set(midT, 0, 1, "minecraft:campfire");
+                f.set(midT, 0, 1, "minecraft:cauldron");
                 f.set(DOOR + 1, -hw, 1, "minecraft:hay_block");
                 f.set(DOOR + 1, -hw + 1, 1, "minecraft:hay_block");
-                f.set(lastT, hw, 1, "minecraft:barrel");
-                f.set(lastT, hw - 1, 1, "minecraft:barrel");
+                f.set(lastT, hw, 1, "minecraft:composter");
+                f.set(lastT, hw - 1, 1, "minecraft:composter");
                 f.set(midT, -hw, h, "minecraft:lantern[hanging=true]");
                 f.set(midT, hw, h, "minecraft:lantern[hanging=true]");
                 f.hooks.add(new Hook("loot", f.wx(lastT, hw), f.floor + 1, f.wz(lastT, hw)));
@@ -366,7 +367,7 @@ public final class Landmarks {
                                     int minX, int minZ, int maxX, int maxZ) {
         for (int gz = cz - 1; gz <= cz + 1; gz++) {
             for (int gx = cx - 1; gx <= cx + 1; gx++) {
-                for (Placement o : byCell.getOrDefault(cellKey(layer, gx, gz), List.of())) {
+                for (Placement o : byCell.getOrDefault(cellKey(0, gx, gz), List.of())) {
                     if (minX <= o.maxX() + 2 && maxX >= o.minX() - 2 && minZ <= o.maxZ() + 2 && maxZ >= o.minZ() - 2) {
                         return true;
                     }
@@ -384,7 +385,7 @@ public final class Landmarks {
 
     private void commit(Build build, Map<Long, List<Placement>> byCell, int cx, int cz) {
         placements.add(build.placement());
-        byCell.computeIfAbsent(cellKey(build.placement().layer(), cx, cz), k -> new ArrayList<>())
+        byCell.computeIfAbsent(cellKey(0, cx, cz), k -> new ArrayList<>())
                 .add(build.placement());
         for (Edit e : build.edits()) {
             int idx = palette.indexOf(e.block());

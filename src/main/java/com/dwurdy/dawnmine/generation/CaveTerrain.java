@@ -36,33 +36,49 @@ public final class CaveTerrain {
     /** The landmark plan for a stack with every palette entry resolved once. */
     private record Marks(Landmarks plan, BlockState[] states) { }
 
-    private static final java.util.IdentityHashMap<CaveStack, Marks> MARKS = new java.util.IdentityHashMap<>();
+    private static final java.util.IdentityHashMap<CaveStack, CompletableFuture<Marks>> MARK_PLANS =
+            new java.util.IdentityHashMap<>();
+    private static volatile CaveStack lastMarkStack;
+    private static volatile Marks lastMarks;
 
-    /** The landmarks of a stack (planned once per stack; at most the current and previous run are held). */
+    /** The landmarks of a stack: planned once per stack outside any lock; the current and previous run are held. */
     private static Marks marks(CaveStack stack, long seed) {
-        synchronized (MARKS) {
-            Marks held = MARKS.get(stack);
-            if (held != null) {
-                return held;
+        Marks fast = lastMarks;
+        if (fast != null && lastMarkStack == stack) {
+            return fast;
+        }
+        CompletableFuture<Marks> future;
+        boolean planner = false;
+        synchronized (MARK_PLANS) {
+            future = MARK_PLANS.get(stack);
+            if (future == null) {
+                future = new CompletableFuture<>();
+                if (MARK_PLANS.size() >= 2) {
+                    MARK_PLANS.clear();
+                }
+                MARK_PLANS.put(stack, future);
+                planner = true;
             }
-            Landmarks plan = Landmarks.plan(stack, seed);
-            BlockState[] states = new BlockState[plan.palette().size()];
-            for (int i = 0; i < states.length; i++) {
-                try {
+        }
+        if (planner) {
+            try {
+                Landmarks plan = Landmarks.plan(stack, seed);
+                BlockState[] states = new BlockState[plan.palette().size()];
+                for (int i = 0; i < states.length; i++) {
                     states[i] = net.minecraft.commands.arguments.blocks.BlockStateParser.parseForBlock(
                             net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(),
                             plan.palette().get(i), false).blockState();
-                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
-                    throw new IllegalStateException("bad landmark block " + plan.palette().get(i), e);
                 }
+                future.complete(new Marks(plan, states));
+            } catch (Throwable t) {
+                LOGGER.error("[dawnmine] landmark planning failed for seed {}", seed, t);
+                future.completeExceptionally(t);
             }
-            Marks made = new Marks(plan, states);
-            if (MARKS.size() >= 2) {
-                MARKS.clear();
-            }
-            MARKS.put(stack, made);
-            return made;
         }
+        Marks made = future.join();
+        lastMarks = made;
+        lastMarkStack = stack;
+        return made;
     }
 
     /** Placed landmarks of a stack, for the census and later systems. */

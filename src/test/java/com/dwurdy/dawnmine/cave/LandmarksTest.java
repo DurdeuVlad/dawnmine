@@ -51,13 +51,14 @@ class LandmarksTest {
             Landmarks.Placement a = ps.get(i);
             assertFalse(Rock.protectedColumn(a.x(), a.z()), "anchor in protected volume");
             assertTrue(a.authoredOverride() == null, "no authored override yet");
+            CaveSheet sheet = STACK.sheet(a.layer());
+            assertTrue(sheet.isOpen(a.x(), a.z()) && sheet.heightAt(a.x(), a.z()) >= 4, "anchor is open cave");
+            assertEquals(sheet.floorAt(a.x(), a.z()) + 1, a.y(), "anchor stands on the floor");
             for (int j = i + 1; j < ps.size(); j++) {
                 Landmarks.Placement b = ps.get(j);
-                if (a.layer() == b.layer()) {
-                    boolean apart = a.maxX() + 2 < b.minX() || b.maxX() + 2 < a.minX()
-                            || a.maxZ() + 2 < b.minZ() || b.maxZ() + 2 < a.minZ();
-                    assertTrue(apart, "overlap " + a + " " + b);
-                }
+                boolean apart = a.maxX() + 2 < b.minX() || b.maxX() + 2 < a.minX()
+                        || a.maxZ() + 2 < b.minZ() || b.maxZ() + 2 < a.minZ();
+                assertTrue(apart, "overlap (any layer) " + a + " " + b);
             }
         }
         assertTrue(ps.stream().anyMatch(Landmarks.Placement::safe), "a Foreman's Office exists");
