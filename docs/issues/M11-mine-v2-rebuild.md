@@ -164,7 +164,9 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 
 ---
 
-## M11-2b - Ore system v2  [draft]  (runs after M11-1, parallel with M11-3)
+## M11-2b - Ore system v2  [in delivery]  (runs after M11-1, parallel with M11-3)
+
+**Delivered design (2026-11-11).** `cave/OreField` is a pure function of (cave stack, run seed, ore tables), used by chunk generation and by the reset baseline, so a reset regenerates ore with no per-block record. Each layer is cut into 12-block cells; a cell owns 7.5 / 11 / 15 expected veins on layers 0 / 1 / 2, each anchored on a rock block touching an open column and grown by a wall-hugging random walk through solid rock (6-17 blocks). 20% of veins are buried 3 blocks deep (hidden ore; there is no cracked-wall block, so "cracked walls" is delivered as buried veins). Three motherlodes per layer are 45 dense veins of the layer's rarest ore in a wide cavern away from the hub. No ore in the hub box or forecourt, open cells, tunnels or the shell. Tables come from the catalogue tiers (layer i = tier i) and are pinned for a run. Live census (one reset, local test server): exposed ore share 11.3% / 13.4% / 15.8%; 2.33M ore blocks; ore per 100 route steps 297 / 376 / 348; longest ore-free stretch on the route 80 steps (the "one vein per ~20 route blocks" rule is **not met everywhere**). The 60-case ore-break audit needs a JVM flag and was not re-run live (its code is untouched; it passes in unit tests).
 
 **Intent.** Ore was too scarce and invisible. A miner must always see ore, and rich finds must exist.
 

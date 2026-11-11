@@ -162,7 +162,7 @@ public final class OreField {
         List<Vein> made = growCell(layer, gx, gz);
         synchronized (cellCache) {
             cellCache.put(key, made);
-            while (cellCache.size() > 8192) {
+            while (cellCache.size() > 4096) {
                 cellCache.remove(cellCache.keySet().iterator().next());
             }
         }
@@ -212,7 +212,7 @@ public final class OreField {
         }
     }
 
-    /** A rock block touching an open column of the layer, inside the square; null after 12 tries. */
+    /** A rock block touching an open column of the layer, inside the square; null after 40 tries. */
     private int[] wallAnchor(int layer, Rng rng, int x0, int z0, int span, boolean buried) {
         CaveSheet sheet = stack.sheet(layer);
         for (int attempt = 0; attempt < 40; attempt++) {
