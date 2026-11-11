@@ -263,6 +263,7 @@ public final class Landmarks {
                 }
                 f.set(midT, 0, 0, "minecraft:chiseled_stone_bricks");
                 f.hooks.add(new Hook("loot", f.wx(midT, 0), f.floor + 1, f.wz(midT, 0)));
+                f.hooks.add(new Hook("encounter", f.wx(midT, 2), f.floor + 1, f.wz(midT, 2)));
             }
             case FLOODED_POOL -> {
                 for (int t = midT - 1; t <= midT + 1; t++) {
@@ -319,6 +320,7 @@ public final class Landmarks {
                 f.set(midT, -hw, h, "minecraft:lantern[hanging=true]");
                 f.set(midT, hw, h, "minecraft:lantern[hanging=true]");
                 f.hooks.add(new Hook("loot", f.wx(lastT, hw), f.floor + 1, f.wz(lastT, hw)));
+                f.hooks.add(new Hook("encounter", f.wx(midT, 2), f.floor + 1, f.wz(midT, 2)));
             }
             default -> throw new IllegalStateException("no decoration for " + type);
         }

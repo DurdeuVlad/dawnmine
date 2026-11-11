@@ -104,6 +104,28 @@ public final class DawnmineCommand {
                 .then(literal("check").executes(ctx -> recoverCheck(ctx.getSource())))
                 .then(literal("repair").executes(ctx -> recoverRepair(ctx.getSource()))));
 
+        root.then(literal("encounters").requires(src -> src.hasPermission(ADMIN_LEVEL))
+                .then(literal("status").executes(ctx -> {
+                    MineMessages.tellLines(ctx.getSource(),
+                            com.dwurdy.dawnmine.encounter.MineEncounterManager.statusLines(ctx.getSource().getServer()));
+                    return 1;
+                }))
+                .then(literal("wake")
+                        .then(Commands.argument("x", com.mojang.brigadier.arguments.IntegerArgumentType.integer())
+                                .then(Commands.argument("y", com.mojang.brigadier.arguments.IntegerArgumentType.integer())
+                                        .then(Commands.argument("z", com.mojang.brigadier.arguments.IntegerArgumentType.integer())
+                                                .executes(ctx -> {
+                                                    int n = com.dwurdy.dawnmine.encounter.MineEncounterManager.adminWake(
+                                                            ctx.getSource().getServer(),
+                                                            new net.minecraft.core.BlockPos(
+                                                                    com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "x"),
+                                                                    com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "y"),
+                                                                    com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "z")));
+                                                    ctx.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal(
+                                                            "Woke " + n + " encounter site(s)."), false);
+                                                    return n;
+                                                }))))));
+
         root.then(literal("census").requires(src -> src.hasPermission(ADMIN_LEVEL))
                 .executes(ctx -> census(ctx.getSource())));
 

@@ -83,7 +83,7 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
 
     static Profile parse(JsonObject json) {
         String id = requiredString(json, "id");
-        int totalCap = integer(json, "totalPopulationCap", 1, 128);
+        int totalCap = integer(json, "totalPopulationCap", 1, 2000);
         JsonArray regionArray = requiredArray(json, "regions");
         if (regionArray.size() > 32) throw new JsonParseException("profile has more than 32 regions");
         Map<String, Region> regions = new LinkedHashMap<>();

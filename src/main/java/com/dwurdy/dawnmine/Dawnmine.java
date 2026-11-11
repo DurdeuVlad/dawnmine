@@ -126,6 +126,7 @@ public class Dawnmine {
     private void onServerTick(ServerTickEvent.Post event) {
         DispatchManager.get(event.getServer()).tick();
         com.dwurdy.dawnmine.census.CensusService.onServerTick(event.getServer());
+        MineEncounterManager.wakeNearby(event.getServer());
         MineDailyReset.get(event.getServer()).onServerTick(event);
         MineGenerator.get(event.getServer()).onServerTick(event);
     }

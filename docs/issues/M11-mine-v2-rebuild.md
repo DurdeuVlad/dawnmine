@@ -124,7 +124,9 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 
 ---
 
-## M11-4 - Placed mob encounters  [draft]
+## M11-4 - Placed mob encounters  [in delivery]
+
+**Delivered design (2026-11-11).** `cave/EncounterSites` plans about 3,600 sites per layer from the run seed: patrol spots on a 28-block grid (never within 80 blocks of the hub) plus guardian sites from landmark hooks (never in the Foreman's Office). Mobs are not spawned at generation: once a second `MineEncounterManager.wakeNearby` wakes the unclaimed sites within 40 blocks (x/z) and 12 (y) of each non-spectator player, once per run per site, at most 6 a second, using the existing composition catalogue, scaling, rewards, provenance and reset cleanup. Alive-mob caps are 200 per region / 600 total; site mobs stop counting while their chunk is unloaded and count again when it loads. A site that cannot be placed is retried after 30 s up to 3 times. Admin: `/dawnmine encounters status|wake <x> <y> <z>`. Live (local test server): 10,858 planned sites, encounters per 100 route steps 2.5 / 3.2 / 2.5 (about one per 35 steps, longest encounter-free stretch 149 steps); forceloaded wake test: 7 sites woken, 16 mobs, no placement failures, second wake 0. **Not measured:** TPS with 4 players, solo survivability (owner playtest), per-chunk caps (only region and total caps exist).
 
 **Intent.** The mine had no mobs. Encounters must be designed content that players meet.
 

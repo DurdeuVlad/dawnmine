@@ -336,6 +336,10 @@ public final class CensusService {
                         for (var lm : com.dwurdy.dawnmine.generation.CaveTerrain.landmarks(stackPlan, seed).placements()) {
                             snapshot.addLandmark(lm.x(), lm.y(), lm.z());
                         }
+                        // encounters spawn when a player comes near, so the census counts the planned sites
+                        for (var site : com.dwurdy.dawnmine.generation.CaveTerrain.encounterSites(stackPlan, seed).sites()) {
+                            snapshot.addMob(site.x(), site.y(), site.z());
+                        }
                         return CensusAnalyzer.analyze(snapshot, start.getX(), start.getY(), start.getZ(),
                                 CensusAnalyzer.Params.DEFAULT, waypoints);
                     }, executor())
@@ -352,8 +356,8 @@ public final class CensusService {
                             return;
                         }
                         List<String> lines = new ArrayList<>(report.lines());
-                        lines.add("note: 'mobs' counts spawner blocks only (live mobs are not part of the "
-                                + "world's static content); missingChunks=" + missingChunks);
+                        lines.add("note: 'mobs' counts spawner blocks plus planned encounter sites (mobs spawn when a "
+                                + "player comes near); missingChunks=" + missingChunks);
                         for (String line : lines) {
                             LOGGER.info("[dawnmine] census {}", line);
                             source.sendSuccess(() -> Component.literal(line), false);
