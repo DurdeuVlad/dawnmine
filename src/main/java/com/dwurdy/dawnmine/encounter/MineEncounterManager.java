@@ -56,59 +56,76 @@ public final class MineEncounterManager {
         }
     }
 
-    /** Called exactly after a topology room is completely generated. */
+    /** Called exactly after a topology room is completely generated (v1 audits and game tests still use it). */
     public static void onNodeGenerated(MinecraftServer server, TopoNode node) {
-        // Owner asked for mobs throughout the entire mine, not just
-        // cavern/cave/dead-end rooms - every room kind is now eligible.
-        // Checkpoints stay exempt: they're the deliberate safe rest points.
+        // Checkpoints stay exempt: they are the deliberate safe rest points.
         if (node == null || node.has(NodeFeature.CHECKPOINT)) return;
+        spawnSite(server, "node:" + node.id(), node.region(),
+                new BlockPos(node.pos().x(), node.pos().y(), node.pos().z()),
+                node.kind() == NodeKind.CAVERN ? 6 : 3);
+    }
+
+    /**
+     * Spawns the encounter of one planned site once per run: picks the composition by seed and site id,
+     * checks the population caps, finds standing places around {@code center} and claims the site.
+     * Returns true when mobs were spawned. A site skipped for a full cap stays unclaimed and is retried.
+     */
+    public static boolean spawnSite(MinecraftServer server, String siteId, String regionId,
+                                    BlockPos center, int radius) {
         ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
-        if (mine == null) return;
+        if (mine == null) return false;
         MineManager manager = MineManager.get(server);
         MineRunData data = manager.data();
+        synchronized (UNPLACEABLE) {
+            if (!data.runId().equals(unplaceableRun)) {
+                UNPLACEABLE.clear();
+                unplaceableRun = data.runId();
+            }
+            if (UNPLACEABLE.contains(siteId)) return false;
+        }
         MineEncounterCatalog.Profile profile = MineEncounterCatalog.forProfile(
                 TopologyProfiles.activeProfileId());
         if (profile == null) {
-            LOGGER.error("[dawnmine] No encounter profile matches topology profile '{}'; skipping node {}.",
-                    TopologyProfiles.activeProfileId(), node.id());
-            return;
+            LOGGER.error("[dawnmine] No encounter profile matches topology profile '{}'; skipping site {}.",
+                    TopologyProfiles.activeProfileId(), siteId);
+            return false;
         }
-        MineEncounterCatalog.Region region = profile.region(node.region());
+        MineEncounterCatalog.Region region = profile.region(regionId);
         if (region == null) {
-            LOGGER.error("[dawnmine] Encounter profile '{}' has no region '{}'; skipping node {}.",
-                    profile.id(), node.region(), node.id());
-            return;
+            LOGGER.error("[dawnmine] Encounter profile '{}' has no region '{}'; skipping site {}.",
+                    profile.id(), regionId, siteId);
+            return false;
         }
-        if (!manager.isOwned(mine, new BlockPos(node.pos().x(), node.pos().y(), node.pos().z()))) {
-            return;
+        if (!manager.isOwned(mine, center) || data.hasClaimedEncounterSite(siteId)) {
+            return false;
         }
-        String siteId = "node:" + node.id();
         MineEncounterCatalog.Composition composition = selectComposition(
                 data.seed(), siteId, region.compositions());
-        if (composition == null) return;
+        if (composition == null) return false;
         List<SpawnRequest> requests = resolveRequests(mine, composition);
-        if (requests == null) return;
+        if (requests == null) {
+            markUnplaceable(siteId);
+            return false;
+        }
         int currentRegionPopulation = (int) data.mineEntities().stream()
-                .filter(origin -> origin.runId().equals(data.runId()) && origin.region().equals(node.region()))
+                .filter(origin -> origin.runId().equals(data.runId()) && origin.region().equals(regionId))
                 .count();
         int currentPopulation = (int) data.mineEntities().stream()
                 .filter(origin -> origin.runId().equals(data.runId())).count();
-        // Budget by what this server can actually spawn (base + whatever bonus
-        // entities resolve), not the composition's worst-case maxPopulation -
-        // otherwise a server without the bonus pack reserves headroom for mobs
-        // that will never spawn and admits fewer encounters than it could.
+        // Budget by what this server can actually spawn (base + whatever bonus entities resolve).
         if (currentRegionPopulation + requests.size() > region.populationCap()
                 || currentPopulation + requests.size() > profile.totalPopulationCap()) {
-            return;
+            return false;
         }
-        List<BlockPos> positions = findSpawnPositions(mine, manager, data, node, requests.size());
+        List<BlockPos> positions = findSpawnPositions(mine, manager, data, center, radius, requests.size());
         if (positions.size() != requests.size()) {
             LOGGER.warn("[dawnmine] No safe surface for encounter '{}' at {} in {}; site skipped.",
-                    composition.id(), node.id(), node.region());
-            return;
+                    composition.id(), siteId, regionId);
+            markUnplaceable(siteId);
+            return false;
         }
-        if (!data.claimEncounterSite(siteId)) return;
-        notifyNearbyPlayers(mine, node);
+        if (!data.claimEncounterSite(siteId)) return false;
+        notifyNearbyPlayers(mine, center);
 
         int spawned = 0;
         for (int i = 0; i < requests.size(); i++) {
@@ -125,21 +142,70 @@ public final class MineEncounterManager {
             mob.finalizeSpawn(mine, mine.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null);
             mob.setPersistenceRequired();
             mob.getPersistentData().putString(RUN_TAG, data.runId());
-            mob.getPersistentData().putString(SOURCE_TAG, "encounter:" + composition.id() + ":" + node.id());
-            mob.getPersistentData().putString(REGION_TAG, node.region());
+            mob.getPersistentData().putString(SOURCE_TAG, "encounter:" + composition.id() + ":" + siteId);
+            mob.getPersistentData().putString(REGION_TAG, regionId);
             MobLevelScaling.apply(mob, composition.level());
             if (mine.noCollision(mob) && mine.addFreshEntity(mob)) {
                 ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
                 data.registerMineEntity(mob.getUUID(), entityId, mine.dimension(), pos,
-                        mob.getPersistentData().getString(SOURCE_TAG), node.region());
+                        mob.getPersistentData().getString(SOURCE_TAG), regionId);
                 spawned++;
             } else {
                 mob.discard();
             }
         }
         LOGGER.info("[dawnmine] Spawned {}/{} mobs for '{}' in {} ({}; tactic: {}; counterplay: {}).",
-                spawned, requests.size(), composition.id(), node.region(), siteId,
+                spawned, requests.size(), composition.id(), regionId, siteId,
                 composition.threat(), composition.counterplay());
+        return spawned > 0;
+    }
+
+    private static long preparedSeed;
+    /** Sites that can never be placed this run (no standing room, unresolvable mobs): not retried every second. */
+    private static final java.util.Set<String> UNPLACEABLE = new java.util.HashSet<>();
+    private static String unplaceableRun = "";
+
+    private static void markUnplaceable(String siteId) {
+        synchronized (UNPLACEABLE) {
+            UNPLACEABLE.add(siteId);
+        }
+    }
+    /** Players wake sites within this distance (blocks, x/z) and this height difference. */
+    public static final int WAKE_RADIUS = 40;
+    public static final int WAKE_HEIGHT = 12;
+    /** Sites woken per second at most, so a crowd never spawns a whole region in one tick. */
+    private static final int WAKE_PER_SECOND = 6;
+
+    /** Once a second: wakes the unclaimed encounter sites near each player in the mine. */
+    public static void wakeNearby(MinecraftServer server) {
+        if (server.getTickCount() % 20 != 0) return;
+        ServerLevel mine = server.getLevel(MineManager.MINE_DIMENSION);
+        if (mine == null || mine.players().isEmpty()) return;
+        MineRunData data = MineManager.get(server).data();
+        if (data == null || data.status() != com.dwurdy.dawnmine.run.RunStatus.READY || data.seed() == 0) return;
+        int shell = com.dwurdy.dawnmine.config.DawnmineConfig.mineRegionRadiusChunks();
+        com.dwurdy.dawnmine.cave.EncounterSites sites =
+                com.dwurdy.dawnmine.generation.CaveTerrain.sitesIfReady(data.seed(), shell);
+        if (sites == null) {
+            if (preparedSeed != data.seed()) {
+                preparedSeed = data.seed();
+                com.dwurdy.dawnmine.generation.CaveTerrain.prepareAsync(data.seed(), shell);
+            }
+            return;
+        }
+        int woken = 0;
+        for (ServerPlayer player : mine.players()) {
+            if (player.isSpectator()) continue;
+            for (var site : sites.near(player.getBlockX(), player.getBlockZ(), WAKE_RADIUS)) {
+                if (Math.abs(site.y() - player.getBlockY()) > WAKE_HEIGHT
+                        || data.hasClaimedEncounterSite(site.id())) continue;
+                BlockPos center = new BlockPos(site.x(), site.y(), site.z());
+                if (spawnSite(server, site.id(), site.region(), center, site.kind().equals("patrol") ? 4 : 3)
+                        && ++woken >= WAKE_PER_SECOND) {
+                    return;
+                }
+            }
+        }
     }
 
     /** Validate the encounter data against the actual server registry at startup. */
@@ -390,9 +456,7 @@ public final class MineEncounterManager {
     }
 
     private static List<BlockPos> findSpawnPositions(ServerLevel mine, MineManager manager, MineRunData data,
-                                                      TopoNode node, int count) {
-        int radius = node.kind() == NodeKind.CAVERN ? 6 : 3;
-        BlockPos center = new BlockPos(node.pos().x(), node.pos().y(), node.pos().z());
+                                                      BlockPos center, int radius, int count) {
         List<BlockPos> candidates = new ArrayList<>();
         int[][] offsets = {
                 {-radius, 0}, {radius, 0}, {0, -radius}, {0, radius},
@@ -414,10 +478,10 @@ public final class MineEncounterManager {
         return candidates;
     }
 
-    private static void notifyNearbyPlayers(ServerLevel mine, TopoNode node) {
-        double x = node.pos().x() + 0.5;
-        double y = node.pos().y();
-        double z = node.pos().z() + 0.5;
+    private static void notifyNearbyPlayers(ServerLevel mine, BlockPos center) {
+        double x = center.getX() + 0.5;
+        double y = center.getY();
+        double z = center.getZ() + 0.5;
         for (Player player : mine.players()) {
             if (player.distanceToSqr(x, y, z) <= MAX_SPAWN_DISTANCE_FROM_PLAYER_SQUARED) {
                 player.sendSystemMessage(Component.literal("You hear movement deeper in the mineshaft."));

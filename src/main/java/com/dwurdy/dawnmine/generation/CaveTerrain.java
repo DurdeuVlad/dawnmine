@@ -34,7 +34,7 @@ public final class CaveTerrain {
     private record Ores(OreField field, BlockState[] states, String fingerprint) { }
 
     /** The landmark plan for a stack with every palette entry resolved once. */
-    private record Marks(Landmarks plan, BlockState[] states) { }
+    private record Marks(Landmarks plan, BlockState[] states, com.dwurdy.dawnmine.cave.EncounterSites sites) { }
 
     private static final java.util.IdentityHashMap<CaveStack, CompletableFuture<Marks>> MARK_PLANS =
             new java.util.IdentityHashMap<>();
@@ -69,7 +69,7 @@ public final class CaveTerrain {
                             net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(),
                             plan.palette().get(i), false).blockState();
                 }
-                future.complete(new Marks(plan, states));
+                future.complete(new Marks(plan, states, com.dwurdy.dawnmine.cave.EncounterSites.plan(stack, plan, seed)));
             } catch (Throwable t) {
                 LOGGER.error("[dawnmine] landmark planning failed for seed {}", seed, t);
                 future.completeExceptionally(t);
@@ -79,6 +79,30 @@ public final class CaveTerrain {
         lastMarks = made;
         lastMarkStack = stack;
         return made;
+    }
+
+    /** Encounter sites of the run, or null while its stack and landmarks are still being planned (never blocks). */
+    public static com.dwurdy.dawnmine.cave.EncounterSites sitesIfReady(long seed, int shellRadiusChunks) {
+        CompletableFuture<CaveStack> stackFuture;
+        synchronized (CACHE) {
+            stackFuture = CACHE.get(seed + ":" + shellRadiusChunks);
+        }
+        if (stackFuture == null || !stackFuture.isDone() || stackFuture.isCompletedExceptionally()) {
+            return null;
+        }
+        CompletableFuture<Marks> marksFuture;
+        synchronized (MARK_PLANS) {
+            marksFuture = MARK_PLANS.get(stackFuture.join());
+        }
+        if (marksFuture == null || !marksFuture.isDone() || marksFuture.isCompletedExceptionally()) {
+            return null;
+        }
+        return marksFuture.join().sites();
+    }
+
+    /** Encounter sites of a stack (blocking: plans on first use), for the census. */
+    public static com.dwurdy.dawnmine.cave.EncounterSites encounterSites(CaveStack stack, long seed) {
+        return marks(stack, seed).sites();
     }
 
     /** Placed landmarks of a stack, for the census and later systems. */
@@ -153,7 +177,7 @@ public final class CaveTerrain {
 
     /** Plans the stack on a background thread so the first chunk or reset step does not wait for it. */
     public static void prepareAsync(long seed, int shellRadiusChunks) {
-        CompletableFuture.runAsync(() -> stack(seed, shellRadiusChunks))
+        CompletableFuture.runAsync(() -> marks(stack(seed, shellRadiusChunks), seed))
                 .exceptionally(t -> {
                     LOGGER.error("[dawnmine] background cave planning failed", t);
                     return null;

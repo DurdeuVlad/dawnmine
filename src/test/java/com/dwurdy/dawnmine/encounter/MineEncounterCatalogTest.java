@@ -27,7 +27,7 @@ class MineEncounterCatalogTest {
     void bundledProfileHasDepthSpecificBoundedCounterplayTables() throws Exception {
         MineEncounterCatalog.Profile profile = bundled();
         assertEquals("standard", profile.id());
-        assertEquals(64, profile.totalPopulationCap());
+        assertEquals(600, profile.totalPopulationCap());
         assertEquals(List.of("upper", "middle", "chaos"),
                 List.of("upper", "middle", "chaos").stream()
                         .filter(id -> profile.region(id) != null).toList());
