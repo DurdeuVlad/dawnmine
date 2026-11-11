@@ -31,44 +31,102 @@ public final class CavePlanner {
     private static final int GATE_X1 = 24;
     private static final int GATE_HALF_WIDTH = 2;
     private static final int GATE_HEIGHT = 4;
-    /** Largest shell the planner will size a layer for (memory is ~28 bytes per column). */
+    /** The cave stack is designed and tested for the default 2048-block shell up to 96 chunks
+     * (memory is about 28 bytes per column per layer). */
+    private static final int MIN_SHELL_CHUNKS = 64;
     private static final int MAX_SHELL_CHUNKS = 96;
     /** Open regions smaller than this many columns are filled in instead of joined. */
     private static final int MIN_REGION = 60;
     private static final int CHANNEL_HEIGHT = 5;
 
-    /** Extent and vertical limits of one layer. Bounds are inclusive block coordinates. */
+    /** Number of stacked layers in the mine. */
+    public static final int LAYERS = 3;
+
+    /** Extent and vertical limits of one layer. Bounds are inclusive block coordinates.
+     * Only the first layer ({@code hub}) has the hub box, gateway and forecourt. */
     public record Spec(int minX, int maxX, int minZ, int maxZ,
-            int floorBase, int floorAmp, int maxHeight, int bandMinY, int bandMaxY) {
-        /** The shared mine's first layer: inside the 64-chunk shell with a rock margin. */
+            int floorBase, int floorAmp, int maxHeight, int bandMinY, int bandMaxY,
+            boolean hub, long salt) {
+
+        /** The first layer of the 64-chunk shell. */
         public static Spec standard() {
-            return new Spec(-1018, 1018, -1018, 1018, 44, 12, 22, 24, 100);
+            return layer(0, 64);
         }
 
-        /** The layer sized to a bedrock shell of the given radius in chunks (6 blocks of rock margin). */
+        /** The first layer sized to a bedrock shell of the given chunk radius. */
         public static Spec forShell(int shellRadiusChunks) {
-            if (shellRadiusChunks < 8 || shellRadiusChunks > MAX_SHELL_CHUNKS) {
-                throw new IllegalArgumentException("cave layer supports shells of 8.." + MAX_SHELL_CHUNKS
+            return layer(0, shellRadiusChunks);
+        }
+
+        /** Layer {@code index} (0 = top, with the hub) sized to a shell of the given radius in chunks
+         * (6 blocks of rock margin). Layers are separated by solid rock. */
+        public static Spec layer(int index, int shellRadiusChunks) {
+            if (shellRadiusChunks < MIN_SHELL_CHUNKS || shellRadiusChunks > MAX_SHELL_CHUNKS) {
+                throw new IllegalArgumentException("cave layer supports shells of 64.." + MAX_SHELL_CHUNKS
                         + " chunks, not " + shellRadiusChunks);
             }
-            int edge = shellRadiusChunks * 16 - 6;
-            return new Spec(-edge, edge, -edge, edge, 44, 12, 22, 24, 100);
+            int e = shellRadiusChunks * 16 - 6;
+            return switch (index) {
+                case 0 -> new Spec(-e, e, -e, e, 44, 12, 22, 24, 100, true, 0L);
+                case 1 -> new Spec(-e, e, -e, e, -4, 8, 14, -26, 18, false, 0x1A7E2L);
+                case 2 -> new Spec(-e, e, -e, e, -44, 5, 10, -58, -30, false, 0x2B8F3L);
+                default -> throw new IllegalArgumentException("no layer " + index);
+            };
         }
 
         /** A smaller square of the same layer, for tests. */
         public Spec withRadius(int radius) {
             return new Spec(-radius, radius, -radius, radius, floorBase, floorAmp, maxHeight,
-                    bandMinY, bandMaxY);
+                    bandMinY, bandMaxY, hub, salt);
         }
     }
 
     private CavePlanner() { }
 
-    public static CaveSheet plan(Spec spec, long seed) {
+    /** A fixed open spot a descent tunnel meets this layer at: floor and height are pinned along the
+     * segment (x0,z0)-(x1,z1) out to {@code radius}, and the layer's floor blends back to its natural
+     * shape over {@link #BLEND} blocks, so the tunnel mouth never opens onto a cliff. */
+    public record Pin(int x0, int z0, int x1, int z1, int radius, int floor, int height, double blend) {
+        public static Pin point(int x, int z, int radius, int floor, int height, double blend) {
+            return new Pin(x, z, x, z, radius, floor, height, blend);
+        }
+    }
+
+    /** The anchor-independent part of a layer: noise floors, open heights and pillars. Computing it
+     * is the slow step (seconds), so it is done once and {@link #finish} reused for each pass. */
+    public static final class Fields {
+        final Spec spec;
+        final int w;
+        final int d;
+        final float[] noiseFloor;
+        final float[] rawHeight;
+        final boolean[] pillar;
+
+        private Fields(Spec spec, int w, int d) {
+            this.spec = spec;
+            this.w = w;
+            this.d = d;
+            this.noiseFloor = new float[w * d];
+            this.rawHeight = new float[w * d];
+            this.pillar = new boolean[w * d];
+        }
+
+        public Spec spec() { return spec; }
+
+        public int index(int x, int z) {
+            return (z - spec.minZ()) * w + (x - spec.minX());
+        }
+    }
+
+    public static CaveSheet plan(Spec spec, long baseSeed) {
+        return finish(fields(spec, baseSeed), java.util.List.of(), new java.util.BitSet());
+    }
+
+    public static Fields fields(Spec spec, long baseSeed) {
+        long seed = baseSeed ^ spec.salt();
         int w = spec.maxX() - spec.minX() + 1;
         int d = spec.maxZ() - spec.minZ() + 1;
-        int[] floor = new int[w * d];
-        int[] height = new int[w * d];
+        Fields f = new Fields(spec, w, d);
         Noise2D floorLow = new Noise2D(seed ^ 0x51A5E1L);
         Noise2D floorHigh = new Noise2D(seed ^ 0x7F3C99L);
         Noise2D cavern = new Noise2D(seed ^ 0xCA7E41L);
@@ -77,40 +135,76 @@ public final class CavePlanner {
         Noise2D tunB = new Noise2D(seed ^ 0x70BB11L);
         Noise2D tunBWidth = new Noise2D(seed ^ 0x70BB22L);
         Noise2D pillar = new Noise2D(seed ^ 0x9111A2L);
-
         int floorMin = spec.bandMinY() + 1;
         int floorMax = spec.bandMaxY() - CaveSheet.MIN_HEIGHT - 1;
         for (int z = spec.minZ(); z <= spec.maxZ(); z++) {
             for (int x = spec.minX(); x <= spec.maxX(); x++) {
                 int i = (z - spec.minZ()) * w + (x - spec.minX());
-                double pd = pinDistance(x, z);
-                double s = pd <= 0 ? 0 : smooth(Math.min(1.0, pd / BLEND));
-
                 double fn = spec.floorBase() + spec.floorAmp()
                         * (0.7 * floorLow.fbm(x / 180.0, z / 180.0, 4, 2.0, 0.5)
                         + 0.3 * floorHigh.fbm(x / 60.0 + 100, z / 60.0, 3, 2.0, 0.5));
-                fn = Math.max(floorMin, Math.min(floorMax, fn));
-                floor[i] = (int) Math.round(PIN_FLOOR + (fn - PIN_FLOOR) * s);
+                f.noiseFloor[i] = (float) Math.max(floorMin, Math.min(floorMax, fn));
 
                 double c = cavern.fbm((x + 500) / 110.0, (z - 300) / 110.0, 4, 2.0, 0.5);
                 double hc = smooth(clamp01((c - 0.24) / 0.25));
                 double raw = hc > 0 ? 4 + hc * (spec.maxHeight() - 4) : 0;
                 raw = Math.max(raw, tunnel(tunA, tunAWidth, x, z, 0, 0));
                 raw = Math.max(raw, tunnel(tunB, tunBWidth, x, z, 4000, -2500));
-                if (raw > 0 && pd > 4 && pillar.fbm(x / 14.0, z / 14.0, 2, 2.0, 0.5) > 0.55) {
+                f.rawHeight[i] = (float) raw;
+                f.pillar[i] = raw > 0 && pillar.fbm(x / 14.0, z / 14.0, 2, 2.0, 0.5) > 0.55;
+            }
+        }
+        return f;
+    }
+
+    /** Builds the walkable layer from precomputed fields, with extra pins and excluded columns
+     * (bit index = {@link Fields#index}). Excluded columns stay solid rock and are never channelled. */
+    public static CaveSheet finish(Fields f, java.util.List<Pin> pins, java.util.BitSet excluded) {
+        Spec spec = f.spec;
+        int w = f.w;
+        int d = f.d;
+        int[] floor = new int[w * d];
+        int[] height = new int[w * d];
+        for (int z = spec.minZ(); z <= spec.maxZ(); z++) {
+            for (int x = spec.minX(); x <= spec.maxX(); x++) {
+                int i = (z - spec.minZ()) * w + (x - spec.minX());
+                // nearest pin: the forecourt on the hub layer, then any anchors
+                double pd = spec.hub() ? pinDistance(x, z) : 1e9;
+                int pinFloor = PIN_FLOOR;
+                int pinHeight = PIN_HEIGHT;
+                double pinBlend = BLEND;
+                for (Pin pin : pins) {
+                    double dd = pinDistance(pin, x, z);
+                    if (dd < pd) {
+                        pd = dd;
+                        pinFloor = pin.floor();
+                        pinHeight = pin.height();
+                        pinBlend = pin.blend();
+                    }
+                }
+                double s = pd <= 0 ? 0 : smooth(Math.min(1.0, pd / pinBlend));
+                floor[i] = (int) Math.round(pinFloor + (f.noiseFloor[i] - pinFloor) * s);
+                double raw = f.rawHeight[i];
+                if (raw > 0 && pd > 4 && f.pillar[i]) {
                     raw = 0; // a rock pillar
                 }
-                double blended = PIN_HEIGHT + (raw - PIN_HEIGHT) * s;
-                height[i] = (int) Math.round(blended);
+                height[i] = (int) Math.round(pinHeight + (raw - pinHeight) * s);
             }
         }
 
         chamfer(floor, w, d);
 
+        for (Pin pin : pins) {
+            int pi = (pin.z0() - spec.minZ()) * w + (pin.x0() - spec.minX());
+            if (floor[pi] != pin.floor()) {
+                throw new IllegalStateException("anchor floor moved from " + pin.floor() + " to "
+                        + floor[pi] + " at " + pin.x0() + "," + pin.z0());
+            }
+        }
         for (int z = spec.minZ(); z <= spec.maxZ(); z++) {
             for (int x = spec.minX(); x <= spec.maxX(); x++) {
                 int i = (z - spec.minZ()) * w + (x - spec.minX());
-                if (gateway(x, z)) {
+                if (spec.hub() && gateway(x, z)) {
                     if (floor[i] != PIN_FLOOR) {
                         throw new IllegalStateException("hub gateway floor was moved to " + floor[i]
                                 + " at " + x + "," + z);
@@ -119,7 +213,7 @@ public final class CavePlanner {
                     continue;
                 }
                 int h = Math.min(height[i], spec.bandMaxY() - floor[i] - 1);
-                if (h < CaveSheet.MIN_HEIGHT || forbidden(x, z, spec)) {
+                if (h < CaveSheet.MIN_HEIGHT || forbidden(x, z, spec) || excluded.get(i)) {
                     h = 0;
                 }
                 height[i] = h;
@@ -127,13 +221,22 @@ public final class CavePlanner {
         }
 
         // Rock between forecourt and a floor that was lowered out of the pin would be a bug.
-        int pinIndex = (0 - spec.minZ()) * w + (PIN_X1 - spec.minX());
-        if (floor[pinIndex] != PIN_FLOOR || height[pinIndex] <= 0) {
-            throw new IllegalStateException("forecourt pin was not kept: floor=" + floor[pinIndex]
-                    + " height=" + height[pinIndex]);
+        int pinIndex = -1;
+        if (spec.hub()) {
+            pinIndex = (0 - spec.minZ()) * w + (PIN_X1 - spec.minX());
+            if (floor[pinIndex] != PIN_FLOOR || height[pinIndex] <= 0) {
+                throw new IllegalStateException("forecourt pin was not kept: floor=" + floor[pinIndex]
+                        + " height=" + height[pinIndex]);
+            }
+        }
+        for (Pin pin : pins) {
+            int pi = (pin.z0() - spec.minZ()) * w + (pin.x0() - spec.minX());
+            if (height[pi] <= 0) {
+                throw new IllegalStateException("anchor at " + pin.x0() + "," + pin.z0() + " is not open");
+            }
         }
 
-        joinRegions(spec, floor, height, w, d, pinIndex);
+        joinRegions(spec, floor, height, w, d, pinIndex, excluded);
 
         byte[] packed = new byte[w * d];
         for (int i = 0; i < packed.length; i++) {
@@ -159,11 +262,21 @@ public final class CavePlanner {
     private static double pinDistance(int x, int z) {
         double t = Math.max(0, Math.min(1.0, (x - PIN_X0) / (double) (PIN_X1 - PIN_X0)));
         double px = PIN_X0 + (PIN_X1 - PIN_X0) * t;
-        double dist = Math.hypot(x - px, z);
+        double dist = StrictMath.hypot(x - px, z);
         if (x >= PIN_X0 && dist <= PIN_RADIUS) {
             return 0;
         }
         return Math.max(1e-6, dist - PIN_RADIUS);
+    }
+
+    /** Distance outside a pin (0 inside it). */
+    private static double pinDistance(Pin pin, int x, int z) {
+        double sx = pin.x1() - pin.x0();
+        double sz = pin.z1() - pin.z0();
+        double len2 = sx * sx + sz * sz;
+        double t = len2 == 0 ? 0 : Math.max(0, Math.min(1.0, ((x - pin.x0()) * sx + (z - pin.z0()) * sz) / len2));
+        double dist = StrictMath.hypot(x - (pin.x0() + sx * t), z - (pin.z0() + sz * t));
+        return dist <= pin.radius() ? 0 : Math.max(1e-6, dist - pin.radius());
     }
 
     /** True for the hub's east gateway tunnel columns. */
@@ -172,10 +285,10 @@ public final class CavePlanner {
     }
 
     private static boolean forbidden(int x, int z, Spec spec) {
-        if (gateway(x, z)) {
+        if (spec.hub() && gateway(x, z)) {
             return false;
         }
-        boolean inHub = Math.abs(x) <= HUB_EXCLUDE && Math.abs(z) <= HUB_EXCLUDE;
+        boolean inHub = spec.hub() && Math.abs(x) <= HUB_EXCLUDE && Math.abs(z) <= HUB_EXCLUDE;
         return inHub || x == spec.minX() || x == spec.maxX() || z == spec.minZ() || z == spec.maxZ();
     }
 
@@ -220,18 +333,19 @@ public final class CavePlanner {
     // ---- connectivity ----
 
     /** Fills tiny open regions and joins every other region to the forecourt region. */
-    private static void joinRegions(Spec spec, int[] floor, int[] height, int w, int d, int pinIndex) {
+    private static void joinRegions(Spec spec, int[] floor, int[] height, int w, int d, int pinIndex,
+            java.util.BitSet excluded) {
         int n = w * d;
         int[] label = new int[n];
         int[] queue = new int[n];
         int labels = labelRegions(height, label, queue, w, d);
-        int mainLabel = label[pinIndex];
         int[] size = new int[labels + 1];
         for (int i = 0; i < n; i++) {
             if (label[i] > 0) {
                 size[label[i]]++;
             }
         }
+        int mainLabel = pinIndex >= 0 ? label[pinIndex] : largest(size);
         boolean needJoin = false;
         for (int i = 0; i < n; i++) {
             int l = label[i];
@@ -272,7 +386,8 @@ public final class CavePlanner {
                     continue;
                 }
                 int ni = nz * w + nx;
-                if (dist[ni] >= 0 || forbidden(spec.minX() + nx, spec.minZ() + nz, spec)) {
+                if (dist[ni] >= 0 || excluded.get(ni)
+                        || forbidden(spec.minX() + nx, spec.minZ() + nz, spec)) {
                     continue;
                 }
                 dist[ni] = dist[cur] + 1;
@@ -296,13 +411,23 @@ public final class CavePlanner {
                 continue;
             }
             for (int at = nearest[l]; at >= 0 && label[at] != mainLabel; at = parent[at]) {
-                carveChannel(spec, floor, height, w, d, at);
+                carveChannel(spec, floor, height, w, d, at, excluded);
             }
         }
 
         // Anything still not in the main region (blocked by the hub box or edge) is filled in.
         labels = labelRegions(height, label, queue, w, d);
-        mainLabel = label[pinIndex];
+        if (pinIndex >= 0) {
+            mainLabel = label[pinIndex];
+        } else {
+            int[] sz = new int[labels + 1];
+            for (int i = 0; i < n; i++) {
+                if (label[i] > 0) {
+                    sz[label[i]]++;
+                }
+            }
+            mainLabel = largest(sz);
+        }
         for (int i = 0; i < n; i++) {
             if (label[i] > 0 && label[i] != mainLabel) {
                 height[i] = 0;
@@ -310,8 +435,20 @@ public final class CavePlanner {
         }
     }
 
+    /** Label (1-based) with the most columns; ties go to the lowest label. */
+    private static int largest(int[] size) {
+        int best = 0;
+        for (int l = 1; l < size.length; l++) {
+            if (best == 0 || size[l] > size[best]) {
+                best = l;
+            }
+        }
+        return best;
+    }
+
     /** Opens a 3-wide channel centred on a column, skipping forbidden columns. */
-    private static void carveChannel(Spec spec, int[] floor, int[] height, int w, int d, int at) {
+    private static void carveChannel(Spec spec, int[] floor, int[] height, int w, int d, int at,
+            java.util.BitSet excluded) {
         int cx = at % w;
         int cz = at / w;
         for (int dz = -1; dz <= 1; dz++) {
@@ -322,7 +459,8 @@ public final class CavePlanner {
                 int nx = cx + dx;
                 int nz = cz + dz;
                 if (nx < 0 || nz < 0 || nx >= w || nz >= d
-                        || forbidden(spec.minX() + nx, spec.minZ() + nz, spec)) {
+                        || forbidden(spec.minX() + nx, spec.minZ() + nz, spec)
+                        || excluded.get(nz * w + nx)) {
                     continue;
                 }
                 int ni = nz * w + nx;

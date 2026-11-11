@@ -40,7 +40,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
                             .forGetter(RunSeedNoiseLevelSource::getBiomeSource),
                     NoiseGeneratorSettings.CODEC.fieldOf("settings")
                             .forGetter(RunSeedNoiseLevelSource::generatorSettings),
-                    Codec.intRange(16, 96).fieldOf("shell_radius_chunks")
+                    Codec.intRange(64, 96).fieldOf("shell_radius_chunks")
                             .forGetter(RunSeedNoiseLevelSource::shellRadiusChunks))
             .apply(instance, RunSeedNoiseLevelSource::new));
 
@@ -50,8 +50,8 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
     public RunSeedNoiseLevelSource(BiomeSource biomeSource,
                                    Holder<NoiseGeneratorSettings> settings, int shellRadiusChunks) {
         super(biomeSource, settings);
-        if (shellRadiusChunks < 16 || shellRadiusChunks > 96) {
-            throw new IllegalArgumentException("shell radius must be within 16..96 chunks");
+        if (shellRadiusChunks < 64 || shellRadiusChunks > 96) {
+            throw new IllegalArgumentException("shell radius must be within 64..96 chunks");
         }
         this.shellRadiusChunks = shellRadiusChunks;
     }
@@ -116,7 +116,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
             return solid;
         }
         return CaveTerrain.carveColumn(solid, x, z, level.getMinBuildHeight(), level.getHeight(),
-                CaveTerrain.sheet(seed, shellRadiusChunks));
+                CaveTerrain.stack(seed, shellRadiusChunks));
     }
 
     private static final long NO_SEED = Long.MIN_VALUE;
@@ -134,7 +134,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
         if (seed == NO_SEED || !MineShellGeometry.inside(pos.x, pos.z, shellRadiusChunks)) {
             return;
         }
-        CaveTerrain.carve(chunk, CaveTerrain.sheet(seed, shellRadiusChunks));
+        CaveTerrain.carve(chunk, CaveTerrain.stack(seed, shellRadiusChunks));
     }
 
     /** The RandomState built under the current run's seed; used for

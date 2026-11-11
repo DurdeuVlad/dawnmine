@@ -3,8 +3,8 @@ package com.dwurdy.dawnmine.census;
 import com.dwurdy.dawnmine.config.DawnmineConfig;
 import com.dwurdy.dawnmine.generation.OreCatalog;
 import com.dwurdy.dawnmine.run.MineManager;
+import com.dwurdy.dawnmine.run.MineRunData;
 import com.dwurdy.dawnmine.topology.HubLayout;
-import com.dwurdy.dawnmine.topology.TopologyProfiles;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -166,21 +166,11 @@ public final class CensusService {
             this.radius = radius;
             this.width = radius * 2;
             this.total = width * width;
-            List<CensusSnapshot.Band> bands = new ArrayList<>();
-            for (var region : TopologyProfiles.active().regions()) {
-                bands.add(new CensusSnapshot.Band(region.id(), region.bottomY(), region.topY()));
-            }
-            // The first layer's caves reach above the old profile's top band; cover them.
-            int top = 0;
-            for (int i = 1; i < bands.size(); i++) {
-                if (bands.get(i).maxY() > bands.get(top).maxY()) {
-                    top = i;
-                }
-            }
-            if (!bands.isEmpty()) {
-                CensusSnapshot.Band b = bands.get(top);
-                bands.set(top, new CensusSnapshot.Band(b.id(), b.minY(), Math.max(b.maxY(), 127)));
-            }
+            // Bands are the three cave layers; gaps between them hold only descent tunnels.
+            List<CensusSnapshot.Band> bands = List.of(
+                    new CensusSnapshot.Band("upper", 24, 127),
+                    new CensusSnapshot.Band("middle", -30, 23),
+                    new CensusSnapshot.Band("chaos", -64, -31));
             this.snapshot = new CensusSnapshot(bands);
             this.bandMinY = bands.stream().mapToInt(CensusSnapshot.Band::minY).min().orElse(0);
             this.bandMaxY = bands.stream().mapToInt(CensusSnapshot.Band::maxY).max().orElse(-1);
@@ -333,9 +323,17 @@ public final class CensusService {
             Job self = this;
             int missingChunks = missing;
             source.sendSuccess(() -> Component.literal("Census scan done; analysing..."), false);
-            CompletableFuture.supplyAsync(() -> CensusAnalyzer.analyze(snapshot,
-                            start.getX(), start.getY(), start.getZ(), CensusAnalyzer.Params.DEFAULT),
-                            executor())
+            MineRunData runData = MineManager.get(server).data();
+            long seed = runData.seed();
+            int shell = DawnmineConfig.mineRegionRadiusChunks();
+            CompletableFuture.supplyAsync(() -> {
+                        List<CensusAnalyzer.Waypoint> waypoints = new ArrayList<>();
+                        for (var w : com.dwurdy.dawnmine.generation.CaveTerrain.stack(seed, shell).waypoints()) {
+                            waypoints.add(new CensusAnalyzer.Waypoint(w.name(), w.x(), w.y(), w.z()));
+                        }
+                        return CensusAnalyzer.analyze(snapshot, start.getX(), start.getY(), start.getZ(),
+                                CensusAnalyzer.Params.DEFAULT, waypoints);
+                    }, executor())
                     .whenComplete((report, error) -> server.execute(() -> {
                         if (current == self) {
                             current = null;
