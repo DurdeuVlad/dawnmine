@@ -116,7 +116,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
             return solid;
         }
         return CaveTerrain.carveColumn(solid, x, z, level.getMinBuildHeight(), level.getHeight(),
-                CaveTerrain.stack(seed, shellRadiusChunks));
+                CaveTerrain.stack(seed, shellRadiusChunks), seed);
     }
 
     private static final long NO_SEED = Long.MIN_VALUE;
@@ -134,7 +134,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
         if (seed == NO_SEED || !MineShellGeometry.inside(pos.x, pos.z, shellRadiusChunks)) {
             return;
         }
-        CaveTerrain.carve(chunk, CaveTerrain.stack(seed, shellRadiusChunks));
+        CaveTerrain.carve(chunk, CaveTerrain.stack(seed, shellRadiusChunks), seed);
     }
 
     /** The RandomState built under the current run's seed; used for

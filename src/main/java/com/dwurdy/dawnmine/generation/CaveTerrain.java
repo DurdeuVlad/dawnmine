@@ -3,6 +3,9 @@ package com.dwurdy.dawnmine.generation;
 import com.dwurdy.dawnmine.cave.CavePlanner;
 import com.dwurdy.dawnmine.cave.CaveSheet;
 import com.dwurdy.dawnmine.cave.CaveStack;
+import com.dwurdy.dawnmine.cave.OreField;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.NoiseColumn;
@@ -25,6 +28,43 @@ public final class CaveTerrain {
     private static final int CACHE_SIZE = 4;
 
     private CaveTerrain() { }
+
+    /** The ore field for a stack with the block of each ore resolved once. */
+    private record Ores(OreField field, BlockState[] states, String fingerprint) { }
+
+    private static final java.util.IdentityHashMap<CaveStack, Ores> ORES = new java.util.IdentityHashMap<>();
+
+    /** Ore veins for a stack, built from the active catalogue (layer i uses ore tier i). */
+    private static Ores ores(CaveStack stack, long seed) {
+        OreCatalog.OreCatalogSnapshot catalog = OreCatalog.active();
+        synchronized (ORES) {
+            Ores held = ORES.get(stack);
+            if (held != null && held.fingerprint().equals(catalog.fingerprint())) {
+                return held;
+            }
+            List<List<OreField.Ore>> tables = new ArrayList<>();
+            for (OreCatalog.Tier tier : OreCatalog.Tier.values()) {
+                List<OreField.Ore> table = new ArrayList<>();
+                for (OreCatalog.Entry e : catalog.resourceEntries(tier)) {
+                    table.add(new OreField.Ore(e.blockId().toString(), e.weight(), e.maxVeinSize()));
+                }
+                tables.add(table);
+            }
+            OreField field = new OreField(stack, seed, tables);
+            int n = field.oreCount();
+            BlockState[] states = new BlockState[n];
+            for (int i = 0; i < n; i++) {
+                states[i] = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+                        .get(net.minecraft.resources.ResourceLocation.parse(field.ore(i).id())).defaultBlockState();
+            }
+            if (ORES.size() >= CACHE_SIZE) {
+                ORES.clear();
+            }
+            Ores made = new Ores(field, states, catalog.fingerprint());
+            ORES.put(stack, made);
+            return made;
+        }
+    }
 
     /** The cave stack for a run seed inside a shell of the given radius (cached; planning takes seconds). */
     public static CaveStack stack(long seed, int shellRadiusChunks) {
@@ -65,7 +105,7 @@ public final class CaveTerrain {
     }
 
     /** Opens the planned cave cells inside one freshly filled chunk. */
-    public static void carve(ChunkAccess chunk, CaveStack stack) {
+    public static void carve(ChunkAccess chunk, CaveStack stack, long seed) {
         int minX = chunk.getPos().getMinBlockX();
         int minZ = chunk.getPos().getMinBlockZ();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -94,12 +134,23 @@ public final class CaveTerrain {
                 }
             }
         }
+        Ores ores = ores(stack, seed);
+        for (var column : ores.field().forChunk(chunk.getPos().x, chunk.getPos().z).byColumn().entrySet()) {
+            int x = (int) (column.getKey() >> 32);
+            int z = (int) (long) column.getKey();
+            int[] ys = column.getValue();
+            for (int i = 0; i < ys.length; i += 2) {
+                chunk.setBlockState(pos.set(x, ys[i], z), ores.states()[ys[i + 1]], false);
+            }
+        }
     }
 
     /** A solid terrain column with the planned cave cells opened (reset baseline). */
     public static NoiseColumn carveColumn(NoiseColumn solid, int x, int z, int minY, int height,
-                                          CaveStack stack) {
-        boolean any = stack.tubeSpans(x, z) != null;
+                                          CaveStack stack, long seed) {
+        Ores ores = ores(stack, seed);
+        int[] oreYs = ores.field().forChunk(x >> 4, z >> 4).byColumn().get(CaveStack.key(x, z));
+        boolean any = stack.tubeSpans(x, z) != null || oreYs != null;
         for (int layer = 0; layer < stack.layers() && !any; layer++) {
             any = stack.sheet(layer).isOpen(x, z);
         }
@@ -120,6 +171,13 @@ public final class CaveTerrain {
         if (spans != null) {
             for (int i = 0; i < spans.length; i += 2) {
                 open(states, minY, spans[i], spans[i + 1]);
+            }
+        }
+        if (oreYs != null) {
+            for (int i = 0; i < oreYs.length; i += 2) {
+                if (oreYs[i] >= minY && oreYs[i] < minY + height) {
+                    states[oreYs[i] - minY] = ores.states()[oreYs[i + 1]];
+                }
             }
         }
         return new NoiseColumn(minY, states);
