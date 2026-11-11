@@ -236,6 +236,40 @@ public final class MineEncounterManager {
         }
     }
 
+    /** Admin: wakes the unclaimed sites within the wake radius of a point, as if a player stood there. */
+    public static int adminWake(MinecraftServer server, BlockPos at) {
+        MineRunData data = MineManager.get(server).data();
+        int shell = com.dwurdy.dawnmine.config.DawnmineConfig.mineRegionRadiusChunks();
+        var sites = com.dwurdy.dawnmine.generation.CaveTerrain.sitesIfReady(data.seed(), shell);
+        if (sites == null) return 0;
+        int woken = 0;
+        for (var site : sites.near(at.getX(), at.getZ(), WAKE_RADIUS)) {
+            if (Math.abs(site.y() - at.getY()) <= WAKE_HEIGHT && !data.hasClaimedEncounterSite(site.id())
+                    && spawnSite(server, site.id(), site.region(),
+                            new BlockPos(site.x(), site.y(), site.z()), site.kind().equals("patrol") ? 4 : 3)) {
+                woken++;
+            }
+        }
+        return woken;
+    }
+
+    /** Admin: planned sites and tracked mobs per region for the running run. */
+    public static List<String> statusLines(MinecraftServer server) {
+        MineRunData data = MineManager.get(server).data();
+        int shell = com.dwurdy.dawnmine.config.DawnmineConfig.mineRegionRadiusChunks();
+        var sites = com.dwurdy.dawnmine.generation.CaveTerrain.sitesIfReady(data.seed(), shell);
+        List<String> lines = new ArrayList<>();
+        lines.add("Encounter sites planned: " + (sites == null ? "not ready" : String.valueOf(sites.sites().size())));
+        for (String region : List.of("upper", "middle", "chaos")) {
+            long mobs = data.mineEntities().stream()
+                    .filter(o -> o.runId().equals(data.runId()) && o.region().equals(region)).count();
+            long claimed = sites == null ? 0 : sites.sites().stream()
+                    .filter(site -> site.region().equals(region) && data.hasClaimedEncounterSite(site.id())).count();
+            lines.add(region + ": " + claimed + " site(s) woken, " + mobs + " tracked mob(s)");
+        }
+        return lines;
+    }
+
     /** Validate the encounter data against the actual server registry at startup. */
     public static void validateEntityRegistry() {
         MineEncounterCatalog.Profile profile = MineEncounterCatalog.forProfile(
