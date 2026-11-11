@@ -171,4 +171,24 @@ class CavePlannerTest {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
                 () -> CavePlanner.Spec.forShell(512));
     }
+    /** Twenty seeds, walked from the hub landing by the independent census walker. */
+    @Test
+    void twentySeedsAreFullyWalkableFromTheHub() {
+        CavePlanner.Spec spec = CavePlanner.Spec.standard().withRadius(220);
+        for (long seed = 100; seed < 120; seed++) {
+            CaveSheet s = CavePlanner.plan(spec, seed);
+            CensusSnapshot snap = new CensusSnapshot(List.of(new CensusSnapshot.Band("layer", 0, 200)));
+            s.addTo(snap);
+            for (int x = -21; x <= 21; x++) {
+                for (int z = -21; z <= 21; z++) {
+                    for (int y = 42; y <= 49; y++) {
+                        snap.addOpen(x, y, z);
+                    }
+                }
+            }
+            CensusReport r = CensusAnalyzer.analyze(snap, 0, 42, 8, CensusAnalyzer.Params.DEFAULT);
+            assertEquals(0, r.unreachable(), "seed " + seed + " has unreachable standable cells");
+            assertTrue(r.reachable() > 20_000, "seed " + seed + " walker stayed in the hub");
+        }
+    }
 }
