@@ -17,7 +17,8 @@ public record CensusReport(
         double walkBlocksPerSecond,
         int[] routeOrePerBand, int[] routeMobsPerBand, int[] routeLootPerBand,
         int[] routeLandmarksPerBand,
-        int emptyAny, int emptyOre, int emptyMob, int emptyLoot, int emptyLandmark) {
+        int emptyAny, int emptyOre, int emptyMob, int emptyLoot, int emptyLandmark,
+        List<int[]> unreachableSamples) {
 
     public int unreachable() { return standable - reachable; }
 
@@ -35,6 +36,13 @@ public record CensusReport(
                 chunks, openCells, fluidCells, oreBlocks, mobs, loot, landmarks));
         out.add(String.format(Locale.ROOT, "walkable: standable=%d reachable=%d unreachable=%d",
                 standable, reachable, unreachable()));
+        if (!unreachableSamples.isEmpty()) {
+            StringBuilder sb = new StringBuilder("unreachable samples (first 8 by packed order):");
+            for (int[] c : unreachableSamples) {
+                sb.append(" (").append(c[0]).append(',').append(c[1]).append(',').append(c[2]).append(')');
+            }
+            out.add(sb.toString());
+        }
         for (int i = 0; i < bandIds.size(); i++) {
             out.add(String.format(Locale.ROOT,
                     "  band %s: standable=%d unreachable=%d wallFaces=%d oreFaces=%d oreShare=%.3f%%",

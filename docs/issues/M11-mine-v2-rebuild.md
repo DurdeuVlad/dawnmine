@@ -63,7 +63,7 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 
 ---
 
-## M11-1 - Cave terrain, connectivity and layer shell  [draft]
+## M11-1 - Cave terrain, connectivity and layer shell  [in delivery]
 
 **Intent.** Replace the room-and-tunnel graph with a vanilla-feel cave system as the base of one layer, because the owner's reference is the vanilla cave system and the graph shape caused the trapped-pocket bugs.
 
@@ -77,7 +77,9 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 5. Whole-layer preparation time on the local server is recorded and stays under a documented budget (proposal: under the current v1 full-run time).
 6. Breaking changes are allowed (owner, 2026-11-11): v2 replaces v1 outright; no config switch and no migration of old runs or saved topology data are required. Existing runs are discarded at the next reset.
 
-**Scope.** New `worldgen/cave` code plus connectivity pass; layer definition data; chunk-ticket reuse. No ores, mobs, loot or landmarks.
+**Scope.** New `cave` package (pure planner) plus `generation/CaveTerrain`, applied in the run-seed chunk generator and the reset baseline; preparation is reduced to the hub; superseded v1 segments (node/edge/dress/motif/ore, mineshaft placement, pocket sealing, encounter spawning) no longer run. No ores, mobs, loot or landmarks until M11-2b/4/5.
+
+**Design decision (2026-11-11).** Walkability is built in, not repaired: each layer is a 2.5D sheet (floor y and open height per column) whose floors are chamfered so neighbouring floors differ by at most 1, so there are no cliffs or pits (players cannot dig out: only ores are breakable). Caverns and spaghetti tunnels come from 2D noise; open regions are labelled and joined to the hub forecourt by channels, so there is one region. Multiple stacked sheets and descents are M11-2. Old v1 code is deleted in a follow-up cleanup PR once nothing references it.
 
 **Non-goals.** Multiple routes down (M11-2), landmarks (M11-3), Layers 2-3, removing v1 code.
 

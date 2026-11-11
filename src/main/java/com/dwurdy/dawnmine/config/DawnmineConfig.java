@@ -23,7 +23,7 @@ public final class DawnmineConfig {
 
     /** Bounds for the active mine region, in 16x16 chunk columns. */
     public static final int REGION_RADIUS_MIN = 16;
-    public static final int REGION_RADIUS_MAX = 512;
+    public static final int REGION_RADIUS_MAX = 96; // the cave layer planner is sized for up to 96 chunks
 
     /** Bounds for advance reset warnings, in minutes before the reset. */
     public static final int RESET_WARNING_MIN_MINUTES = 1;

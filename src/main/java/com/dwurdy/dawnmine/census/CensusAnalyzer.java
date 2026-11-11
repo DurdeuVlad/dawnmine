@@ -38,6 +38,7 @@ public final class CensusAnalyzer {
 
     /** Safety cap on the walkable-area search (memory is ~30 bytes per cell). */
     static final int MAX_WALK_CELLS = 10_000_000;
+    private static final int SAMPLES = 8;
 
     private CensusAnalyzer() { }
 
@@ -55,6 +56,7 @@ public final class CensusAnalyzer {
         }
         int[] standablePerBand = new int[bandCount];
         int[] unreachablePerBand = new int[bandCount];
+        java.util.TreeSet<Long> sampleSet = new java.util.TreeSet<>();
         s.forEachOpen(p -> {
             if (standable(s, p)) {
                 int b = s.bandIndex(y(p));
@@ -62,6 +64,10 @@ public final class CensusAnalyzer {
                     standablePerBand[b]++;
                     if (!dist.containsKey(p)) {
                         unreachablePerBand[b]++;
+                        sampleSet.add(p);
+                        if (sampleSet.size() > SAMPLES) {
+                            sampleSet.pollLast();
+                        }
                     }
                 }
             }
@@ -157,6 +163,10 @@ public final class CensusAnalyzer {
         int emptyLand = longestEmpty(route, landGrid, null, null, null, r);
         int emptyAny = longestEmpty(route, oreGrid, mobGrid, lootGrid, landGrid, r);
 
+        java.util.List<int[]> samples = new java.util.ArrayList<>();
+        for (long c : sampleSet) {
+            samples.add(new int[] {x(c), y(c), z(c)});
+        }
         java.util.List<String> bandIds = new java.util.ArrayList<>();
         for (CensusSnapshot.Band b : s.bands()) {
             bandIds.add(b.id());
@@ -169,7 +179,7 @@ public final class CensusAnalyzer {
                 startWalkable, Math.max(0, route.size() - 1), routeStepsPerBand,
                 new int[] {x(end), y(end), z(end)}, params.walkBlocksPerSecond(),
                 routeOre, routeMob, routeLoot, routeLand,
-                emptyAny, emptyOre, emptyMob, emptyLoot, emptyLand);
+                emptyAny, emptyOre, emptyMob, emptyLoot, emptyLand, samples);
     }
 
     // ---- walking ----
