@@ -34,8 +34,6 @@ public final class OreField {
     private static final int CELL_MARGIN = REACH + 3;
     private static final int LODE_MARGIN = MOTHERLODE_RADIUS + MOTHERLODE_REACH + 3;
     private static final int BURIED_PERCENT = 20;
-    private static final int MIN_Y = -58;
-    private static final int MAX_Y = 120;
     private static final int COARSE = 512;
     private static final int[][] DIRS = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
@@ -48,6 +46,7 @@ public final class OreField {
     private record Motherlode(int layer, int x, int z, int ore) { }
 
     private final CaveStack stack;
+    private final Rock rock;
     private final long seed;
     private final List<List<Ore>> tables;
     private final List<Ore> ids = new ArrayList<>();
@@ -59,6 +58,7 @@ public final class OreField {
 
     public OreField(CaveStack stack, long seed, List<List<Ore>> tables) {
         this.stack = stack;
+        this.rock = new Rock(stack);
         this.seed = seed;
         this.tables = tables;
         for (List<Ore> table : tables) {
@@ -354,68 +354,22 @@ public final class OreField {
         return open >= 25;
     }
 
-    // ---------- terrain tests ----------
+    // ---------- terrain tests (shared with landmarks) ----------
 
     /** Hub box and its forecourt: never any ore (protected volumes). */
     public static boolean protectedColumn(int x, int z) {
-        return (Math.abs(x) <= 26 && Math.abs(z) <= 26) || (x >= 16 && x <= 46 && Math.abs(z) <= 14);
+        return Rock.protectedColumn(x, z);
     }
 
-    /** A rock block ore may replace: inside the shell, not protected, not open on any layer or tunnel. */
     public boolean solid(int x, int y, int z) {
-        return y >= MIN_Y && y <= MAX_Y && !protectedColumn(x, z) && stack.sheet(0).contains(x, z)
-                && !isOpenCell(x, y, z);
+        return rock.solid(x, y, z);
     }
 
     private boolean touchesOpen(int x, int y, int z) {
-        for (int[] d : DIRS) {
-            if (isOpenCell(x + d[0], y + d[1], z + d[2])) {
-                return true;
-            }
-        }
-        return false;
+        return rock.touchesOpen(x, y, z);
     }
 
-    /** Whether a cell is cave air of any layer or tunnel. */
     public boolean isOpenCell(int x, int y, int z) {
-        for (int layer = 0; layer < stack.layers(); layer++) {
-            CaveSheet s = stack.sheet(layer);
-            if (s.isOpen(x, z) && y > s.floorAt(x, z) && y <= s.floorAt(x, z) + s.heightAt(x, z)) {
-                return true;
-            }
-        }
-        int[] spans = stack.tubeSpans(x, z);
-        if (spans != null) {
-            for (int i = 0; i < spans.length; i += 2) {
-                if (y >= spans[i] && y <= spans[i + 1]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /** splitmix64: tiny, fast and identical on every JVM. */
-    private static final class Rng {
-        private long state;
-
-        Rng(long seed) {
-            this.state = seed;
-        }
-
-        long next() {
-            long z = (state += 0x9E3779B97F4A7C15L);
-            z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
-            z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
-            return z ^ (z >>> 31);
-        }
-
-        int nextInt(int bound) {
-            return (int) Long.remainderUnsigned(next() >>> 1, bound);
-        }
-
-        double nextDouble() {
-            return (next() >>> 11) * 0x1.0p-53;
-        }
+        return rock.isOpenCell(x, y, z);
     }
 }

@@ -3,6 +3,7 @@ package com.dwurdy.dawnmine.generation;
 import com.dwurdy.dawnmine.cave.CavePlanner;
 import com.dwurdy.dawnmine.cave.CaveSheet;
 import com.dwurdy.dawnmine.cave.CaveStack;
+import com.dwurdy.dawnmine.cave.Landmarks;
 import com.dwurdy.dawnmine.cave.OreField;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,59 @@ public final class CaveTerrain {
 
     /** The ore field for a stack with the block of each ore resolved once. */
     private record Ores(OreField field, BlockState[] states, String fingerprint) { }
+
+    /** The landmark plan for a stack with every palette entry resolved once. */
+    private record Marks(Landmarks plan, BlockState[] states) { }
+
+    private static final java.util.IdentityHashMap<CaveStack, CompletableFuture<Marks>> MARK_PLANS =
+            new java.util.IdentityHashMap<>();
+    private static volatile CaveStack lastMarkStack;
+    private static volatile Marks lastMarks;
+
+    /** The landmarks of a stack: planned once per stack outside any lock; the current and previous run are held. */
+    private static Marks marks(CaveStack stack, long seed) {
+        Marks fast = lastMarks;
+        if (fast != null && lastMarkStack == stack) {
+            return fast;
+        }
+        CompletableFuture<Marks> future;
+        boolean planner = false;
+        synchronized (MARK_PLANS) {
+            future = MARK_PLANS.get(stack);
+            if (future == null) {
+                future = new CompletableFuture<>();
+                if (MARK_PLANS.size() >= 2) {
+                    MARK_PLANS.clear();
+                }
+                MARK_PLANS.put(stack, future);
+                planner = true;
+            }
+        }
+        if (planner) {
+            try {
+                Landmarks plan = Landmarks.plan(stack, seed);
+                BlockState[] states = new BlockState[plan.palette().size()];
+                for (int i = 0; i < states.length; i++) {
+                    states[i] = net.minecraft.commands.arguments.blocks.BlockStateParser.parseForBlock(
+                            net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(),
+                            plan.palette().get(i), false).blockState();
+                }
+                future.complete(new Marks(plan, states));
+            } catch (Throwable t) {
+                LOGGER.error("[dawnmine] landmark planning failed for seed {}", seed, t);
+                future.completeExceptionally(t);
+            }
+        }
+        Marks made = future.join();
+        lastMarks = made;
+        lastMarkStack = stack;
+        return made;
+    }
+
+    /** Placed landmarks of a stack, for the census and later systems. */
+    public static Landmarks landmarks(CaveStack stack, long seed) {
+        return marks(stack, seed).plan();
+    }
 
     private static final java.util.IdentityHashMap<CaveStack, Ores> ORES = new java.util.IdentityHashMap<>();
 
@@ -145,6 +199,19 @@ public final class CaveTerrain {
                 chunk.setBlockState(pos.set(x, ys[i], z), ores.states()[ys[i + 1]], false);
             }
         }
+        Marks marks = marks(stack, seed);
+        for (int dz = 0; dz < 16; dz++) {
+            for (int dx = 0; dx < 16; dx++) {
+                int x = minX + dx;
+                int z = minZ + dz;
+                int[] edits = marks.plan().columns().get(CaveStack.key(x, z));
+                if (edits != null) {
+                    for (int i = 0; i < edits.length; i += 2) {
+                        chunk.setBlockState(pos.set(x, edits[i], z), marks.states()[edits[i + 1]], false);
+                    }
+                }
+            }
+        }
     }
 
     /** A solid terrain column with the planned cave cells opened (reset baseline). */
@@ -152,7 +219,9 @@ public final class CaveTerrain {
                                           CaveStack stack, long seed) {
         Ores ores = ores(stack, seed);
         int[] oreYs = ores.field().forChunk(x >> 4, z >> 4).byColumn().get(CaveStack.key(x, z));
-        boolean any = stack.tubeSpans(x, z) != null || oreYs != null;
+        Marks marks = marks(stack, seed);
+        int[] markYs = marks.plan().columns().get(CaveStack.key(x, z));
+        boolean any = stack.tubeSpans(x, z) != null || oreYs != null || markYs != null;
         for (int layer = 0; layer < stack.layers() && !any; layer++) {
             any = stack.sheet(layer).isOpen(x, z);
         }
@@ -179,6 +248,13 @@ public final class CaveTerrain {
             for (int i = 0; i < oreYs.length; i += 2) {
                 if (oreYs[i] >= minY && oreYs[i] < minY + height) {
                     states[oreYs[i] - minY] = ores.states()[oreYs[i + 1]];
+                }
+            }
+        }
+        if (markYs != null) {
+            for (int i = 0; i < markYs.length; i += 2) {
+                if (markYs[i] >= minY && markYs[i] < minY + height) {
+                    states[markYs[i] - minY] = marks.states()[markYs[i + 1]];
                 }
             }
         }
