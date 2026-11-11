@@ -71,6 +71,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
         return super.fillFromNoise(blender, runState(randomState), structureManager, chunk)
                 .thenApply(filled -> {
                     applyShell(filled);
+                    carveCaves(filled);
                     return filled;
                 });
     }
@@ -109,7 +110,31 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
     public net.minecraft.world.level.NoiseColumn baselineColumn(
             int x, int z, net.minecraft.world.level.LevelHeightAccessor level,
             RandomState fallback) {
-        return getBaseColumn(x, z, level, runState(fallback));
+        net.minecraft.world.level.NoiseColumn solid = getBaseColumn(x, z, level, runState(fallback));
+        long seed = caveSeed();
+        if (seed == NO_SEED || !MineShellGeometry.inside(x >> 4, z >> 4, shellRadiusChunks)) {
+            return solid;
+        }
+        return CaveTerrain.carveColumn(solid, x, z, level.getMinBuildHeight(), level.getHeight(),
+                CaveTerrain.sheet(seed, shellRadiusChunks));
+    }
+
+    private static final long NO_SEED = Long.MIN_VALUE;
+
+    /** The run seed the caves are planned from, or {@link #NO_SEED} outside a running server. */
+    private long caveSeed() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        return server == null ? NO_SEED : runSeed(server.getWorldData().worldGenOptions().seed());
+    }
+
+    /** Opens the run's planned cave cells in a chunk inside the shell. */
+    private void carveCaves(ChunkAccess chunk) {
+        long seed = caveSeed();
+        ChunkPos pos = chunk.getPos();
+        if (seed == NO_SEED || !MineShellGeometry.inside(pos.x, pos.z, shellRadiusChunks)) {
+            return;
+        }
+        CaveTerrain.carve(chunk, CaveTerrain.sheet(seed, shellRadiusChunks));
     }
 
     /** The RandomState built under the current run's seed; used for

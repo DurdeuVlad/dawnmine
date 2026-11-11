@@ -79,7 +79,7 @@ public final class MineGenerator {
     private static final double ENCOUNTER_APPROACH_DISTANCE_SQ = 56.0 * 56.0;
     private static final TopoPos ARRIVAL = new TopoPos(
             MineManager.ARRIVAL.getX(), MineManager.ARRIVAL.getY(), MineManager.ARRIVAL.getZ());
-    private static final String GEOMETRY_VERSION = "dawnmine-segment-geometry-v13-anchor-band-reroll";
+    private static final String GEOMETRY_VERSION = "dawnmine-cave-layer-v1";
 
     private static MineGenerator instance;
 
@@ -204,10 +204,6 @@ public final class MineGenerator {
         if (tick - lastLookaheadScan >= LOOKAHEAD_TICKS) {
             lastLookaheadScan = tick;
             scanPlayerLookahead(manager.mineLevel());
-        }
-        if (tick - lastEncounterScan >= ENCOUNTER_SCAN_TICKS) {
-            lastEncounterScan = tick;
-            spawnApproachingEncounters(data, manager.mineLevel());
         }
     }
 
@@ -755,25 +751,6 @@ public final class MineGenerator {
             long elapsedMs = (System.nanoTime() - prepStartedNanos) / 1_000_000L;
             LOGGER.info("[dawnmine] Run {} preparation complete: {} segments generated in {} ms.",
                     data.runId(), expectedSegments.size(), elapsedMs);
-            ServerLevel mine = manager.mineLevel();
-            try {
-                int shafts = mine != null
-                        ? MineMineshaftPlacer.place(server, mine, data, topology) : 0;
-                LOGGER.info("[dawnmine] Run {} mineshaft placement finished: {} sites placed.",
-                        data.runId(), shafts);
-            } catch (RuntimeException e) {
-                LOGGER.error("[dawnmine] Mineshaft placement failed for run {} (non-fatal).",
-                        data.runId(), e);
-            }
-            try {
-                int sealed = mine != null ? sealUnreachablePockets(mine, topology) : 0;
-                LOGGER.info("[dawnmine] Run {} unreachable-pocket seal finished: {} cells sealed.",
-                        data.runId(), sealed);
-            } catch (RuntimeException e) {
-                LOGGER.error("[dawnmine] Unreachable-pocket seal failed for run {} (non-fatal; "
-                        + "any standable trap it would have closed is left as-is).",
-                        data.runId(), e);
-            }
         }
     }
 

@@ -170,6 +170,11 @@ public final class CensusService {
             for (var region : TopologyProfiles.active().regions()) {
                 bands.add(new CensusSnapshot.Band(region.id(), region.bottomY(), region.topY()));
             }
+            // The first layer's caves reach above the old profile's top band; cover them.
+            if (!bands.isEmpty()) {
+                CensusSnapshot.Band first = bands.get(0);
+                bands.set(0, new CensusSnapshot.Band(first.id(), first.minY(), Math.max(first.maxY(), 127)));
+            }
             this.snapshot = new CensusSnapshot(bands);
             this.bandMinY = bands.stream().mapToInt(CensusSnapshot.Band::minY).min().orElse(0);
             this.bandMaxY = bands.stream().mapToInt(CensusSnapshot.Band::maxY).max().orElse(-1);

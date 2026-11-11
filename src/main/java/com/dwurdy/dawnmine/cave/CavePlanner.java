@@ -38,6 +38,12 @@ public final class CavePlanner {
             return new Spec(-1018, 1018, -1018, 1018, 44, 12, 22, 24, 100);
         }
 
+        /** The layer sized to a bedrock shell of the given radius in chunks (6 blocks of rock margin). */
+        public static Spec forShell(int shellRadiusChunks) {
+            int edge = shellRadiusChunks * 16 - 6;
+            return new Spec(-edge, edge, -edge, edge, 44, 12, 22, 24, 100);
+        }
+
         /** A smaller square of the same layer, for tests. */
         public Spec withRadius(int radius) {
             return new Spec(-radius, radius, -radius, radius, floorBase, floorAmp, maxHeight,

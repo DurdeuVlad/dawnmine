@@ -27,60 +27,11 @@ class PreparationPlanTest {
     }
 
     @Test
-    void expectedSetCoversConnectorAllNodesAndEdgesInAllPhases() {
+    void mineV2PreparationIsJustTheHub() {
+        // Terrain comes from the chunk generator (CaveTerrain); only the hub is a placed segment.
         TopologyPlan plan = TopologyPlanner.plan(42, TopologyProfile.builtin(), BOUNDS);
-        Set<String> placed = safehouseIds(plan);
-        List<String> expected = PreparationPlan.expectedSegments(plan, placed);
-        int structural = 1 + plan.nodes().size() + plan.edges().size();
-        long safehouses = plan.nodes().stream()
-                .filter(n -> n.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE))
-                .count();
-        // +1 for the hub build, +N for each placed static landmark segment.
-        assertEquals(structural * 4 + 1 + safehouses, expected.size());
-        // Connector first, structural before dress before motif before ore.
-        assertEquals("connector:arrival:" + plan.entranceId(), expected.get(0));
-        assertTrue(expected.subList(0, structural).stream()
-                .noneMatch(PreparationPlan::isDressSegment));
-        assertTrue(expected.subList(0, structural).stream()
-                .noneMatch(PreparationPlan::isOreSegment));
-        assertTrue(expected.subList(0, structural).stream()
-                .noneMatch(PreparationPlan::isMotifSegment));
-        // Hub sits after all structural carves, landmarks after the hub,
-        // and both before dressing.
-        assertEquals("hub", expected.get(structural));
-        int dressStart = structural + 1 + (int) safehouses;
-        assertTrue(expected.subList(structural + 1, dressStart).stream()
-                .allMatch(id -> id.startsWith("landmark:")));
-        assertTrue(expected.subList(dressStart, dressStart + structural).stream()
-                .allMatch(PreparationPlan::isDressSegment));
-        int motifStart = dressStart + structural;
-        assertTrue(expected.subList(motifStart, motifStart + structural).stream()
-                .allMatch(PreparationPlan::isMotifSegment));
-        assertTrue(expected.subList(motifStart + structural, expected.size()).stream()
-                .allMatch(PreparationPlan::isOreSegment));
-        for (var node : plan.nodes()) {
-            assertTrue(expected.contains("node:" + node.id()));
-            assertTrue(expected.contains("dress:node:" + node.id()));
-            assertTrue(expected.contains("motif:node:" + node.id()));
-            assertTrue(expected.contains("ores:node:" + node.id()));
-            if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE)) {
-                assertTrue(expected.contains("landmark:" + node.id()));
-            }
-        }
-        // Degrade contract: a safehouse node whose catalog entry produced
-        // no placement expects no landmark segment, so the run can never
-        // be asked to build a landmark that was never placed.
-        List<String> degraded = PreparationPlan.expectedSegments(plan, Set.of());
-        assertTrue(degraded.stream().noneMatch(id -> id.startsWith("landmark:")),
-                "degraded layout must not enqueue landmark segments");
-        assertEquals(structural * 4 + 1, degraded.size());
-        for (var edge : plan.edges()) {
-            String id = "edge:" + edge.a() + ":" + edge.b();
-            assertTrue(expected.contains(id));
-            assertTrue(expected.contains("dress:" + id));
-            assertTrue(expected.contains("motif:" + id));
-            assertTrue(expected.contains("ores:" + id));
-        }
+        assertEquals(List.of("hub"), PreparationPlan.expectedSegments(plan, safehouseIds(plan)));
+        assertEquals(List.of("hub"), PreparationPlan.expectedSegments(plan, Set.of()));
     }
 
     @Test

@@ -27,41 +27,12 @@ public final class PreparationPlan {
 
     private PreparationPlan() { }
 
-    /** Full ordered preparation list for a run: connector first so the
-     * arrival always exists, then all structural nodes/edges, then all
-     * dressing passes, then all ore passes. {@code placedLandmarkNodeIds}
-     * names the safehouse nodes that actually anchored a landmark - a node
-     * whose catalog entry degraded away expects no segment, so the run can
-     * never be asked to build a landmark that was never placed. */
+    /** Preparation list for a run. Mine v2 terrain is generated with the chunks themselves (see
+     * {@link CaveTerrain}), so the only segment left is the hand-placed expedition hub. The
+     * arguments are kept until the old topology is removed. */
     public static List<String> expectedSegments(TopologyPlan topology,
                                                 Set<String> placedLandmarkNodeIds) {
-        List<String> structural = structuralSegments(topology);
-        List<String> expected = new ArrayList<>(structural.size() * 3 + 1);
-        expected.addAll(structural);
-        // The generated hub build runs after all cave carving and before any
-        // dressing or ore pass, as its own required preparation segment.
-        expected.add("hub");
-        // Static landmark safehouses are fixed-structure segments too: they
-        // write after carving so their literal grids land in opened rooms,
-        // and before dress/ore so those passes respect the placed reserve.
-        for (TopoNode node : topology.nodes()) {
-            if (node.has(com.dwurdy.dawnmine.topology.NodeFeature.SAFEHOUSE)
-                    && placedLandmarkNodeIds.contains(node.id())) {
-                expected.add(StaticLandmarkBuilder.segmentId(node.id()));
-            }
-        }
-        for (String id : structural) {
-            expected.add(dressSegmentId(id));
-        }
-        // Motifs run after dressing so they can see floors/supports, and
-        // before ore so a motif-embedded vein never buries a catalog vein.
-        for (String id : structural) {
-            expected.add(motifSegmentId(id));
-        }
-        for (String id : structural) {
-            expected.add(oreSegmentId(id));
-        }
-        return List.copyOf(expected);
+        return List.of("hub");
     }
 
     /** Structural segment ids only, in deterministic enqueue order. */
