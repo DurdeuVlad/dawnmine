@@ -331,6 +331,11 @@ public final class CensusService {
                         for (var w : com.dwurdy.dawnmine.generation.CaveTerrain.stack(seed, shell).waypoints()) {
                             waypoints.add(new CensusAnalyzer.Waypoint(w.name(), w.x(), w.y(), w.z()));
                         }
+                        // landmarks are read from the plan (they have no block signature); the walk is still real blocks
+                        var stackPlan = com.dwurdy.dawnmine.generation.CaveTerrain.stack(seed, shell);
+                        for (var lm : com.dwurdy.dawnmine.generation.CaveTerrain.landmarks(stackPlan, seed).placements()) {
+                            snapshot.addLandmark(lm.x(), lm.y(), lm.z());
+                        }
                         return CensusAnalyzer.analyze(snapshot, start.getX(), start.getY(), start.getZ(),
                                 CensusAnalyzer.Params.DEFAULT, waypoints);
                     }, executor())
