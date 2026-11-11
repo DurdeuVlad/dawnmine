@@ -111,6 +111,7 @@ public class Dawnmine {
 
     private void onServerStopping(ServerStoppingEvent event) {
         com.dwurdy.dawnmine.teleporter.TeleporterManager.clearSessionState();
+        com.dwurdy.dawnmine.census.CensusService.clear();
         MineGenerator.get(event.getServer()).onServerStopping();
     }
 

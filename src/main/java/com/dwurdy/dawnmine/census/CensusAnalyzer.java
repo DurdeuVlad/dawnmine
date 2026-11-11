@@ -36,6 +36,9 @@ public final class CensusAnalyzer {
         public static final Params DEFAULT = new Params(4.3, 8);
     }
 
+    /** Safety cap on the walkable-area search (memory is ~30 bytes per cell). */
+    static final int MAX_WALK_CELLS = 10_000_000;
+
     private CensusAnalyzer() { }
 
     public static CensusReport analyze(CensusSnapshot s, int startX, int startY, int startZ,
@@ -88,17 +91,17 @@ public final class CensusAnalyzer {
                 if (s.isOpen(n) || s.isFluid(n)) {
                     continue;
                 }
-                faceTotals[0]++;
                 int b = s.bandIndex(y(n));
                 if (b >= 0) {
+                    faceTotals[0]++;
                     wallPerBand[b]++;
                 }
                 if (s.ore().containsKey(n)) {
-                    faceTotals[1]++;
-                    exposedOre.add(n);
                     if (b >= 0) {
+                        faceTotals[1]++;
                         orePerBand[b]++;
                     }
+                    exposedOre.add(n);
                 }
             }
         });
@@ -203,12 +206,19 @@ public final class CensusAnalyzer {
                     if (dy > 0 && !s.isOpen(pack(cx, cy + 2, cz))) {
                         continue;
                     }
+                    if (dy < 0 && !s.isOpen(pack(cx + d[0], cy + 1, cz + d[1]))) {
+                        continue; // a low ceiling over the drop blocks the step
+                    }
                     if (d[0] != 0 && d[1] != 0) {
                         int crossing = Math.max(cy, cy + dy);
                         if (!clearColumn(s, cx + d[0], crossing, cz)
                                 || !clearColumn(s, cx, crossing, cz + d[1])) {
                             continue;
                         }
+                    }
+                    if (dist.size() >= MAX_WALK_CELLS) {
+                        throw new IllegalStateException("walkable area exceeds " + MAX_WALK_CELLS
+                                + " cells; census analysis stopped to protect the server");
                     }
                     dist.put(next, cd + 1);
                     parent.put(next, cur);
