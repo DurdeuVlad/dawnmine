@@ -35,7 +35,7 @@ public final class CaveStack {
     private static final int PIN_HEIGHT = 6;
     private static final double PIN_BLEND = 90.0;
     private static final int EDGE_MARGIN = 40;
-    private static final int MIN_SPACING = 400;
+    private static final int ATTEMPTS = 8;
     private static final int CLUSTER = 450;
     private static final int RIDGE_OFFSET = 300;
     private static final int RIDGE_HALF_THICKNESS = 5;
@@ -113,7 +113,22 @@ public final class CaveStack {
 
     // ---- planning ----
 
+    /** Plans the stack, retrying with a different (still deterministic) choice of ways down if a
+     * layer cannot place or route all three: the layers themselves stay the same. */
     public static CaveStack plan(int shellChunks, long seed) {
+        IllegalStateException last = null;
+        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
+            try {
+                return planOnce(shellChunks, seed, attempt);
+            } catch (IllegalStateException e) {
+                last = e;
+            }
+        }
+        throw new IllegalStateException("cave stack for seed " + seed + " failed after " + ATTEMPTS
+                + " attempts: " + last.getMessage(), last);
+    }
+
+    private static CaveStack planOnce(int shellChunks, long seed, int attempt) {
         int layers = CavePlanner.LAYERS;
         CavePlanner.Spec[] specs = new CavePlanner.Spec[layers];
         CavePlanner.Fields[] fields = new CavePlanner.Fields[layers];
@@ -139,7 +154,7 @@ public final class CaveStack {
             CaveSheet next0 = CavePlanner.finish(fields[k + 1], List.of(), new BitSet());
 
             int[] dist = WalkDistance.from(pass1, entries);
-            int[][] tops = chooseTops(pass1, fk, dist, seed + k, k == 0);
+            int[][] tops = chooseTops(pass1, fk, dist, seed + k * 31L + attempt * 1_000_003L, k == 0);
             List<Descent> pair = new ArrayList<>();
             List<CavePlanner.Pin> outPins = new ArrayList<>();
             List<CavePlanner.Pin> nextPins = new ArrayList<>();
@@ -148,7 +163,7 @@ public final class CaveStack {
             int[][] landings = new int[tops.length][];
             for (int j = 0; j < tops.length; j++) {
                 Descent made = buildDescent(k, j, tops[j], pass1, next0, specs[k], specs[k + 1],
-                        fk, fields[k + 1], seed, pair, hubBox(k));
+                        fk, fields[k + 1], seed + attempt * 1_000_003L, pair, hubBox(k), excludedIn);
                 if (made == null) {
                     throw new IllegalStateException("could not route descent " + j + " from layer " + k);
                 }
@@ -241,7 +256,7 @@ public final class CaveStack {
         int lo = (int) (target * 0.93);
         int hi = target;
         List<int[]> picked = new ArrayList<>();
-        int[] spacings = {250, 150, 0};
+        int[] spacings = {250, 150, 100};
         for (int spacing : spacings) {
             picked.clear();
             for (int j = 0; j < DESCENTS_PER_PAIR; j++) {
@@ -265,7 +280,7 @@ public final class CaveStack {
                     }
                     boolean apart = true;
                     for (int[] p : picked) {
-                        double dd2 = Math.hypot(p[0] - x, p[1] - z);
+                        double dd2 = StrictMath.hypot(p[0] - x, p[1] - z);
                         // the ways down sit together (so the layer below is entered in one region
                         // and its own way down is a long walk away) yet well apart from each other
                         if (dd2 < spacing || dd2 > CLUSTER) {
@@ -306,16 +321,14 @@ public final class CaveStack {
     /** Routes one descent from the top site to an open column of the layer below, or null. */
     private static Descent buildDescent(int layer, int j, int[] top, CaveSheet a, CaveSheet b,
             CavePlanner.Spec sa, CavePlanner.Spec sb, CavePlanner.Fields fa, CavePlanner.Fields fb,
-            long seed, List<Descent> earlier, boolean avoidHub) {
+            long seed, List<Descent> earlier, boolean avoidHub, BitSet blockedA) {
         int px = top[0];
         int pz = top[1];
         int fA = a.floorAt(px, pz);
         double slope = SLOPES[j];
         int reach = 400;
-        long bestHash = Long.MIN_VALUE;
-        Descent best = null;
         int tried = 0;
-        // candidate landing columns around the top, scanned in hash order via a strided sweep
+        // candidate landing columns around the top, tried in hash order (a fixed, seed-dependent shuffle)
         List<int[]> candidates = new ArrayList<>();
         for (int z = Math.max(b.minZ() + EDGE_MARGIN, pz - reach); z <= Math.min(b.maxZ() - EDGE_MARGIN, pz + reach); z += 3) {
             for (int x = Math.max(b.minX() + EDGE_MARGIN, px - reach); x <= Math.min(b.maxX() - EDGE_MARGIN, px + reach); x += 3) {
@@ -324,19 +337,22 @@ public final class CaveStack {
                 }
             }
         }
-        for (int c = 0; c < candidates.size(); c++) {
+        long[] order = new long[candidates.size()];
+        for (int c = 0; c < order.length; c++) {
             int[] q = candidates.get(c);
             long h = mix(seed * 31 + layer * 1000003L + j * 7919L + q[0] * 73856093L + q[1] * 19349663L);
-            if (best != null && h <= bestHash) {
-                continue;
-            }
+            order[c] = (h & ~0xFFFFFL) | c; // hash in the high bits, candidate index in the low 20
+        }
+        java.util.Arrays.sort(order);
+        for (int o = order.length - 1; o >= 0; o--) {
+            int[] q = candidates.get((int) (order[o] & 0xFFFFFL));
             int fB = b.floorAt(q[0], q[1]);
             int drop = fA - fB;
             if (drop < 8) {
                 continue;
             }
             int need = 2 * FLAT + (int) Math.ceil(drop / slope);
-            double e = Math.hypot(q[0] - px, q[1] - pz);
+            double e = StrictMath.hypot(q[0] - px, q[1] - pz);
             if (e < 0.3 * need || e > 0.8 * need) {
                 continue;
             }
@@ -344,7 +360,8 @@ public final class CaveStack {
                 break;
             }
             int[][] path = routePath(px, pz, q[0], q[1], need);
-            if (path == null || !pathClear(path, a, b, sa, avoidHub, earlier)) {
+            if (path == null || !pathClear(path, a, b, sa, avoidHub, earlier)
+                    || crossesBlocked(path, blockedA, fa)) {
                 continue;
             }
             int len = path[0].length;
@@ -359,10 +376,20 @@ public final class CaveStack {
                     floors[i] = fA - (int) Math.round(drop * (i - FLAT + 1) / (double) (m + 1));
                 }
             }
-            best = new Descent(layer, NAMES[j], path[0], path[1], floors);
-            bestHash = h;
+            return new Descent(layer, NAMES[j], path[0], path[1], floors);
         }
-        return best;
+        return null;
+    }
+
+    /** True when any tunnel column lies in a closed column of the upper layer (its ridge or another
+     * tunnel's closed margin), so a tunnel can never cut through a ridge. */
+    private static boolean crossesBlocked(int[][] path, BitSet blocked, CavePlanner.Fields fa) {
+        for (int i = 0; i < path[0].length; i++) {
+            if (blocked.get(fa.index(path[0][i], path[1][i]))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Edge, hub and earlier-tunnel clearance for a candidate path. */
@@ -411,7 +438,7 @@ public final class CaveStack {
     private static int[][] routePath(int px, int pz, int qx, int qz, int need) {
         double dx = qx - px;
         double dz = qz - pz;
-        double e = Math.hypot(dx, dz);
+        double e = StrictMath.hypot(dx, dz);
         double nx = -dz / e;
         double nz = dx / e;
         for (double amp = 0; amp <= 0.45 * e; amp += 3) {
@@ -422,7 +449,7 @@ public final class CaveStack {
             cells.add(new int[] {cx, cz});
             for (int s = 1; s <= steps; s++) {
                 double t = s / (double) steps;
-                double off = amp * Math.sin(2 * Math.PI * 1.5 * t) * Math.sin(Math.PI * t);
+                double off = amp * StrictMath.sin(2 * Math.PI * 1.5 * t) * StrictMath.sin(Math.PI * t);
                 int tx = s == steps ? qx : (int) Math.round(px + dx * t + nx * off);
                 int tz = s == steps ? qz : (int) Math.round(pz + dz * t + nz * off);
                 while (cx != tx || cz != tz) {

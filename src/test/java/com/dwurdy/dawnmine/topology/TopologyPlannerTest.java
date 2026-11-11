@@ -184,7 +184,7 @@ class TopologyPlannerTest {
 
     @Test
     void smallestConfiguredRegionStillPlans() {
-        // mineRegionRadiusChunks floor is 16 -> a 256x256-block field.
+        // legacy planner check: a 16-chunk region (256x256 blocks) still plans (the config floor is now 64).
         TopologyPlan plan = plan(42L, 16);
         TopologyReport report = TopologyValidator.validate(plan, profile());
         assertTrue(report.ok(), "16-chunk region failed: " + report.describe());

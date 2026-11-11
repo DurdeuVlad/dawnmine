@@ -32,6 +32,8 @@ public final class CavePlanner {
     private static final int GATE_HALF_WIDTH = 2;
     private static final int GATE_HEIGHT = 4;
     /** Largest shell the planner will size a layer for (memory is ~28 bytes per column). */
+    /** The cave stack is designed and tested for the default 2048-block shell up to 96 chunks. */
+    private static final int MIN_SHELL_CHUNKS = 64;
     private static final int MAX_SHELL_CHUNKS = 96;
     /** Open regions smaller than this many columns are filled in instead of joined. */
     private static final int MIN_REGION = 60;
@@ -59,8 +61,8 @@ public final class CavePlanner {
         /** Layer {@code index} (0 = top, with the hub) sized to a shell of the given radius in chunks
          * (6 blocks of rock margin). Layers are separated by solid rock. */
         public static Spec layer(int index, int shellRadiusChunks) {
-            if (shellRadiusChunks < 48 || shellRadiusChunks > MAX_SHELL_CHUNKS) {
-                throw new IllegalArgumentException("cave layer supports shells of 48.." + MAX_SHELL_CHUNKS
+            if (shellRadiusChunks < MIN_SHELL_CHUNKS || shellRadiusChunks > MAX_SHELL_CHUNKS) {
+                throw new IllegalArgumentException("cave layer supports shells of 64.." + MAX_SHELL_CHUNKS
                         + " chunks, not " + shellRadiusChunks);
             }
             int e = shellRadiusChunks * 16 - 6;
@@ -260,7 +262,7 @@ public final class CavePlanner {
     private static double pinDistance(int x, int z) {
         double t = Math.max(0, Math.min(1.0, (x - PIN_X0) / (double) (PIN_X1 - PIN_X0)));
         double px = PIN_X0 + (PIN_X1 - PIN_X0) * t;
-        double dist = Math.hypot(x - px, z);
+        double dist = StrictMath.hypot(x - px, z);
         if (x >= PIN_X0 && dist <= PIN_RADIUS) {
             return 0;
         }
@@ -273,7 +275,7 @@ public final class CavePlanner {
         double sz = pin.z1() - pin.z0();
         double len2 = sx * sx + sz * sz;
         double t = len2 == 0 ? 0 : Math.max(0, Math.min(1.0, ((x - pin.x0()) * sx + (z - pin.z0()) * sz) / len2));
-        double dist = Math.hypot(x - (pin.x0() + sx * t), z - (pin.z0() + sz * t));
+        double dist = StrictMath.hypot(x - (pin.x0() + sx * t), z - (pin.z0() + sz * t));
         return dist <= pin.radius() ? 0 : Math.max(1e-6, dist - pin.radius());
     }
 

@@ -4,7 +4,6 @@ import com.dwurdy.dawnmine.cave.CavePlanner;
 import com.dwurdy.dawnmine.cave.CaveSheet;
 import com.dwurdy.dawnmine.cave.CaveStack;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.block.Blocks;
@@ -19,22 +18,52 @@ import net.minecraft.world.level.chunk.ChunkAccess;
  */
 public final class CaveTerrain {
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
-    private static final ConcurrentHashMap<String, CaveStack> STACKS = new ConcurrentHashMap<>();
+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+    /** Most recently used first-in-last-out cache; each value is shared by every waiter. */
+    private static final java.util.LinkedHashMap<String, CompletableFuture<CaveStack>> CACHE =
+            new java.util.LinkedHashMap<>(8, 0.75f, true);
+    private static final int CACHE_SIZE = 4;
 
     private CaveTerrain() { }
 
     /** The cave stack for a run seed inside a shell of the given radius (cached; planning takes seconds). */
     public static CaveStack stack(long seed, int shellRadiusChunks) {
-        if (STACKS.size() > 2) {
-            STACKS.clear();
+        String key = seed + ":" + shellRadiusChunks;
+        CompletableFuture<CaveStack> future;
+        boolean planner = false;
+        synchronized (CACHE) {
+            future = CACHE.get(key);
+            if (future == null) {
+                future = new CompletableFuture<>();
+                CACHE.put(key, future);
+                planner = true;
+                while (CACHE.size() > CACHE_SIZE) {
+                    CACHE.remove(CACHE.keySet().iterator().next()); // least recently used
+                }
+            }
         }
-        return STACKS.computeIfAbsent(seed + ":" + shellRadiusChunks,
-                k -> CaveStack.plan(shellRadiusChunks, seed));
+        if (planner) {
+            try {
+                future.complete(CaveStack.plan(shellRadiusChunks, seed));
+            } catch (Throwable t) {
+                synchronized (CACHE) {
+                    CACHE.remove(key);
+                }
+                LOGGER.error("[dawnmine] cave stack planning failed for seed {} shell {}", seed,
+                        shellRadiusChunks, t);
+                future.completeExceptionally(t);
+            }
+        }
+        return future.join();
     }
 
     /** Plans the stack on a background thread so the first chunk or reset step does not wait for it. */
     public static void prepareAsync(long seed, int shellRadiusChunks) {
-        CompletableFuture.runAsync(() -> stack(seed, shellRadiusChunks));
+        CompletableFuture.runAsync(() -> stack(seed, shellRadiusChunks))
+                .exceptionally(t -> {
+                    LOGGER.error("[dawnmine] background cave planning failed", t);
+                    return null;
+                });
     }
 
     /** Opens the planned cave cells inside one freshly filled chunk. */

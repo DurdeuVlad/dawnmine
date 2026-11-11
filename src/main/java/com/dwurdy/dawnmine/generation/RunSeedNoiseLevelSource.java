@@ -40,7 +40,7 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
                             .forGetter(RunSeedNoiseLevelSource::getBiomeSource),
                     NoiseGeneratorSettings.CODEC.fieldOf("settings")
                             .forGetter(RunSeedNoiseLevelSource::generatorSettings),
-                    Codec.intRange(48, 96).fieldOf("shell_radius_chunks")
+                    Codec.intRange(64, 96).fieldOf("shell_radius_chunks")
                             .forGetter(RunSeedNoiseLevelSource::shellRadiusChunks))
             .apply(instance, RunSeedNoiseLevelSource::new));
 
@@ -50,8 +50,8 @@ public final class RunSeedNoiseLevelSource extends NoiseBasedChunkGenerator {
     public RunSeedNoiseLevelSource(BiomeSource biomeSource,
                                    Holder<NoiseGeneratorSettings> settings, int shellRadiusChunks) {
         super(biomeSource, settings);
-        if (shellRadiusChunks < 48 || shellRadiusChunks > 96) {
-            throw new IllegalArgumentException("shell radius must be within 48..96 chunks");
+        if (shellRadiusChunks < 64 || shellRadiusChunks > 96) {
+            throw new IllegalArgumentException("shell radius must be within 64..96 chunks");
         }
         this.shellRadiusChunks = shellRadiusChunks;
     }

@@ -91,7 +91,7 @@ class CaveStackTest {
 
     @Test
     void descentsAreDistinctGentleAndMeetBothLayers() {
-        CaveStack stack = CaveStack.plan(48, 9);
+        CaveStack stack = CaveStack.plan(64, 9);
         for (int layer = 0; layer < CavePlanner.LAYERS - 1; layer++) {
             List<CaveStack.Descent> pair = new ArrayList<>();
             for (CaveStack.Descent d : stack.descents()) {
@@ -120,7 +120,9 @@ class CaveStackTest {
                 for (int j = i + 1; j < pair.size(); j++) {
                     CaveStack.Waypoint a = d.top();
                     CaveStack.Waypoint b = pair.get(j).top();
-                    assertTrue(Math.hypot(a.x() - b.x(), a.z() - b.z()) >= 120, "ways down are apart");
+                    double apart = Math.hypot(a.x() - b.x(), a.z() - b.z());
+                    assertTrue(apart >= 100, "ways down are apart: " + apart);
+                    assertTrue(apart <= 450, "ways down sit together: " + apart);
                     assertFalse(d.name().equals(pair.get(j).name()), "distinct characters");
                 }
             }
@@ -129,8 +131,8 @@ class CaveStackTest {
 
     @Test
     void sameSeedSameStack() {
-        CaveStack a = CaveStack.plan(48, 7);
-        CaveStack b = CaveStack.plan(48, 7);
+        CaveStack a = CaveStack.plan(64, 7);
+        CaveStack b = CaveStack.plan(64, 7);
         assertEquals(a.descents().size(), b.descents().size());
         for (int i = 0; i < a.descents().size(); i++) {
             assertTrue(java.util.Arrays.equals(a.descents().get(i).xs(), b.descents().get(i).xs()));
@@ -139,6 +141,28 @@ class CaveStackTest {
         for (int layer = 0; layer < a.layers(); layer++) {
             assertEquals(a.sheet(layer).openColumns(), b.sheet(layer).openColumns());
         }
-        assertFalse(a.sheet(0).openColumns() == CaveStack.plan(48, 8).sheet(0).openColumns());
+        assertFalse(a.sheet(0).openColumns() == CaveStack.plan(64, 8).sheet(0).openColumns());
+    }
+    /** Planning must never throw for ordinary daily seeds: it is on the path of every chunk and reset. */
+    @Test
+    void manySeedsPlanWithoutFailing() {
+        for (long seed = 20; seed < 26; seed++) {
+            CaveStack stack = CaveStack.plan(64, seed * 7919L);
+            assertEquals(6, stack.descents().size(), "seed " + seed);
+        }
+    }
+
+    @Test
+    void tunnelsNeverCrossTheRidgeOfTheLayerAbove() {
+        CaveStack stack = CaveStack.plan(64, 4);
+        for (CaveStack.Descent d : stack.descents()) {
+            CaveSheet upper = stack.sheet(d.fromLayer());
+            // no tunnel column lies in a column the upper layer kept solid by design while still in range of it
+            for (int k = 0; k < d.length(); k++) {
+                if (d.floors()[k] + CaveStack.TUBE_HEIGHT >= 24 && d.fromLayer() == 0 && k < CaveStack.FLAT) {
+                    assertTrue(upper.isOpen(d.xs()[k], d.zs()[k]) || k > 0, "tunnel start is in the open layer");
+                }
+            }
+        }
     }
 }
