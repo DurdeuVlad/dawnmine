@@ -25,11 +25,14 @@ public final class OreField {
     /** Vein growth stays within this Chebyshev distance of its anchor. */
     public static final int REACH = 6;
     public static final int MOTHERLODES_PER_LAYER = 3;
-    public static final int MOTHERLODE_VEINS = 30;
+    public static final int MOTHERLODE_VEINS = 45;
     public static final int MOTHERLODE_RADIUS = 12;
     public static final int MOTHERLODE_REACH = 14;
     /** Expected veins per cell on layers 0, 1, 2 (richer deeper). */
     public static final double[] VEINS_PER_CELL = {7.5, 11.0, 15.0};
+    /** A buried anchor sits up to 3 blocks outside its cell, so a vein reaches REACH + 3 past the cell edge. */
+    private static final int CELL_MARGIN = REACH + 3;
+    private static final int LODE_MARGIN = MOTHERLODE_RADIUS + MOTHERLODE_REACH + 3;
     private static final int BURIED_PERCENT = 20;
     private static final int MIN_Y = -58;
     private static final int MAX_Y = 120;
@@ -39,6 +42,9 @@ public final class OreField {
     /** Ore blocks inside a box: column key (see {@link CaveStack#key}) to {y, oreIndex, ...}. */
     public record Blocks(Map<Long, int[]> byColumn) { }
 
+    /** A grown vein: ore index plus x,y,z triples. Independent of any chunk. */
+    private record Vein(int ore, int[] xyz) { }
+
     private record Motherlode(int layer, int x, int z, int ore) { }
 
     private final CaveStack stack;
@@ -46,6 +52,9 @@ public final class OreField {
     private final List<List<Ore>> tables;
     private final List<Ore> ids = new ArrayList<>();
     private final List<Motherlode> motherlodes = new ArrayList<>();
+    private final LinkedHashMap<Long, List<Vein>> cellCache = new LinkedHashMap<>(256, 0.75f, true);
+    private final java.util.concurrent.ConcurrentHashMap<Integer, List<Vein>> lodeCache =
+            new java.util.concurrent.ConcurrentHashMap<>();
     private final LinkedHashMap<Long, Blocks> chunkCache = new LinkedHashMap<>(64, 0.75f, true);
 
     public OreField(CaveStack stack, long seed, List<List<Ore>> tables) {
@@ -116,22 +125,24 @@ public final class OreField {
             if (tables.get(layer).isEmpty()) {
                 continue;
             }
-            int gx0 = Math.floorDiv(minX - REACH, CELL);
-            int gx1 = Math.floorDiv(maxX + REACH, CELL);
-            int gz0 = Math.floorDiv(minZ - REACH, CELL);
-            int gz1 = Math.floorDiv(maxZ + REACH, CELL);
+            int gx0 = Math.floorDiv(minX - CELL_MARGIN, CELL);
+            int gx1 = Math.floorDiv(maxX + CELL_MARGIN, CELL);
+            int gz0 = Math.floorDiv(minZ - CELL_MARGIN, CELL);
+            int gz1 = Math.floorDiv(maxZ + CELL_MARGIN, CELL);
             for (int gz = gz0; gz <= gz1; gz++) {
                 for (int gx = gx0; gx <= gx1; gx++) {
-                    cellVeins(layer, gx, gz, minX, minZ, maxX, maxZ, out);
+                    for (Vein v : cell(layer, gx, gz)) {
+                        clip(v, minX, minZ, maxX, maxZ, out);
+                    }
                 }
             }
             for (int i = 0; i < motherlodes.size(); i++) {
                 Motherlode m = motherlodes.get(i);
-                if (m.layer == layer && m.x >= minX - MOTHERLODE_RADIUS - MOTHERLODE_REACH
-                        && m.x <= maxX + MOTHERLODE_RADIUS + MOTHERLODE_REACH
-                        && m.z >= minZ - MOTHERLODE_RADIUS - MOTHERLODE_REACH
-                        && m.z <= maxZ + MOTHERLODE_RADIUS + MOTHERLODE_REACH) {
-                    motherlodeVeins(m, i, minX, minZ, maxX, maxZ, out);
+                if (m.layer == layer && m.x >= minX - LODE_MARGIN && m.x <= maxX + LODE_MARGIN
+                        && m.z >= minZ - LODE_MARGIN && m.z <= maxZ + LODE_MARGIN) {
+                    for (Vein v : lode(m, i)) {
+                        clip(v, minX, minZ, maxX, maxZ, out);
+                    }
                 }
             }
         }
@@ -140,12 +151,30 @@ public final class OreField {
 
     // ---------- veins ----------
 
-    private void cellVeins(int layer, int gx, int gz, int minX, int minZ, int maxX, int maxZ,
-                           Map<Long, int[]> out) {
+    private List<Vein> cell(int layer, int gx, int gz) {
+        long key = (((long) layer) << 56) ^ (((long) gx & 0xFFFFFFFL) << 28) ^ ((long) gz & 0xFFFFFFFL);
+        synchronized (cellCache) {
+            List<Vein> hit = cellCache.get(key);
+            if (hit != null) {
+                return hit;
+            }
+        }
+        List<Vein> made = growCell(layer, gx, gz);
+        synchronized (cellCache) {
+            cellCache.put(key, made);
+            while (cellCache.size() > 8192) {
+                cellCache.remove(cellCache.keySet().iterator().next());
+            }
+        }
+        return made;
+    }
+
+    private List<Vein> growCell(int layer, int gx, int gz) {
         Rng rng = new Rng(seed ^ (layer * 0x9E3779B97F4A7C15L) ^ (gx * 0xC2B2AE3D27D4EB4FL)
                 ^ (gz * 0x165667B19E3779F9L));
         double expected = VEINS_PER_CELL[Math.min(layer, VEINS_PER_CELL.length - 1)];
         int count = (int) expected + (rng.nextDouble() < expected - (int) expected ? 1 : 0);
+        List<Vein> veins = new ArrayList<>();
         for (int k = 0; k < count; k++) {
             int[] anchor = wallAnchor(layer, rng, gx * CELL, gz * CELL, CELL, rng.nextInt(100) < BURIED_PERCENT);
             if (anchor == null) {
@@ -154,28 +183,39 @@ public final class OreField {
             int oreIndex = pick(layer, rng);
             Ore ore = ids.get(oreIndex);
             int size = 5 + ore.grade() * (1 + rng.nextInt(4));
-            grow(layer, rng, anchor, oreIndex, size, REACH, minX, minZ, maxX, maxZ, out);
+            veins.add(grow(rng, anchor, oreIndex, size, REACH));
         }
+        return veins;
     }
 
-    private void motherlodeVeins(Motherlode m, int index, int minX, int minZ, int maxX, int maxZ,
-                                 Map<Long, int[]> out) {
-        Rng rng = new Rng(seed ^ 0x5DEECE66DL ^ (index * 0x9E3779B97F4A7C15L));
-        for (int k = 0; k < MOTHERLODE_VEINS; k++) {
-            int[] anchor = wallAnchor(m.layer, rng, m.x - MOTHERLODE_RADIUS, m.z - MOTHERLODE_RADIUS,
-                    MOTHERLODE_RADIUS * 2, false);
-            if (anchor == null) {
-                continue;
+    private List<Vein> lode(Motherlode m, int index) {
+        return lodeCache.computeIfAbsent(index, i -> {
+            Rng rng = new Rng(seed ^ 0x5DEECE66DL ^ (index * 0x9E3779B97F4A7C15L));
+            List<Vein> veins = new ArrayList<>();
+            for (int k = 0; k < MOTHERLODE_VEINS; k++) {
+                int[] anchor = wallAnchor(m.layer, rng, m.x - MOTHERLODE_RADIUS, m.z - MOTHERLODE_RADIUS,
+                        MOTHERLODE_RADIUS * 2, false);
+                if (anchor != null) {
+                    veins.add(grow(rng, anchor, m.ore, 20 + rng.nextInt(21), MOTHERLODE_REACH));
+                }
             }
-            grow(m.layer, rng, anchor, m.ore, 20 + rng.nextInt(21), MOTHERLODE_REACH,
-                    minX, minZ, maxX, maxZ, out);
+            return veins;
+        });
+    }
+
+    private static void clip(Vein v, int minX, int minZ, int maxX, int maxZ, Map<Long, int[]> out) {
+        int[] c = v.xyz();
+        for (int i = 0; i < c.length; i += 3) {
+            if (c[i] >= minX && c[i] <= maxX && c[i + 2] >= minZ && c[i + 2] <= maxZ) {
+                put(out, c[i], c[i + 1], c[i + 2], v.ore());
+            }
         }
     }
 
     /** A rock block touching an open column of the layer, inside the square; null after 12 tries. */
     private int[] wallAnchor(int layer, Rng rng, int x0, int z0, int span, boolean buried) {
         CaveSheet sheet = stack.sheet(layer);
-        for (int attempt = 0; attempt < 12; attempt++) {
+        for (int attempt = 0; attempt < 40; attempt++) {
             int x = x0 + rng.nextInt(span);
             int z = z0 + rng.nextInt(span);
             if (!sheet.isOpen(x, z)) {
@@ -193,8 +233,7 @@ public final class OreField {
         return null;
     }
 
-    private void grow(int layer, Rng rng, int[] anchor, int oreIndex, int size, int reach,
-                      int minX, int minZ, int maxX, int maxZ, Map<Long, int[]> out) {
+    private Vein grow(Rng rng, int[] anchor, int oreIndex, int size, int reach) {
         int[][] cells = new int[size][];
         cells[0] = anchor;
         int n = 1;
@@ -220,13 +259,13 @@ public final class OreField {
                 cells[n++] = new int[] {x, y, z};
             }
         }
+        int[] xyz = new int[n * 3];
         for (int i = 0; i < n; i++) {
-            int[] c = cells[i];
-            if (c[0] < minX || c[0] > maxX || c[2] < minZ || c[2] > maxZ) {
-                continue;
-            }
-            put(out, c[0], c[1], c[2], oreIndex);
+            xyz[i * 3] = cells[i][0];
+            xyz[i * 3 + 1] = cells[i][1];
+            xyz[i * 3 + 2] = cells[i][2];
         }
+        return new Vein(oreIndex, xyz);
     }
 
     /** Later veins replace earlier ones on the same block; a column holds a few ore blocks. */

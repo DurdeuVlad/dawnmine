@@ -73,6 +73,28 @@ class OreFieldTest {
         assertTrue(count(both) > 0, "ore exists in this window");
     }
 
+    /** Any chunk's ore equals the same area cut from a much larger box: no vein is clipped at a chunk border. */
+    @Test
+    void chunkOreMatchesALargeBoxEverywhere() {
+        CaveStack stack = stack(1);
+        OreField field = new OreField(stack, 1, tables());
+        for (int[] c : new int[][] {{20, 20}, {-33, 7}, {40, -25}, {3, 51}, {-50, -50}}) {
+            OreField.Blocks chunk = field.forChunk(c[0], c[1]);
+            OreField.Blocks wide = field.forBox(c[0] * 16 - 48, c[1] * 16 - 48, c[0] * 16 + 63, c[1] * 16 + 63);
+            long inside = 0;
+            for (var e : wide.byColumn().entrySet()) {
+                int x = (int) (e.getKey() >> 32);
+                int z = (int) (long) e.getKey();
+                if (x >= c[0] * 16 && x < c[0] * 16 + 16 && z >= c[1] * 16 && z < c[1] * 16 + 16) {
+                    inside += e.getValue().length / 2;
+                    assertTrue(java.util.Arrays.equals(chunk.byColumn().get(e.getKey()), e.getValue()),
+                            "chunk " + c[0] + "," + c[1] + " differs from the wide box at " + x + "," + z);
+                }
+            }
+            assertEquals(count(chunk), inside, "ore count of chunk " + c[0] + "," + c[1]);
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(longs = {1, 2})
     void oreOnlyReplacesRockAndIsPartlyExposed(long seed) {
@@ -149,9 +171,13 @@ class OreFieldTest {
             int[] at = field.motherlodeCentres(layer).get(0);
             long rich = 0;
             for (var c : field.forBox(at[0] - 30, at[1] - 30, at[0] + 30, at[1] + 30).byColumn().values()) {
-                rich += c.length / 2;
+                for (int i = 0; i < c.length; i += 2) {
+                    if (field.ore(c[i + 1]).id().equals("test:l" + layer + "_ore9")) {
+                        rich++;
+                    }
+                }
             }
-            assertTrue(rich > 300, "motherlode on layer " + layer + " holds " + rich + " ore blocks");
+            assertTrue(rich > 150, "motherlode on layer " + layer + " holds " + rich + " ore blocks");
         }
     }
 }

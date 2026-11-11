@@ -39,8 +39,8 @@ public final class CaveTerrain {
         OreCatalog.OreCatalogSnapshot catalog = OreCatalog.active();
         synchronized (ORES) {
             Ores held = ORES.get(stack);
-            if (held != null && held.fingerprint().equals(catalog.fingerprint())) {
-                return held;
+            if (held != null) {
+                return held; // pinned for the stack lifetime: a catalogue reload never changes a run's ore
             }
             List<List<OreField.Ore>> tables = new ArrayList<>();
             for (OreCatalog.Tier tier : OreCatalog.Tier.values()) {
@@ -57,11 +57,13 @@ public final class CaveTerrain {
                 states[i] = net.minecraft.core.registries.BuiltInRegistries.BLOCK
                         .get(net.minecraft.resources.ResourceLocation.parse(field.ore(i).id())).defaultBlockState();
             }
-            if (ORES.size() >= CACHE_SIZE) {
-                ORES.clear();
-            }
             Ores made = new Ores(field, states, catalog.fingerprint());
-            ORES.put(stack, made);
+            if (!catalog.entries().isEmpty()) { // never pin the empty catalogue seen before data loads
+                if (ORES.size() >= 2) {
+                    ORES.clear(); // each held field pins its stack: keep the current and previous run only
+                }
+                ORES.put(stack, made);
+            }
             return made;
         }
     }
