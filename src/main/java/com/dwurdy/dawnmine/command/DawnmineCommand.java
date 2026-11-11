@@ -104,6 +104,9 @@ public final class DawnmineCommand {
                 .then(literal("check").executes(ctx -> recoverCheck(ctx.getSource())))
                 .then(literal("repair").executes(ctx -> recoverRepair(ctx.getSource()))));
 
+        root.then(literal("census").requires(src -> src.hasPermission(ADMIN_LEVEL))
+                .executes(ctx -> census(ctx.getSource())));
+
         root.then(literal("reset").requires(src -> src.hasPermission(ADMIN_LEVEL))
                 .executes(ctx -> resetStatus(ctx.getSource()))
                 .then(literal("status").executes(ctx -> resetStatus(ctx.getSource())))
@@ -780,6 +783,15 @@ public final class DawnmineCommand {
     // ------------------------------------------------------------------
     // daily reset (M7)
     // ------------------------------------------------------------------
+
+    private static int census(CommandSourceStack src) {
+        String refusal = com.dwurdy.dawnmine.census.CensusService.start(src);
+        if (refusal != null) {
+            src.sendFailure(net.minecraft.network.chat.Component.literal(refusal));
+            return 0;
+        }
+        return 1;
+    }
 
     private static int resetStatus(CommandSourceStack src) {
         MineMessages.tellLines(src, MineDailyReset.get(src.getServer()).statusLines());
