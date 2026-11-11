@@ -26,6 +26,13 @@ public final class CavePlanner {
     private static final int PIN_HEIGHT = 8;
     private static final double BLEND = 40.0;
     private static final int HUB_EXCLUDE = 24;
+    /** The hub's east gateway: a 5-wide, 4-high tunnel through the wall (x 22..24) into the forecourt. */
+    private static final int GATE_X0 = 22;
+    private static final int GATE_X1 = 24;
+    private static final int GATE_HALF_WIDTH = 2;
+    private static final int GATE_HEIGHT = 4;
+    /** Largest shell the planner will size a layer for (memory is ~28 bytes per column). */
+    private static final int MAX_SHELL_CHUNKS = 96;
     /** Open regions smaller than this many columns are filled in instead of joined. */
     private static final int MIN_REGION = 60;
     private static final int CHANNEL_HEIGHT = 5;
@@ -40,6 +47,10 @@ public final class CavePlanner {
 
         /** The layer sized to a bedrock shell of the given radius in chunks (6 blocks of rock margin). */
         public static Spec forShell(int shellRadiusChunks) {
+            if (shellRadiusChunks < 8 || shellRadiusChunks > MAX_SHELL_CHUNKS) {
+                throw new IllegalArgumentException("cave layer supports shells of 8.." + MAX_SHELL_CHUNKS
+                        + " chunks, not " + shellRadiusChunks);
+            }
             int edge = shellRadiusChunks * 16 - 6;
             return new Spec(-edge, edge, -edge, edge, 44, 12, 22, 24, 100);
         }
@@ -99,6 +110,14 @@ public final class CavePlanner {
         for (int z = spec.minZ(); z <= spec.maxZ(); z++) {
             for (int x = spec.minX(); x <= spec.maxX(); x++) {
                 int i = (z - spec.minZ()) * w + (x - spec.minX());
+                if (gateway(x, z)) {
+                    if (floor[i] != PIN_FLOOR) {
+                        throw new IllegalStateException("hub gateway floor was moved to " + floor[i]
+                                + " at " + x + "," + z);
+                    }
+                    height[i] = GATE_HEIGHT;
+                    continue;
+                }
                 int h = Math.min(height[i], spec.bandMaxY() - floor[i] - 1);
                 if (h < CaveSheet.MIN_HEIGHT || forbidden(x, z, spec)) {
                     h = 0;
@@ -147,7 +166,15 @@ public final class CavePlanner {
         return Math.max(1e-6, dist - PIN_RADIUS);
     }
 
+    /** True for the hub's east gateway tunnel columns. */
+    private static boolean gateway(int x, int z) {
+        return x >= GATE_X0 && x <= GATE_X1 && Math.abs(z) <= GATE_HALF_WIDTH;
+    }
+
     private static boolean forbidden(int x, int z, Spec spec) {
+        if (gateway(x, z)) {
+            return false;
+        }
         boolean inHub = Math.abs(x) <= HUB_EXCLUDE && Math.abs(z) <= HUB_EXCLUDE;
         return inHub || x == spec.minX() || x == spec.maxX() || z == spec.minZ() || z == spec.maxZ();
     }

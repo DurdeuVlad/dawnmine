@@ -53,7 +53,8 @@ class CavePlannerTest {
                         }
                     }
                 }
-                if (Math.abs(x) <= 24 && Math.abs(z) <= 24) {
+                boolean gateway = x >= 22 && x <= 24 && Math.abs(z) <= 2;
+                if (Math.abs(x) <= 24 && Math.abs(z) <= 24 && !gateway) {
                     assertEquals(0, h, "hub box must stay solid at " + x + "," + z);
                 }
             }
@@ -124,5 +125,50 @@ class CavePlannerTest {
         assertTrue(planMs < 20_000, "planning took " + planMs + " ms");
         assertEquals(0, r.unreachable());
         assertTrue(r.standable() > 500_000);
+    }
+    /** The hub's gateway really connects: walking from inside the hub reaches every cave cell. */
+    @ParameterizedTest
+    @ValueSource(longs = {1, 2, 3})
+    void hubInteriorWalksIntoTheCave(long seed) {
+        CaveSheet s = CavePlanner.plan(SPEC, seed);
+        CensusSnapshot snap = new CensusSnapshot(List.of(new CensusSnapshot.Band("layer", 0, 200)));
+        s.addTo(snap);
+        // The hub's interior air (floor slab y41 is solid; the wall at x=22 is solid except the gateway).
+        for (int x = -21; x <= 21; x++) {
+            for (int z = -21; z <= 21; z++) {
+                for (int y = 42; y <= 49; y++) {
+                    snap.addOpen(x, y, z);
+                }
+            }
+        }
+        CensusReport r = CensusAnalyzer.analyze(snap, 0, 42, 8, CensusAnalyzer.Params.DEFAULT);
+        assertTrue(r.startWalkable());
+        assertEquals(0, r.unreachable(), "hub or cave cells not reachable from the hub landing");
+        assertTrue(r.reachable() > 50_000, "walker never left the hub: " + r.reachable());
+    }
+
+    @Test
+    void gatewayAndPinHoldForManySeeds() {
+        CavePlanner.Spec spec = CavePlanner.Spec.standard().withRadius(100);
+        for (long seed = 0; seed < 150; seed++) {
+            CaveSheet s = CavePlanner.plan(spec, seed);
+            for (int x = 22; x <= 24; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    assertEquals(41, s.floorAt(x, z), "gateway floor, seed " + seed);
+                    assertEquals(4, s.heightAt(x, z), "gateway height, seed " + seed);
+                }
+            }
+            assertEquals(41, s.floorAt(36, 0), "forecourt floor, seed " + seed);
+            assertTrue(s.heightAt(36, 0) >= CaveSheet.MIN_HEIGHT, "forecourt open, seed " + seed);
+        }
+    }
+
+    @Test
+    void shellSizedLayerStaysInsideTheBedrockShell() {
+        CavePlanner.Spec spec = CavePlanner.Spec.forShell(64);
+        assertTrue(spec.minX() > -1024 && spec.maxX() < 1023, "x inside the shell");
+        assertTrue(spec.minZ() > -1024 && spec.maxZ() < 1023, "z inside the shell");
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> CavePlanner.Spec.forShell(512));
     }
 }

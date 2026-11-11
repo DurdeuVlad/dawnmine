@@ -171,9 +171,15 @@ public final class CensusService {
                 bands.add(new CensusSnapshot.Band(region.id(), region.bottomY(), region.topY()));
             }
             // The first layer's caves reach above the old profile's top band; cover them.
+            int top = 0;
+            for (int i = 1; i < bands.size(); i++) {
+                if (bands.get(i).maxY() > bands.get(top).maxY()) {
+                    top = i;
+                }
+            }
             if (!bands.isEmpty()) {
-                CensusSnapshot.Band first = bands.get(0);
-                bands.set(0, new CensusSnapshot.Band(first.id(), first.minY(), Math.max(first.maxY(), 127)));
+                CensusSnapshot.Band b = bands.get(top);
+                bands.set(top, new CensusSnapshot.Band(b.id(), b.minY(), Math.max(b.maxY(), 127)));
             }
             this.snapshot = new CensusSnapshot(bands);
             this.bandMinY = bands.stream().mapToInt(CensusSnapshot.Band::minY).min().orElse(0);
