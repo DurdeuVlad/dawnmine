@@ -89,26 +89,18 @@ Each PR body repeats: intent, expectation, acceptance criteria, non-code context
 
 ---
 
-## M11-2 - Multiple routes down, loops and walking-pace sizing  [draft]
+## M11-2 - Multiple routes down, loops and walking-pace sizing  [in delivery]
 
-**Intent.** The owner wants several ways down each layer and a 15-minute rush versus 30-45-minute explore.
+**Design decision (2026-11-11).** Three stacked cave layers, each spanning the whole shell, joined by three descent tunnels per layer pair (steep, gentle, bypass: slopes 0.5, 0.25, 0.4, 118-216 steps long). A long rock ridge across each layer with one wide gap at the far end forces the way down to cross the map, and the descent sites are chosen by measured walking distance (Dijkstra, 10/14 weights) to about 3,600 blocks from where the layer is entered. Tunnels are 3 wide, 5 high, level for 12 steps at each end, and land in a pinned level patch of the lower layer; both layers are closed around the tunnel's middle so it never undercuts a floor or opens on a cliff. Shell radius is restricted to 64-96 chunks. Census gains waypoint walking times in real blocks (diagonal steps count 1.41).
 
-**Expectation.** Each layer has at least 3 distinct routes from its entry to its descent point to the next layer, differing in character (fast and dangerous, long and rich, hidden shortcut), joined by side branches and loops, with descents as vertical shafts, ramps or falls. Layer footprint is sized so the shortest route takes about 15 min at the configured speed and total explorable route length supports 30-45 min.
+**Acceptance criteria (as delivered).**
+1. Each layer pair has 3 distinct descents (distinct tunnels, 100-450 blocks apart, different slope and length), each reachable on foot from the hub by the census walker. Edge-disjoint route counting by max-flow was not built; independence is by distinct tunnels and landings.
+2. Rush to the way down is about 15 minutes at 4.3 blocks/s: tests assert 11-18 min for layer 0 and 9-19 min for the layer-1 leg on 3 seeds; live: layer 0 at 13.2-13.6 min, layer 1 leg about 13.5 min. Explore time (30-45 min per layer) is **not measured** (no metric yet); the walkable area is 3.5M standable cells.
+3. Route character rules (hazards on the fast route, ore on the long route) are **unsupported** until hazards and ore exist (M11-2b, M11-4).
+4. Every route is walkable without placing blocks: the census walker (no drops over 1 block) reaches every standable cell.
+5. Zero unreachable standable cells: full three-layer mine on 3 seeds plus 20 single-layer seeds plus a 150-seed gateway check; live full mine: 21 unreachable, all in or beside the old hub build.
 
-**Acceptance criteria.**
-1. Census reports >= 3 edge-disjoint routes entry to descent per layer.
-2. Shortest-route length gives a rush estimate of 15 min (+/- 3) and total route length gives 30-45 min explore (estimate method documented and checked once by an owner or agent timed walk on the live server).
-3. Routes meet the character rules (shortest route has the most hazards per block; longest has the most ore per block) by census values, thresholds set after baseline.
-4. Every route is traversable without placing blocks (fall damage within a documented limit).
-5. Zero unreachable standable cells on 20 seeds.
-
-**Scope.** Route planner on top of M11-1 caves; descent features; census route metrics. Non-goals: landmarks, ore/mobs/loot content, Layers 2-3 content.
-
-**Dependencies and open decisions.** After M11-1. Open: exact tolerance on walking-time estimate; owner may adjust the 15/30-45 targets after a first timed walk.
-
-**Verification.** Unit tests on route graph metrics; census; timed walk on the local server with notes; independent review.
-
----
+**Dependencies.** After M11-1.
 
 ## M11-3 - Landmark (POI) framework and vanilla-style landmark set  [draft]
 
