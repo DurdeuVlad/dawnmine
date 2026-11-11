@@ -152,17 +152,28 @@ class CaveStackTest {
         }
     }
 
+    /** No tunnel column may lie in the ridge of the layer it leaves, so a tunnel can never cut a ridge. */
     @Test
     void tunnelsNeverCrossTheRidgeOfTheLayerAbove() {
-        CaveStack stack = CaveStack.plan(64, 4);
-        for (CaveStack.Descent d : stack.descents()) {
-            CaveSheet upper = stack.sheet(d.fromLayer());
-            // no tunnel column lies in a column the upper layer kept solid by design while still in range of it
-            for (int k = 0; k < d.length(); k++) {
-                if (d.floors()[k] + CaveStack.TUBE_HEIGHT >= 24 && d.fromLayer() == 0 && k < CaveStack.FLAT) {
-                    assertTrue(upper.isOpen(d.xs()[k], d.zs()[k]) || k > 0, "tunnel start is in the open layer");
+        long seed = 4;
+        CaveStack stack = CaveStack.plan(64, seed);
+        int[][] entries = {{36, 0}};
+        for (int layer = 0; layer < CavePlanner.LAYERS - 1; layer++) {
+            CavePlanner.Fields fields = CavePlanner.fields(CavePlanner.Spec.layer(layer, 64), seed);
+            java.util.BitSet ridge = CaveStack.ridge(layer, fields, entries);
+            assertTrue(ridge.cardinality() > 5_000, "the ridge exists on layer " + layer);
+            List<int[]> landings = new ArrayList<>();
+            for (CaveStack.Descent d : stack.descents()) {
+                if (d.fromLayer() != layer) {
+                    continue;
                 }
+                for (int k = 0; k < d.length(); k++) {
+                    assertFalse(ridge.get(fields.index(d.xs()[k], d.zs()[k])),
+                            d.top().name() + " crosses the ridge at " + d.xs()[k] + "," + d.zs()[k]);
+                }
+                landings.add(new int[] {d.xs()[d.length() - 1], d.zs()[d.length() - 1]});
             }
+            entries = landings.toArray(new int[0][]);
         }
     }
 }

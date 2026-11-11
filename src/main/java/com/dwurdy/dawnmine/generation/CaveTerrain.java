@@ -19,7 +19,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 public final class CaveTerrain {
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
-    /** Most recently used first-in-last-out cache; each value is shared by every waiter. */
+    /** Least-recently-used cache; each value (including a failure) is shared by every waiter. */
     private static final java.util.LinkedHashMap<String, CompletableFuture<CaveStack>> CACHE =
             new java.util.LinkedHashMap<>(8, 0.75f, true);
     private static final int CACHE_SIZE = 4;
@@ -46,9 +46,7 @@ public final class CaveTerrain {
             try {
                 future.complete(CaveStack.plan(shellRadiusChunks, seed));
             } catch (Throwable t) {
-                synchronized (CACHE) {
-                    CACHE.remove(key);
-                }
+                // keep the failed future cached: waiters fail at once instead of each re-planning
                 LOGGER.error("[dawnmine] cave stack planning failed for seed {} shell {}", seed,
                         shellRadiusChunks, t);
                 future.completeExceptionally(t);

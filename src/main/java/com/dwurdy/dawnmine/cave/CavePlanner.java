@@ -31,8 +31,8 @@ public final class CavePlanner {
     private static final int GATE_X1 = 24;
     private static final int GATE_HALF_WIDTH = 2;
     private static final int GATE_HEIGHT = 4;
-    /** Largest shell the planner will size a layer for (memory is ~28 bytes per column). */
-    /** The cave stack is designed and tested for the default 2048-block shell up to 96 chunks. */
+    /** The cave stack is designed and tested for the default 2048-block shell up to 96 chunks
+     * (memory is about 28 bytes per column per layer). */
     private static final int MIN_SHELL_CHUNKS = 64;
     private static final int MAX_SHELL_CHUNKS = 96;
     /** Open regions smaller than this many columns are filled in instead of joined. */
