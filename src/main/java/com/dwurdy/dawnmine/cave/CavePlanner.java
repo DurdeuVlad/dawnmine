@@ -45,6 +45,9 @@ public final class CavePlanner {
 
     /** Number of stacked layers in the mine. */
     public static final int LAYERS = 4;
+    /** Each deeper layer covers less ground than the one above it, so the mine tapers with depth
+     * instead of repeating the same scale at every layer. */
+    private static final double[] LAYER_EXTENT_SCALE = {1.0, 0.8, 0.65, 0.5};
 
     /** Extent and vertical limits of one layer. Bounds are inclusive block coordinates.
      * Only the first layer ({@code hub}) has the hub box, gateway and forecourt. */
@@ -69,7 +72,7 @@ public final class CavePlanner {
                 throw new IllegalArgumentException("cave layer supports shells of 64.." + MAX_SHELL_CHUNKS
                         + " chunks, not " + shellRadiusChunks);
             }
-            int e = shellRadiusChunks * 16 - 6;
+            int e = (int) Math.round((shellRadiusChunks * 16 - 6) * LAYER_EXTENT_SCALE[index]);
             return switch (index) {
                 case 0 -> new Spec(-e, e, -e, e, 44, 12, 22, 24, 100, true, 0L);
                 case 1 -> new Spec(-e, e, -e, e, -4, 8, 14, -26, 18, false, 0x1A7E2L);

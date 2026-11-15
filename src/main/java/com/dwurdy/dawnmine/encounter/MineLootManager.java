@@ -60,12 +60,13 @@ public final class MineLootManager {
         if (sites == null) return;
         for (ServerPlayer player : mine.players()) {
             for (LootSites.Site site : sites.near(player.getBlockX(), player.getBlockZ(), RESOLVE_RADIUS)) {
-                resolveOne(mine, data, site, data.seed());
+                resolveOne(server, mine, data, sites, site, data.seed());
             }
         }
     }
 
-    private static void resolveOne(ServerLevel mine, MineRunData data, LootSites.Site site, long seed) {
+    private static void resolveOne(MinecraftServer server, ServerLevel mine, MineRunData data,
+            LootSites sites, LootSites.Site site, long seed) {
         String claim = "lootresolve:" + site.id();
         if (data.hasClaimedEncounterSite(claim)) return;
         BlockPos pos = new BlockPos(site.x(), site.y(), site.z());
@@ -86,5 +87,13 @@ public final class MineLootManager {
                 seed ^ com.dwurdy.dawnmine.cave.CaveStack.key(site.x(), site.z()));
         data.claimEncounterSite(claim);
         LOGGER.debug("[dawnmine] Attached loot table for {} at {}", site.id(), pos);
+        // A vault's anchor box also wakes its guard, the first time it is opened - reuses the
+        // normal encounter spawn/level-scaling path, under its own claim so it never repeats.
+        if (sites.isGuardianAnchor(site.id())) {
+            String guardClaim = "vaultguard:" + site.id();
+            if (!data.hasClaimedEncounterSite(guardClaim)) {
+                MineEncounterManager.spawnSite(server, guardClaim, site.region(), pos, 6);
+            }
+        }
     }
 }

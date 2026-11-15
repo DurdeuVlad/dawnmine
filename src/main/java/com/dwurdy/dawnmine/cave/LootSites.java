@@ -16,10 +16,14 @@ public final class LootSites {
     /** A place a loot container waits. {@code kind} selects which loot table it gets. */
     public record Site(String id, int layer, String region, int x, int y, int z, String kind) { }
 
-    public static final int CELL = 44;
-    public static final double CELL_CHANCE = 0.55;
+    public static final int CELL = 36;
+    public static final double CELL_CHANCE = 0.7;
     /** No loot site within this Manhattan distance of the hub (same clearance as encounters). */
     public static final int HUB_CLEARANCE = 80;
+    /** One in this many sites is a small "vault" cluster (a few boxes together, guarded) instead
+     * of a single container. */
+    private static final int VAULT_EVERY = 5;
+    private static final int VAULT_EXTRA_BOXES = 2;
     private static final String[] REGIONS = {"upper", "middle", "chaos"};
     private static final int INDEX_CELL = 48;
     /** Alternates crate/locker so a region's loot doesn't read as one repeated prop. */
@@ -28,9 +32,16 @@ public final class LootSites {
     private final List<Site> sites = new ArrayList<>();
     private final Map<Long, List<Site>> index = new HashMap<>();
     private final Map<String, Site> byColumn = new HashMap<>();
+    private final java.util.Set<String> guardianAnchors = new java.util.HashSet<>();
 
     public List<Site> sites() {
         return sites;
+    }
+
+    /** True for the one site in a vault cluster that should also spawn its guard, the first time
+     * it resolves. */
+    public boolean isGuardianAnchor(String siteId) {
+        return guardianAnchors.contains(siteId);
     }
 
     /** Exact-column lookup for the generation pass, keyed by layer too: different layers plan
@@ -75,10 +86,17 @@ public final class LootSites {
                         int z = cz * CELL + rng.nextInt(CELL);
                         if (sheet.isOpen(x, z) && sheet.heightAt(x, z) >= 3
                                 && Math.abs(x) + Math.abs(z) >= HUB_CLEARANCE && !Rock.protectedColumn(x, z)
-                                && !insideAnyLandmark(landmarks, layer, x, z)) {
+                                && !insideAnyLandmark(landmarks, layer, x, z)
+                                && !out.byColumn.containsKey(columnKey(layer, x, z))) {
+                            String region = REGIONS[Math.min(layer, REGIONS.length - 1)];
                             String kind = KINDS[rng.nextInt(KINDS.length)];
-                            out.add(new Site(id(layer, x, z), layer, REGIONS[Math.min(layer, REGIONS.length - 1)],
-                                    x, sheet.floorAt(x, z) + 1, z, kind));
+                            String anchorId = id(layer, x, z);
+                            out.add(new Site(anchorId, layer, region, x, sheet.floorAt(x, z) + 1, z, kind));
+                            boolean vault = out.sites.size() % VAULT_EVERY == 0;
+                            if (vault) {
+                                out.guardianAnchors.add(anchorId);
+                                placeVaultExtras(out, sheet, landmarks, rng, layer, region, x, z);
+                            }
                             break;
                         }
                     }
@@ -86,6 +104,27 @@ public final class LootSites {
             }
         }
         return out;
+    }
+
+    /** A vault's extra boxes: a couple more containers near the anchor, same layer and region, so
+     * a guarded site reads as a small stash rather than one more single crate. Best-effort - a
+     * vault with no room nearby simply keeps its one anchor box. */
+    private static void placeVaultExtras(LootSites out, CaveSheet sheet, Landmarks landmarks, Rng rng,
+            int layer, String region, int ax, int az) {
+        int placed = 0;
+        for (int attempt = 0; attempt < 30 && placed < VAULT_EXTRA_BOXES; attempt++) {
+            int x = ax + rng.nextInt(9) - 4;
+            int z = az + rng.nextInt(9) - 4;
+            if ((x == ax && z == az) || !sheet.isOpen(x, z) || sheet.heightAt(x, z) < 3
+                    || Math.abs(x) + Math.abs(z) < HUB_CLEARANCE || Rock.protectedColumn(x, z)
+                    || insideAnyLandmark(landmarks, layer, x, z)
+                    || out.byColumn.containsKey(columnKey(layer, x, z))) {
+                continue;
+            }
+            String kind = KINDS[rng.nextInt(KINDS.length)];
+            out.add(new Site(id(layer, x, z), layer, region, x, sheet.floorAt(x, z) + 1, z, kind));
+            placed++;
+        }
     }
 
     /** Review finding (M12d): a loot site chosen purely from open-floor/hub-clearance checks could

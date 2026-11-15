@@ -7,18 +7,19 @@
         { "type": "minecraft:item", "weight": 4, "name": "minecraft:quartz",
           "functions": [ { "function": "minecraft:set_count",
             "count": { "type": "minecraft:uniform", "min": 2, "max": 5 } } ] },
-        { "type": "minecraft:item", "weight": 3, "name": "minecraft:deepslate",
-          "functions": [ { "function": "minecraft:set_count",
-            "count": { "type": "minecraft:uniform", "min": 3, "max": 7 } } ] },
         { "type": "minecraft:item", "weight": 2, "name": "minecraft:diamond",
           "functions": [ { "function": "minecraft:set_count",
             "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] },
         { "type": "minecraft:item", "weight": 1, "name": "minecraft:emerald",
           "functions": [ { "function": "minecraft:set_count",
             "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] },
-        { "type": "minecraft:item", "weight": 2, "name": "minecraft:tnt",
+        { "type": "minecraft:item", "weight": 1, "name": "minecraft:ancient_debris" },
+        { "type": "minecraft:item", "weight": 1, "name": "born_in_chaos_v1:pieceofdarkmetal" },
+        { "type": "minecraft:item", "weight": 1, "name": "jewelry:jade" },
+        { "type": "minecraft:item", "weight": 1, "name": "jewelry:topaz" },
+        { "type": "minecraft:item", "weight": 2, "name": "minecraft:torch",
           "functions": [ { "function": "minecraft:set_count",
-            "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] }
+            "count": { "type": "minecraft:uniform", "min": 2, "max": 6 } } ] }
       ]
     }
   ]

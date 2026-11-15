@@ -68,27 +68,27 @@ class CaveStackTest {
         for (String line : r.lines()) {
             assertFalse(line.contains("not reachable"), line);
         }
-        // Layer 0: a rush from the hub to any of the three main ways down is about 15 minutes
-        // (13-17 allowed). The dropper is deliberately a faster, more direct route, so it is
-        // exempt from this pacing target - that is the point of adding it.
+        // Layer 0: a rush from the hub to the way down targets CaveStack.TARGET_BLOCKS_PER_PAIR[0]
+        // (1500 blocks, about 6 minutes at a rush); each deeper layer is reached sooner than a
+        // flat per-layer pace would give, by design (the mine tapers with depth).
         for (CaveStack.Descent d : stack.descents()) {
-            if (d.fromLayer() == 0 && !"dropper".equals(d.name())) {
+            if (d.fromLayer() == 0) {
                 double t = minutes(r, d.top().name());
-                assertTrue(t > 11 && t < 18, d.top().name() + " at " + t + " min");
+                assertTrue(t > 3 && t < 9, d.top().name() + " at " + t + " min");
             }
         }
-        // Layer 1: another layer's worth on top of the best way out of layer 0. The dropper is
-        // exempt from both sides of this comparison, same reasoning as the layer-0 check above.
+        // Layer 1: the next leg, targeting the pair's own distance on top of the best way out of
+        // layer 0.
         double bestOut0 = Double.MAX_VALUE;
         for (CaveStack.Descent d : stack.descents()) {
-            if (d.fromLayer() == 0 && !"dropper".equals(d.name())) {
+            if (d.fromLayer() == 0) {
                 bestOut0 = Math.min(bestOut0, minutes(r, d.bottom().name()));
             }
         }
         for (CaveStack.Descent d : stack.descents()) {
-            if (d.fromLayer() == 1 && !"dropper".equals(d.name())) {
+            if (d.fromLayer() == 1) {
                 double leg = minutes(r, d.top().name()) - bestOut0;
-                assertTrue(leg > 9 && leg < 19, d.top().name() + " leg " + leg + " min");
+                assertTrue(leg > 2 && leg < 12, d.top().name() + " leg " + leg + " min");
             }
         }
     }
