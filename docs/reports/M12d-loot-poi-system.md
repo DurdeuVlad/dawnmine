@@ -55,6 +55,38 @@ column instead of assuming one site per column.
   generation time (not lazily), none of the schema-versioned claim-set
   machinery `MineEncounterManager`/`MineRunData` use for mobs was needed.
 
+## Follow-up: loot tables did not actually persist (found via live testing)
+
+After the first merge, a live `/dawnmine census` on the rebuilt server still
+reported `loot=0`. Direct investigation (forcing a generated chunk to load
+via `/execute in dawnmine:mine run forceload add`, then reading the
+container's real NBT with `/data get block`) showed the chest/barrel block
+itself was placed correctly, but its NBT carried no `LootTable` tag at all -
+`setLootTable` called against the `RandomizableContainerBlockEntity` reached
+through `CaveTerrain.carve`'s raw `ChunkAccess` during generation never
+persisted. Manually merging the same NBT tag onto the *already-loaded* block
+entity worked immediately (confirmed by the pack's Lootr mod swapping the
+block to its own `lootr_barrel` the instant a loot table appeared) - proving
+the loot table mechanism itself is correct, and the bug is specifically in
+*when* it was set.
+
+Fixed by no longer attempting to set the loot table during generation at
+all. `CaveTerrain.carve` now only places the bare container block (which
+does persist correctly). A new `MineLootManager.resolveNearby`, wired into
+the same server tick used by `MineEncounterManager.wakeNearby`, attaches
+each site's loot table the first time a player is close enough for the
+chunk to be genuinely loaded - the same reasoning (and the same proven
+pattern) `MineGenerator.finishSegment` already uses for the hub's teleporter
+sign text, the one other place in this codebase that sets block-entity
+content, which also does it post-generation against a real `ServerLevel`
+rather than during raw chunk generation.
+
+This could not be fully verified end-to-end without a connected client (no
+player was online during this session to trigger the tick-based resolve),
+but the core mechanism - `setLootTable` against an already-loaded block
+entity - was directly proven to work via the manual NBT-merge test above.
+**Please confirm by walking up to a generated chest/barrel and opening it.**
+
 ## Verification
 
 `./gradlew test` (full suite): BUILD SUCCESSFUL. New `LootSitesTest`

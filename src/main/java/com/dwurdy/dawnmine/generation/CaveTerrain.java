@@ -274,38 +274,26 @@ public final class CaveTerrain {
                 for (int layer = 0; layer < stack.layers(); layer++) {
                     com.dwurdy.dawnmine.cave.LootSites.Site loot = marks.loot().atColumn(layer, x, z);
                     if (loot != null) {
-                        placeLootContainer(chunk, pos.set(x, loot.y(), z), loot, seed);
+                        placeLootContainer(chunk, pos.set(x, loot.y(), z), loot);
                     }
                 }
             }
         }
     }
 
-    private static final net.minecraft.resources.ResourceLocation[] CHEST_LOOT_TABLES = {
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/upper_crate"),
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/middle_crate"),
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/chaos_crate"),
-    };
-
-    /** M12d: places a static loot container (never a spawned entity) with a vanilla loot table
-     * attached, same lazy-roll mechanic vanilla structure chests use - the table resolves into
-     * real items only the first time a player opens it, so generation never constructs ItemStacks
-     * itself. "crate" is a chest; "locker" is a barrel, both reusing the same per-region tables. */
+    /** M12d: places a static loot container (never a spawned entity) - "crate" is a chest,
+     * "locker" is a barrel. The loot table is deliberately *not* attached here: setting it
+     * against a block entity reached through a raw {@code ChunkAccess} during generation does
+     * not persist (confirmed live - the saved container carried no {@code LootTable} tag at
+     * all), the same reason {@code MineGenerator.finishSegment}'s teleporter sign text is set
+     * post-generation against a real {@code ServerLevel} rather than here. See
+     * {@link com.dwurdy.dawnmine.encounter.MineLootManager#resolveNearby}, which attaches each
+     * site's loot table once a player is near enough for the chunk to be genuinely loaded. */
     private static void placeLootContainer(ChunkAccess chunk, BlockPos pos,
-            com.dwurdy.dawnmine.cave.LootSites.Site site, long seed) {
+            com.dwurdy.dawnmine.cave.LootSites.Site site) {
         BlockState block = "locker".equals(site.kind())
                 ? Blocks.BARREL.defaultBlockState() : Blocks.CHEST.defaultBlockState();
         chunk.setBlockState(pos, block, false);
-        if (chunk.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity container) {
-            int tier = switch (site.region()) {
-                case "middle" -> 1;
-                case "chaos" -> 2;
-                default -> 0;
-            };
-            container.setLootTable(net.minecraft.resources.ResourceKey.create(
-                    net.minecraft.core.registries.Registries.LOOT_TABLE, CHEST_LOOT_TABLES[tier]),
-                    seed ^ CaveStack.key(site.x(), site.z()));
-        }
     }
 
     /** A solid terrain column with the planned cave cells opened (reset baseline). */
