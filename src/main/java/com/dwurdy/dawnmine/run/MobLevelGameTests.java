@@ -71,6 +71,16 @@ public final class MobLevelGameTests {
                             + " != expected " + expected);
             helper.assertTrue(scaledHigh.getHealth() == scaledHigh.getMaxHealth(),
                     "scaled mob was not healed to its new maximum");
+            AttributeInstance damage = scaledHigh.getAttribute(Attributes.ATTACK_DAMAGE);
+            helper.assertTrue(damage != null
+                            && damage.getModifier(MobLevelScaling.DAMAGE_MODIFIER_ID) != null,
+                    "scaled mob did not receive the bounded damage modifier");
+            AttributeInstance speed = scaledHigh.getAttribute(Attributes.MOVEMENT_SPEED);
+            helper.assertTrue(speed != null
+                            && speed.getModifier(MobLevelScaling.SPEED_MODIFIER_ID) != null,
+                    "scaled mob did not receive the bounded speed modifier");
+            helper.assertTrue(scaledHigh.getCustomName().getStyle().getColor() != null,
+                    "scaled mob nametag has no level color");
             scaledHigh.discard();
         }
         Mob scaledMid = EntityType.ZOMBIE.create(level);
@@ -82,7 +92,7 @@ public final class MobLevelGameTests {
             helper.assertTrue(health != null
                             && health.getModifier(MobLevelScaling.HEALTH_MODIFIER_ID) != null,
                     "mid-band mob did not receive the health modifier");
-            double expected = base * (1.0 + MobLevelScaling.BONUS_BAND_3_TO_5);
+            double expected = base * (1.0 + MobLevelScaling.HEALTH_BAND_3_TO_5);
             helper.assertTrue(Math.abs(scaledMid.getMaxHealth() - expected) < 0.01,
                     "mid-band mob max health " + scaledMid.getMaxHealth()
                             + " != expected " + expected);
@@ -99,6 +109,12 @@ public final class MobLevelGameTests {
                     "level-1 mob received a health modifier it must not have");
             helper.assertTrue(Math.abs(easiest.getMaxHealth() - base) < 0.001,
                     "level-1 mob lost its unmodified native health");
+            AttributeInstance damage = easiest.getAttribute(Attributes.ATTACK_DAMAGE);
+            helper.assertTrue(damage == null || damage.getModifier(MobLevelScaling.DAMAGE_MODIFIER_ID) == null,
+                    "level-1 mob received a damage modifier it must not have");
+            AttributeInstance speed = easiest.getAttribute(Attributes.MOVEMENT_SPEED);
+            helper.assertTrue(speed == null || speed.getModifier(MobLevelScaling.SPEED_MODIFIER_ID) == null,
+                    "level-1 mob received a speed modifier it must not have");
             helper.assertTrue(easiest.getCustomName() != null
                             && easiest.getCustomName().getString().equals("Lv. 1 Zombie")
                             && easiest.isCustomNameVisible(),
@@ -172,6 +188,74 @@ public final class MobLevelGameTests {
         helper.assertTrue(data.snapshot(testLevel.registryAccess()).equals(original),
                 "M9a level GameTest failed to restore shared run state");
         LOGGER.info("[dawnmine] M9a scheduled-encounter level GameTest passed.");
+        helper.succeed();
+    }
+
+    /** M12c: a scheduled encounter mob drops only ore matching its region, never vanilla loot. */
+    @GameTest(template = "empty", batch = "m9a_levels", timeoutTicks = 1200)
+    public static void scheduledEncounterDropsOnlyMatchingOre(GameTestHelper helper) {
+        ServerLevel testLevel = helper.getLevel();
+        ServerLevel mine = testLevel.getServer().getLevel(MineManager.MINE_DIMENSION);
+        if (mine == null || BuiltInRegistries.ENTITY_TYPE.getOptional(
+                ResourceLocation.parse("born_in_chaos_v1:decrepit_skeleton")).isEmpty()) {
+            LOGGER.warn("[dawnmine] M12c drop GameTest skipped: mine level or Born in Chaos is unavailable.");
+            helper.succeed();
+            return;
+        }
+        if (!TEMPORARY_WORLD_NAME.equals(testLevel.getServer().getWorldData().getLevelName())) {
+            LOGGER.warn("[dawnmine] M12c drop GameTest skipped outside disposable world '{}'.",
+                    TEMPORARY_WORLD_NAME);
+            helper.succeed();
+            return;
+        }
+        MineManager manager = MineManager.get(testLevel.getServer());
+        MineRunData data = manager.data();
+        var original = data.snapshot(testLevel.registryAccess());
+        int radius = DawnmineConfig.mineRegionRadiusChunks();
+        OwnedVolume owned = new OwnedVolume("m12c_gametest_region", MineManager.MINE_DIMENSION,
+                new BlockPos(-radius * 16, mine.getMinBuildHeight(), -radius * 16),
+                new BlockPos(radius * 16 - 1, mine.getMaxBuildHeight() - 1, radius * 16 - 1));
+        try {
+            data.beginNewRun("m12c-gametest-" + UUID.randomUUID(), 1, 0x4d3942L,
+                    LocalDate.now(DawnmineConfig.resetZoneId()).toString());
+            data.setBounds(-radius, -radius, radius - 1, radius - 1);
+            data.addOwnedVolume(owned);
+            data.markStatus(RunStatus.READY);
+            BlockPos center = new BlockPos(192, 60, 192);
+            preparePlatform(mine, center);
+            TopoNode node = new TopoNode("m12c-upper", NodeKind.CAVERN,
+                    "upper", new TopoPos(center.getX(), center.getY(), center.getZ()),
+                    Set.of(), "");
+            MineEncounterManager.onNodeGenerated(testLevel.getServer(), node);
+            List<Mob> spawned = mine.getEntitiesOfClass(Mob.class,
+                    new AABB(center).inflate(12)).stream()
+                    .filter(mob -> data.runId().equals(
+                            mob.getPersistentData().getString("dawnmineRunId")))
+                    .toList();
+            helper.assertTrue(!spawned.isEmpty(), "scheduled encounter spawned nothing for the drop check");
+            Mob victim = spawned.get(0);
+            BlockPos deathPos = victim.blockPosition();
+            Set<String> allowedUpperDrops = com.dwurdy.dawnmine.generation.OreCatalog.active()
+                    .resourceEntries(com.dwurdy.dawnmine.generation.OreCatalog.Tier.UPPER).stream()
+                    .flatMap(e -> e.nativeDropItems().stream())
+                    .map(ResourceLocation::toString)
+                    .collect(java.util.stream.Collectors.toSet());
+            victim.kill();
+            List<net.minecraft.world.entity.item.ItemEntity> drops = mine.getEntitiesOfClass(
+                    net.minecraft.world.entity.item.ItemEntity.class, new AABB(deathPos).inflate(4));
+            helper.assertTrue(!drops.isEmpty(), "killed mine mob dropped nothing at all");
+            for (var drop : drops) {
+                String itemId = BuiltInRegistries.ITEM.getKey(drop.getItem().getItem()).toString();
+                helper.assertTrue(allowedUpperDrops.contains(itemId),
+                        "mine mob dropped a non-ore/vanilla item: " + itemId);
+            }
+        } finally {
+            MineEncounterManager.cleanupRun(mine, data, data.runId());
+            data.restoreSnapshot(original, testLevel.registryAccess());
+        }
+        helper.assertTrue(data.snapshot(testLevel.registryAccess()).equals(original),
+                "M12c drop GameTest failed to restore shared run state");
+        LOGGER.info("[dawnmine] M12c ore-only-drop GameTest passed.");
         helper.succeed();
     }
 
@@ -276,6 +360,25 @@ public final class MobLevelGameTests {
             helper.assertTrue(Math.abs(health.getValue() - expected) < 0.01,
                     "mob resolved health " + health.getValue() + " != expected " + expected);
         }
+        assertBandedModifier(helper, mob.getAttribute(Attributes.ATTACK_DAMAGE),
+                MobLevelScaling.DAMAGE_MODIFIER_ID,
+                MobLevelScaling.damageBonusMultiplier(composition.level()), "damage");
+        assertBandedModifier(helper, mob.getAttribute(Attributes.MOVEMENT_SPEED),
+                MobLevelScaling.SPEED_MODIFIER_ID,
+                MobLevelScaling.speedBonusMultiplier(composition.level()), "speed");
+    }
+
+    private static void assertBandedModifier(GameTestHelper helper, AttributeInstance instance,
+            ResourceLocation modifierId, double bonus, String label) {
+        if (bonus == 0.0) {
+            helper.assertTrue(instance == null || instance.getModifier(modifierId) == null,
+                    "no-scaling-band mob received the level " + label + " modifier");
+            return;
+        }
+        helper.assertTrue(instance != null, "mob has no " + label + " attribute but required a bonus");
+        var modifier = instance.getModifier(modifierId);
+        helper.assertTrue(modifier != null && Math.abs(modifier.amount() - bonus) < 0.0001,
+                "mob " + label + " modifier missing or wrong, expected " + bonus);
     }
 
     private static void preparePlatform(ServerLevel mine, BlockPos center) {
