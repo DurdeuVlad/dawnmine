@@ -18,8 +18,9 @@ import java.util.Map;
  * never depends on which chunk is being generated.
  */
 public final class OreField {
-    /** One catalogued ore as the field sees it. {@code grade} (1..3) scales vein size. */
-    public record Ore(String id, int weight, int grade) { }
+    /** One catalogued ore as the field sees it. {@code sizeMin}/{@code sizeMax} (inclusive) bound
+     * an ordinary vein's block count directly - M12a: researched per-ore rarity, not a multiplier. */
+    public record Ore(String id, int weight, int sizeMin, int sizeMax) { }
 
     public static final int CELL = 12;
     /** Vein growth stays within this Chebyshev distance of its anchor. */
@@ -182,7 +183,8 @@ public final class OreField {
             }
             int oreIndex = pick(layer, rng);
             Ore ore = ids.get(oreIndex);
-            int size = 5 + ore.grade() * (1 + rng.nextInt(4));
+            int span = ore.sizeMax() - ore.sizeMin();
+            int size = ore.sizeMin() + (span > 0 ? rng.nextInt(span + 1) : 0);
             veins.add(grow(rng, anchor, oreIndex, size, REACH));
         }
         return veins;

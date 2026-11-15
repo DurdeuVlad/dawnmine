@@ -74,7 +74,7 @@ Constraint kept: the mine stays fully procedural from code and block layouts (AG
 - **Motherlodes:** 2-4 per level, a cavern rich in ore with guards.
 - **Hidden ore:** behind cracked/suspicious walls, mining-only secrets.
 - All 32 Rustic Craft 2 ores stay in the catalogue; native drops and break rules stay.
-- Targets (tunable): exposed ore share of wall surface, L1 >= 6%, L2 >= 10%, L3 >= 14%; each ore type appears in its intended levels at least N times per run.
+- Targets (tunable): exposed ore share of wall surface, L1 >= 6%, L2 >= 10%, L3 >= 14%; each ore type appears in its intended levels at least N times per run. **M12a note (2026-11-15):** the pre-fix build exceeded these only because every vein - rare ores included - was inflated by a sizing bug; see `docs/reports/M12a-ore-vein-rarity.md`. These floors are a tuning target for the richer-deeper pillar, not a mandate to keep rare-ore veins oversized to hit them.
 
 ### Mobs
 - Mobs are **placed at generation as encounters**, not just rolled at runtime. Types: patrol group, ambush, nest (spawner + guard), mini-boss, vault guardian, wandering elite.

@@ -20,7 +20,7 @@ class OreFieldTest {
         for (int layer = 0; layer < 3; layer++) {
             List<OreField.Ore> table = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
-                table.add(new OreField.Ore("test:l" + layer + "_ore" + i, i == 9 ? 1 : 5, 1 + i % 3));
+                table.add(new OreField.Ore("test:l" + layer + "_ore" + i, i == 9 ? 1 : 5, 5, 9));
             }
             t.add(table);
         }
