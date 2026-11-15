@@ -42,6 +42,17 @@
             { "id": "minecraft:skeleton", "count": 1 }
           ],
           "bonusEntities": []
+        },
+        {
+          "id": "upper_husk_patrol",
+          "weight": 1,
+          "level": 2,
+          "threat": "A sun-immune patroller lingers near the entrance without ever retreating to shade.",
+          "counterplay": "Treat it like any melee pursuer; it has no special resistance underground.",
+          "entities": [
+            { "id": "minecraft:husk", "count": 1 }
+          ],
+          "bonusEntities": []
         }
       ]
     },
@@ -88,6 +99,17 @@
             { "id": "minecraft:spider", "count": 1 }
           ],
           "bonusEntities": []
+        },
+        {
+          "id": "middle_ranged_pillager",
+          "weight": 2,
+          "level": 5,
+          "threat": "A crossbow-wielding raider keeps its distance and punishes a straight approach.",
+          "counterplay": "Close the gap diagonally behind cover; its reload window is the opening.",
+          "entities": [
+            { "id": "minecraft:pillager", "count": 1 }
+          ],
+          "bonusEntities": []
         }
       ]
     },
@@ -131,6 +153,17 @@
           "counterplay": "Bring upgraded gear from earlier depths before engaging; retreat to a chokepoint.",
           "entities": [
             { "id": "minecraft:wither_skeleton", "count": 2 }
+          ],
+          "bonusEntities": []
+        },
+        {
+          "id": "chaos_ranged_blaze",
+          "weight": 2,
+          "level": 8,
+          "threat": "A fire-ranged attacker punishes players who stand still in the open.",
+          "counterplay": "Use pillars and corners to block fireballs, then close the distance quickly.",
+          "entities": [
+            { "id": "minecraft:blaze", "count": 1 }
           ],
           "bonusEntities": []
         }

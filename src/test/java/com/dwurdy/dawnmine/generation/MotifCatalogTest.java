@@ -144,7 +144,8 @@ class MotifCatalogTest {
     void shippedMotifsParse() throws Exception {
         // The bundled rule sets must always be valid: they are what the
         // production motif pass actually places.
-        for (String name : new String[] {"collapsed_support", "rubble_vein", "abandoned_cart"}) {
+        for (String name : new String[] {"collapsed_support", "rubble_vein", "abandoned_cart",
+                "lantern_cache", "timber_scaffold", "deep_vein_cluster"}) {
             try (var in = MotifCatalogTest.class.getResourceAsStream(
                     "/data/dawnmine/motifs/" + name + ".json")) {
                 JsonObject json = JsonParser.parseString(

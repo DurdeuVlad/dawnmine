@@ -1,0 +1,33 @@
+{
+  "motif": "lantern_cache",
+  "appliesTo": ["edge", "node", "natural"],
+  "regions": ["upper", "middle", "chaos"],
+  "spacing": [34, 52],
+  "chance": 0.45,
+  "elements": [
+    {
+      "type": "lamp",
+      "blockSlot": "light",
+      "countRange": [1, 1],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.6
+    },
+    {
+      "type": "vein",
+      "blockSlot": "ore_slot",
+      "countRange": [1, 2],
+      "offsetRule": "wall",
+      "radius": 3,
+      "chance": 0.5
+    },
+    {
+      "type": "scatter",
+      "blockSlot": "rubble",
+      "countRange": [2, 5],
+      "offsetRule": "floor",
+      "radius": 2,
+      "chance": 0.8
+    }
+  ]
+}
