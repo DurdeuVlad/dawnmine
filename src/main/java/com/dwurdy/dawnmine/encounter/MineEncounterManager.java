@@ -8,8 +8,10 @@ import com.dwurdy.dawnmine.topology.NodeFeature;
 import com.dwurdy.dawnmine.topology.NodeKind;
 import com.dwurdy.dawnmine.topology.TopoNode;
 import com.dwurdy.dawnmine.topology.TopologyProfiles;
+import com.dwurdy.dawnmine.generation.OreCatalog;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -22,6 +24,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -31,6 +34,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import org.slf4j.Logger;
 
 /** Run-owned encounter spawning, entity provenance, population caps, and cleanup. */
@@ -415,6 +419,44 @@ public final class MineEncounterManager {
                 data.unregisterMineEntity(entity.getUUID());
             }
         }
+    }
+
+    /**
+     * M12c: a mine-tracked mob drops no native/vanilla loot at all - only ore matching its
+     * region and level. The native infected-ore summon ({@link #NATIVE_TERMITE_ID}) is excluded,
+     * same as {@link MobLevelScaling}: its own shard-drop behavior stays exactly as M4a left it.
+     * This is deliberately separate from {@link #awardMineReward}'s rare "salvage" bonus (a
+     * player-targeted chance roll into inventory): that stays unchanged and can still trigger on
+     * top of this guaranteed ground drop - they are different mechanisms, not a double-award of
+     * the same reward.
+     */
+    @SubscribeEvent
+    public void onTrackedMobDrops(LivingDropsEvent event) {
+        if (event.isCanceled() || !(event.getEntity().level() instanceof ServerLevel level)
+                || !level.dimension().equals(MineManager.MINE_DIMENSION)
+                || !(event.getEntity() instanceof Mob mob) || !(mob instanceof Enemy)) return;
+        MineRunData data = MineManager.get(level.getServer()).data();
+        MineEntityOrigin origin = data.mineEntity(mob.getUUID());
+        if (origin == null) return;
+        ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
+        if (NATIVE_TERMITE_ID.equals(entityId)) return;
+        // Resolve the ore substitute fully before touching the event: if resolution fails (e.g. an
+        // unknown region, or the ore catalog snapshot is still empty during a reload race), the
+        // mob keeps its native drops rather than silently dropping nothing at all.
+        if (!OreCatalog.Tier.isKnown(origin.region())) return;
+        OreCatalog.Tier tier = OreCatalog.Tier.valueOf(origin.region().toUpperCase(Locale.ROOT));
+        OreCatalog.Entry entry = OreCatalog.active().choose(tier, mob.getRandom());
+        if (entry == null || entry.nativeDropItems().isEmpty()) return;
+        ResourceLocation dropId = entry.nativeDropItems()
+                .get(mob.getRandom().nextInt(entry.nativeDropItems().size()));
+        var item = BuiltInRegistries.ITEM.getOptional(dropId).orElse(null);
+        if (item == null) return;
+        event.getDrops().clear();
+        int mobLevel = mob.getPersistentData().getInt(MobLevelScaling.LEVEL_TAG);
+        int count = 1 + Math.min(3, mobLevel / 3);
+        ItemStack stack = new ItemStack(item, Math.min(count, item.getDefaultInstance().getMaxStackSize()));
+        ItemEntity drop = new ItemEntity(level, mob.getX(), mob.getY(), mob.getZ(), stack);
+        event.getDrops().add(drop);
     }
 
     private static void awardMineReward(ServerLevel level, Entity entity, Entity attacker,
