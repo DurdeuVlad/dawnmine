@@ -59,7 +59,7 @@ public final class LootSites {
         return out;
     }
 
-    public static LootSites plan(CaveStack stack, long seed) {
+    public static LootSites plan(CaveStack stack, Landmarks landmarks, long seed) {
         LootSites out = new LootSites();
         for (int layer = 0; layer < stack.layers(); layer++) {
             CaveSheet sheet = stack.sheet(layer);
@@ -74,7 +74,8 @@ public final class LootSites {
                         int x = cx * CELL + rng.nextInt(CELL);
                         int z = cz * CELL + rng.nextInt(CELL);
                         if (sheet.isOpen(x, z) && sheet.heightAt(x, z) >= 3
-                                && Math.abs(x) + Math.abs(z) >= HUB_CLEARANCE && !Rock.protectedColumn(x, z)) {
+                                && Math.abs(x) + Math.abs(z) >= HUB_CLEARANCE && !Rock.protectedColumn(x, z)
+                                && !insideAnyLandmark(landmarks, layer, x, z)) {
                             String kind = KINDS[rng.nextInt(KINDS.length)];
                             out.add(new Site(id(layer, x, z), layer, REGIONS[Math.min(layer, REGIONS.length - 1)],
                                     x, sheet.floorAt(x, z) + 1, z, kind));
@@ -85,6 +86,19 @@ public final class LootSites {
             }
         }
         return out;
+    }
+
+    /** Review finding (M12d): a loot site chosen purely from open-floor/hub-clearance checks could
+     * land inside a landmark's own footprint and have its placed chest silently overwrite part of
+     * that landmark's authored content, with nothing to detect it. Landmarks are placed first in
+     * {@code CaveTerrain.carve}, so this check - not write order - is what actually prevents it. */
+    private static boolean insideAnyLandmark(Landmarks landmarks, int layer, int x, int z) {
+        for (Landmarks.Placement p : landmarks.placements()) {
+            if (p.layer() == layer && x >= p.minX() && x <= p.maxX() && z >= p.minZ() && z <= p.maxZ()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Site ids use only letters, digits, ':' and '-', same claim-list requirement as encounters. */
