@@ -2,7 +2,8 @@ package com.dwurdy.dawnmine.cave;
 
 /** What is rock and what is cave in a planned stack: shared by ore and landmark placement. */
 public final class Rock {
-    public static final int MIN_Y = -58;
+    /** M12e: extended down to cover the fourth (nether) layer's band (-92..-68). */
+    public static final int MIN_Y = -100;
     public static final int MAX_Y = 120;
     private static final int[][] DIRS = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 

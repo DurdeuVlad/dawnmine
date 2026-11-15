@@ -44,7 +44,7 @@ public final class CavePlanner {
     private static final int CHANNEL_HEIGHT = 5;
 
     /** Number of stacked layers in the mine. */
-    public static final int LAYERS = 3;
+    public static final int LAYERS = 4;
 
     /** Extent and vertical limits of one layer. Bounds are inclusive block coordinates.
      * Only the first layer ({@code hub}) has the hub box, gateway and forecourt. */
@@ -74,6 +74,8 @@ public final class CavePlanner {
                 case 0 -> new Spec(-e, e, -e, e, 44, 12, 22, 24, 100, true, 0L);
                 case 1 -> new Spec(-e, e, -e, e, -4, 8, 14, -26, 18, false, 0x1A7E2L);
                 case 2 -> new Spec(-e, e, -e, e, -44, 5, 10, -58, -30, false, 0x2B8F3L);
+                // M12e: a fourth, nether-themed layer below Chaos Depths.
+                case 3 -> new Spec(-e, e, -e, e, -80, 5, 9, -92, -68, false, 0x3C9A4L);
                 default -> throw new IllegalArgumentException("no layer " + index);
             };
         }
