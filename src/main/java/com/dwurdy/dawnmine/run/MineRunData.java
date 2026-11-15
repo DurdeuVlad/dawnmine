@@ -43,7 +43,12 @@ public class MineRunData extends SavedData {
     private static final int SURFACE_EXIT_SAFE_ZONE_HALF_WIDTH = 2;
     static final int MAX_MINE_ORE_ORIGINS = 65_536;
     static final int MAX_MINE_ENTITIES = 16_384;
-    static final int MAX_ENCOUNTER_SITE_CLAIMS = 16_384;
+    // M12d follow-up: this set is now shared with loot-site resolution claims too
+    // ("lootresolve:" prefix). A real seed measured 14,692 encounter sites + 4,500 loot
+    // sites = 19,192 - already over the old 16,384 cap within a single day's run, which
+    // would have made claimEncounterSite silently fail (and loot sites retry forever,
+    // harmlessly but wastefully) well before a player could explore the whole shell.
+    static final int MAX_ENCOUNTER_SITE_CLAIMS = 32_768;
     static final int MAX_MINE_REWARD_CLAIMS = MAX_ENCOUNTER_SITE_CLAIMS * 8;
     static final int MAX_ENCOUNTER_SITE_ID_LENGTH = 128;
     static final int MAX_MINE_ENTITY_SOURCE_LENGTH = 128;
