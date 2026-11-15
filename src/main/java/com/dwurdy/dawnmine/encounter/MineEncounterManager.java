@@ -440,7 +440,9 @@ public final class MineEncounterManager {
         if (origin == null) return;
         ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());
         if (NATIVE_TERMITE_ID.equals(entityId)) return;
-        event.getDrops().clear();
+        // Resolve the ore substitute fully before touching the event: if resolution fails (e.g. an
+        // unknown region, or the ore catalog snapshot is still empty during a reload race), the
+        // mob keeps its native drops rather than silently dropping nothing at all.
         if (!OreCatalog.Tier.isKnown(origin.region())) return;
         OreCatalog.Tier tier = OreCatalog.Tier.valueOf(origin.region().toUpperCase(Locale.ROOT));
         OreCatalog.Entry entry = OreCatalog.active().choose(tier, mob.getRandom());
@@ -449,6 +451,7 @@ public final class MineEncounterManager {
                 .get(mob.getRandom().nextInt(entry.nativeDropItems().size()));
         var item = BuiltInRegistries.ITEM.getOptional(dropId).orElse(null);
         if (item == null) return;
+        event.getDrops().clear();
         int mobLevel = mob.getPersistentData().getInt(MobLevelScaling.LEVEL_TAG);
         int count = 1 + Math.min(3, mobLevel / 3);
         ItemStack stack = new ItemStack(item, Math.min(count, item.getDefaultInstance().getMaxStackSize()));
