@@ -21,7 +21,11 @@ public final class CavePlanner {
     /** Hub floor block y and the forecourt pin, taken from the hub layout. */
     private static final int PIN_FLOOR = HubLayout.FEET_Y - 1;
     private static final int PIN_X0 = 25;
-    private static final int PIN_X1 = 36;
+    /** M12g: the forecourt pin now reaches to x=100, not 36 - a long guaranteed-straight,
+     * guaranteed-open entry corridor east of the hub gateway, so first-time players always
+     * commit forward for a real stretch before any noise-carved cave (which has no directional
+     * bias and could otherwise curl a lobe back near the hub) takes over. */
+    private static final int PIN_X1 = 100;
     private static final int PIN_RADIUS = 8;
     private static final int PIN_HEIGHT = 8;
     private static final double BLEND = 40.0;

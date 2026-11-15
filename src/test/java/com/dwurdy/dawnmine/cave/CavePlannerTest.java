@@ -149,7 +149,10 @@ class CavePlannerTest {
 
     @Test
     void gatewayAndPinHoldForManySeeds() {
-        CavePlanner.Spec spec = CavePlanner.Spec.standard().withRadius(100);
+        // M12g: the forecourt pin now reaches x=100 (a long guaranteed-straight entry corridor),
+        // so the test radius must clear the pin plus its blend zone (radius 100 used to be enough
+        // margin for the old x=36 pin; it no longer is).
+        CavePlanner.Spec spec = CavePlanner.Spec.standard().withRadius(160);
         for (long seed = 0; seed < 150; seed++) {
             CaveSheet s = CavePlanner.plan(spec, seed);
             for (int x = 22; x <= 24; x++) {
