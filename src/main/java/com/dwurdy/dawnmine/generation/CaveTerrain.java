@@ -35,7 +35,8 @@ public final class CaveTerrain {
     private record Ores(OreField field, BlockState[] states, String fingerprint) { }
 
     /** The landmark plan for a stack with every palette entry resolved once. */
-    private record Marks(Landmarks plan, BlockState[] states, com.dwurdy.dawnmine.cave.EncounterSites sites) { }
+    private record Marks(Landmarks plan, BlockState[] states, com.dwurdy.dawnmine.cave.EncounterSites sites,
+                         com.dwurdy.dawnmine.cave.LootSites loot) { }
 
     private static final java.util.IdentityHashMap<CaveStack, CompletableFuture<Marks>> MARK_PLANS =
             new java.util.IdentityHashMap<>();
@@ -70,7 +71,8 @@ public final class CaveTerrain {
                             net.minecraft.core.registries.BuiltInRegistries.BLOCK.asLookup(),
                             plan.palette().get(i), false).blockState();
                 }
-                future.complete(new Marks(plan, states, com.dwurdy.dawnmine.cave.EncounterSites.plan(stack, plan, seed)));
+                future.complete(new Marks(plan, states, com.dwurdy.dawnmine.cave.EncounterSites.plan(stack, plan, seed),
+                        com.dwurdy.dawnmine.cave.LootSites.plan(stack, seed)));
             } catch (Throwable t) {
                 LOGGER.error("[dawnmine] landmark planning failed for seed {}", seed, t);
                 future.completeExceptionally(t);
@@ -101,9 +103,33 @@ public final class CaveTerrain {
         return marksFuture.join().sites();
     }
 
+    /** Loot sites of the run, or null while its stack and landmarks are still being planned. */
+    public static com.dwurdy.dawnmine.cave.LootSites lootSitesIfReady(long seed, int shellRadiusChunks) {
+        CompletableFuture<CaveStack> stackFuture;
+        synchronized (CACHE) {
+            stackFuture = CACHE.get(seed + ":" + shellRadiusChunks);
+        }
+        if (stackFuture == null || !stackFuture.isDone() || stackFuture.isCompletedExceptionally()) {
+            return null;
+        }
+        CompletableFuture<Marks> marksFuture;
+        synchronized (MARK_PLANS) {
+            marksFuture = MARK_PLANS.get(stackFuture.join());
+        }
+        if (marksFuture == null || !marksFuture.isDone() || marksFuture.isCompletedExceptionally()) {
+            return null;
+        }
+        return marksFuture.join().loot();
+    }
+
     /** Encounter sites of a stack (blocking: plans on first use), for the census. */
     public static com.dwurdy.dawnmine.cave.EncounterSites encounterSites(CaveStack stack, long seed) {
         return marks(stack, seed).sites();
+    }
+
+    /** Loot sites of a stack (blocking: plans on first use), for the census. */
+    public static com.dwurdy.dawnmine.cave.LootSites lootSites(CaveStack stack, long seed) {
+        return marks(stack, seed).loot();
     }
 
     /** Placed landmarks of a stack, for the census and later systems. */
@@ -245,7 +271,40 @@ public final class CaveTerrain {
                         chunk.setBlockState(pos.set(x, edits[i], z), marks.states()[edits[i + 1]], false);
                     }
                 }
+                for (int layer = 0; layer < stack.layers(); layer++) {
+                    com.dwurdy.dawnmine.cave.LootSites.Site loot = marks.loot().atColumn(layer, x, z);
+                    if (loot != null) {
+                        placeLootContainer(chunk, pos.set(x, loot.y(), z), loot, seed);
+                    }
+                }
             }
+        }
+    }
+
+    private static final net.minecraft.resources.ResourceLocation[] CHEST_LOOT_TABLES = {
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/upper_crate"),
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/middle_crate"),
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/chaos_crate"),
+    };
+
+    /** M12d: places a static loot container (never a spawned entity) with a vanilla loot table
+     * attached, same lazy-roll mechanic vanilla structure chests use - the table resolves into
+     * real items only the first time a player opens it, so generation never constructs ItemStacks
+     * itself. "crate" is a chest; "locker" is a barrel, both reusing the same per-region tables. */
+    private static void placeLootContainer(ChunkAccess chunk, BlockPos pos,
+            com.dwurdy.dawnmine.cave.LootSites.Site site, long seed) {
+        BlockState block = "locker".equals(site.kind())
+                ? Blocks.BARREL.defaultBlockState() : Blocks.CHEST.defaultBlockState();
+        chunk.setBlockState(pos, block, false);
+        if (chunk.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity container) {
+            int tier = switch (site.region()) {
+                case "middle" -> 1;
+                case "chaos" -> 2;
+                default -> 0;
+            };
+            container.setLootTable(net.minecraft.resources.ResourceKey.create(
+                    net.minecraft.core.registries.Registries.LOOT_TABLE, CHEST_LOOT_TABLES[tier]),
+                    seed ^ CaveStack.key(site.x(), site.z()));
         }
     }
 
