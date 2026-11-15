@@ -1,0 +1,41 @@
+{
+  "motif": "timber_scaffold",
+  "appliesTo": ["mineshaft"],
+  "regions": ["upper", "middle"],
+  "spacing": [30, 48],
+  "chance": 0.5,
+  "elements": [
+    {
+      "type": "pillar",
+      "blockSlot": "support",
+      "countRange": [2, 4],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.95
+    },
+    {
+      "type": "scatter",
+      "blockSlot": "fence",
+      "countRange": [2, 4],
+      "offsetRule": "floor",
+      "radius": 2,
+      "chance": 0.5
+    },
+    {
+      "type": "scatter",
+      "blockSlot": "planks",
+      "countRange": [2, 4],
+      "offsetRule": "floor",
+      "radius": 2,
+      "chance": 0.7
+    },
+    {
+      "type": "lamp",
+      "blockSlot": "light",
+      "countRange": [1, 1],
+      "offsetRule": "floor",
+      "radius": 4,
+      "chance": 0.5
+    }
+  ]
+}

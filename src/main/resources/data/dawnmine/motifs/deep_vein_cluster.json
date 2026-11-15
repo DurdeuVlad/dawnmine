@@ -1,0 +1,33 @@
+{
+  "motif": "deep_vein_cluster",
+  "appliesTo": ["edge", "node", "natural"],
+  "regions": ["middle", "chaos"],
+  "spacing": [36, 60],
+  "chance": 0.4,
+  "elements": [
+    {
+      "type": "vein",
+      "blockSlot": "ore_slot",
+      "countRange": [2, 4],
+      "offsetRule": "wall",
+      "radius": 4,
+      "chance": 0.9
+    },
+    {
+      "type": "pillar",
+      "blockSlot": "support",
+      "countRange": [1, 2],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.4
+    },
+    {
+      "type": "scatter",
+      "blockSlot": "rubble",
+      "countRange": [3, 6],
+      "offsetRule": "floor",
+      "radius": 3,
+      "chance": 0.85
+    }
+  ]
+}
