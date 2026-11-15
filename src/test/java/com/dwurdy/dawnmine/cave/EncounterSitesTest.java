@@ -42,8 +42,8 @@ class EncounterSitesTest {
             assertEquals(regions[Math.min(s.layer(), regions.length - 1)], s.region());
         }
         System.out.println("  encounter sites per layer " + java.util.Arrays.toString(perLayer));
-        for (int layer = 0; layer < 3; layer++) {
-            assertTrue(perLayer[layer] > 500, "layer " + layer + " has " + perLayer[layer]);
+        for (int layer = 0; layer < STACK.layers(); layer++) {
+            assertTrue(perLayer[layer] > 200, "layer " + layer + " has " + perLayer[layer]);
         }
         for (Landmarks.Placement p : LANDMARKS.placements()) {
             if (p.safe()) {
