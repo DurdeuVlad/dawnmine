@@ -60,11 +60,32 @@ public final class CaveStack {
     private final CaveSheet[] sheets;
     private final List<Descent> descents;
     private final Map<Long, int[]> tubeColumns;
+    private final Map<Long, Integer> dropperLandings;
 
     private CaveStack(CaveSheet[] sheets, List<Descent> descents) {
         this.sheets = sheets;
         this.descents = List.copyOf(descents);
         this.tubeColumns = buildTubeColumns(descents);
+        this.dropperLandings = buildDropperLandings(descents);
+    }
+
+    /** M12e: the bottom floor Y of a dropper shaft landing in this column, or null. A dropper's
+     * landing gets a shallow water pool (fall-damage-safe) instead of the dry floor other
+     * connectors get. */
+    public Integer dropperLandingFloor(int x, int z) {
+        return dropperLandings.get(key(x, z));
+    }
+
+    private static Map<Long, Integer> buildDropperLandings(List<Descent> descents) {
+        Map<Long, Integer> out = new HashMap<>();
+        for (Descent d : descents) {
+            if (!"dropper".equals(d.name())) {
+                continue;
+            }
+            int n = d.length() - 1;
+            out.put(key(d.xs()[n], d.zs()[n]), d.floors()[n]);
+        }
+        return out;
     }
 
     public int layers() { return sheets.length; }
@@ -187,7 +208,84 @@ public final class CaveStack {
             excludedIn = excludedNext;
             entries = landings;
         }
+        // M12e: one additional, direct "dropper" shaft per layer pair - a straight vertical fall
+        // chute (not a walkable ramp like the three main descents), at an increasing straight-line
+        // distance from the hub so players can navigate toward it deliberately. Best-effort and
+        // additive: the three main descents already guarantee connectivity on their own, so a
+        // dropper that can't find a clean column is simply skipped, never a generation failure.
+        int[] dropperTargets = {1000, 2000, 3000};
+        for (int k = 0; k < layers - 1 && k < dropperTargets.length; k++) {
+            Descent dropper = buildDropper(k, finals[k], finals[k + 1],
+                    dropperTargets[k], 0, seed + attempt * 1_000_003L);
+            if (dropper != null) {
+                all.add(dropper);
+            }
+        }
         return new CaveStack(finals, all);
+    }
+
+    /** Searches outward from the target point for a column open in both layers with enough drop
+     * to be a real shaft, and returns a straight vertical path through it - or null if none of the
+     * bounded attempts found one (the caller treats this as optional, not a planning failure). */
+    private static Descent buildDropper(int fromLayer, CaveSheet upper, CaveSheet lower,
+            int targetX, int targetZ, long seed) {
+        Rng rng = new Rng(seed ^ 0x44524F50504552L ^ (fromLayer * 0x9E3779B97F4A7C15L));
+        for (int attempt = 0; attempt < 600; attempt++) {
+            int spread = 24 + attempt / 2;
+            int x = targetX + rng.nextInt(spread * 2 + 1) - spread;
+            int z = targetZ + rng.nextInt(spread * 2 + 1) - spread;
+            if (!upper.isOpen(x, z) || !lower.isOpen(x, z) || Rock.protectedColumn(x, z)) {
+                continue;
+            }
+            int topFloor = upper.floorAt(x, z);
+            int bottomFloor = lower.floorAt(x, z);
+            int steps = topFloor - bottomFloor;
+            if (steps < 6 || steps > 400) {
+                continue; // too shallow to read as a shaft, or implausibly deep (bad sample)
+            }
+            // The shaft itself is a single repeated (x,z) column: every step's open band shares
+            // that column, so buildTubeColumns merges them into one continuous vertical opening
+            // with no solid footing anywhere inside it - correct for a straight drop, but it also
+            // means the shaft's own first step would eat the solid floor a player needs to stand
+            // on at the entrance. A one-block lateral approach tile (a distinct column, touched by
+            // no other step) keeps that entrance floor solid.
+            int[] approach = approachTile(upper, x, z);
+            if (approach == null) {
+                continue;
+            }
+            int[] xs = new int[steps + 2];
+            int[] zs = new int[steps + 2];
+            int[] floors = new int[steps + 2];
+            xs[0] = approach[0];
+            zs[0] = approach[1];
+            floors[0] = topFloor;
+            for (int i = 0; i <= steps; i++) {
+                xs[i + 1] = x;
+                zs[i + 1] = z;
+                floors[i + 1] = topFloor - i;
+            }
+            return new Descent(fromLayer, "dropper", xs, zs, floors);
+        }
+        return null;
+    }
+
+    /** A neighbouring column at the same floor the shaft's own entrance can safely approach from
+     * - open, not protected, and level with the shaft so the one step onto the shaft column is a
+     * flat step, not a fall in disguise. Must offset in Z, not X: a stationary-column descent
+     * always reports its direction-of-travel as "none" from one shaft step to the next, so
+     * {@link #buildTubeColumns} treats X as the lateral (width) axis for every single step - an
+     * X-offset approach tile would sit inside the shaft's own width and inherit its full depth
+     * once the deeper steps' spans merge into it. A Z-offset tile is never touched by that spread.
+     * Null if neither Z neighbour qualifies. */
+    private static int[] approachTile(CaveSheet sheet, int x, int z) {
+        for (int dz : new int[] {1, -1}) {
+            int nz = z + dz;
+            if (sheet.isOpen(x, nz) && sheet.floorAt(x, nz) == sheet.floorAt(x, z)
+                    && !Rock.protectedColumn(x, nz)) {
+                return new int[] {x, nz};
+            }
+        }
+        return null;
     }
 
     /** A long rock ridge across the layer with one wide gap at the far end from where the layer is

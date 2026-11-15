@@ -22,6 +22,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
  */
 public final class CaveTerrain {
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
+    private static final BlockState WATER = Blocks.WATER.defaultBlockState();
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     /** Least-recently-used cache; each value (including a failure) is shared by every waiter. */
     private static final java.util.LinkedHashMap<String, CompletableFuture<CaveStack>> CACHE =
@@ -121,7 +122,11 @@ public final class CaveTerrain {
                 return held; // pinned for the stack lifetime: a catalogue reload never changes a run's ore
             }
             List<List<OreField.Ore>> tables = new ArrayList<>();
-            for (OreCatalog.Tier tier : OreCatalog.Tier.values()) {
+            OreCatalog.Tier[] tiers = OreCatalog.Tier.values();
+            // M12e: a layer beyond the catalog's own tiers (the new nether layer) reuses the
+            // deepest tier's ore table rather than needing a new catalog tier/schema.
+            for (int layer = 0; layer < CavePlanner.LAYERS; layer++) {
+                OreCatalog.Tier tier = tiers[Math.min(layer, tiers.length - 1)];
                 List<OreField.Ore> table = new ArrayList<>();
                 for (OreCatalog.Entry e : catalog.resourceEntries(tier)) {
                     OreRarity.Range size = OreRarity.sizeFor(e.blockId().toString());
@@ -213,6 +218,11 @@ public final class CaveTerrain {
                         }
                     }
                 }
+                Integer dropperFloor = stack.dropperLandingFloor(x, z);
+                if (dropperFloor != null) {
+                    chunk.setBlockState(pos.set(x, dropperFloor + 1, z), WATER, false);
+                    chunk.setBlockState(pos.set(x, dropperFloor + 2, z), WATER, false);
+                }
             }
         }
         Ores ores = ores(stack, seed);
@@ -246,7 +256,8 @@ public final class CaveTerrain {
         int[] oreYs = ores.field().forChunk(x >> 4, z >> 4).byColumn().get(CaveStack.key(x, z));
         Marks marks = marks(stack, seed);
         int[] markYs = marks.plan().columns().get(CaveStack.key(x, z));
-        boolean any = stack.tubeSpans(x, z) != null || oreYs != null || markYs != null;
+        Integer dropperFloor = stack.dropperLandingFloor(x, z);
+        boolean any = stack.tubeSpans(x, z) != null || oreYs != null || markYs != null || dropperFloor != null;
         for (int layer = 0; layer < stack.layers() && !any; layer++) {
             any = stack.sheet(layer).isOpen(x, z);
         }
@@ -267,6 +278,13 @@ public final class CaveTerrain {
         if (spans != null) {
             for (int i = 0; i < spans.length; i += 2) {
                 open(states, minY, spans[i], spans[i + 1]);
+            }
+        }
+        if (dropperFloor != null) {
+            for (int y = dropperFloor + 1; y <= dropperFloor + 2; y++) {
+                if (y >= minY && y < minY + height) {
+                    states[y - minY] = WATER;
+                }
             }
         }
         if (oreYs != null) {

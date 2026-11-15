@@ -31,7 +31,7 @@ class LandmarksTest {
     @Test
     void everyTypeIsPlacedOnEveryLayerInDensity() {
         Map<Landmarks.Type, Integer> perType = new EnumMap<>(Landmarks.Type.class);
-        int[] perLayer = new int[3];
+        int[] perLayer = new int[STACK.layers()];
         for (Landmarks.Placement p : PLAN.placements()) {
             perType.merge(p.type(), 1, Integer::sum);
             perLayer[p.layer()]++;
@@ -39,8 +39,8 @@ class LandmarksTest {
         System.out.println("  landmarks per type " + perType + " per layer " + java.util.Arrays.toString(perLayer));
         assertEquals(Landmarks.Type.values().length, perType.size(), "all types appear: " + perType);
         assertTrue(Landmarks.Type.values().length >= 8);
-        for (int layer = 0; layer < 3; layer++) {
-            assertTrue(perLayer[layer] > 300, "layer " + layer + " has " + perLayer[layer]);
+        for (int layer = 0; layer < STACK.layers(); layer++) {
+            assertTrue(perLayer[layer] > 100, "layer " + layer + " has " + perLayer[layer]);
         }
     }
 

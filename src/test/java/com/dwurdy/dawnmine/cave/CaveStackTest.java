@@ -57,7 +57,8 @@ class CaveStackTest {
     @ValueSource(longs = {1, 2, 3})
     void fullStackIsWalkableAndPacedLikeTheDesign(long seed) {
         CaveStack stack = CaveStack.plan(64, seed);
-        assertEquals(CaveStack.DESCENTS_PER_PAIR * (CavePlanner.LAYERS - 1), stack.descents().size());
+        long mainDescents = stack.descents().stream().filter(d -> !"dropper".equals(d.name())).count();
+        assertEquals(CaveStack.DESCENTS_PER_PAIR * (CavePlanner.LAYERS - 1), mainDescents);
         CensusReport r = walk(stack);
         r.lines().stream().filter(l -> l.contains("waypoint") || l.startsWith("walkable"))
                 .forEach(l -> System.out.println("  seed " + seed + ": " + l));
@@ -67,22 +68,25 @@ class CaveStackTest {
         for (String line : r.lines()) {
             assertFalse(line.contains("not reachable"), line);
         }
-        // Layer 0: a rush from the hub to any way down is about 15 minutes (13-17 allowed).
+        // Layer 0: a rush from the hub to any of the three main ways down is about 15 minutes
+        // (13-17 allowed). The dropper is deliberately a faster, more direct route, so it is
+        // exempt from this pacing target - that is the point of adding it.
         for (CaveStack.Descent d : stack.descents()) {
-            if (d.fromLayer() == 0) {
+            if (d.fromLayer() == 0 && !"dropper".equals(d.name())) {
                 double t = minutes(r, d.top().name());
                 assertTrue(t > 11 && t < 18, d.top().name() + " at " + t + " min");
             }
         }
-        // Layer 1: another layer's worth on top of the best way out of layer 0.
+        // Layer 1: another layer's worth on top of the best way out of layer 0. The dropper is
+        // exempt from both sides of this comparison, same reasoning as the layer-0 check above.
         double bestOut0 = Double.MAX_VALUE;
         for (CaveStack.Descent d : stack.descents()) {
-            if (d.fromLayer() == 0) {
+            if (d.fromLayer() == 0 && !"dropper".equals(d.name())) {
                 bestOut0 = Math.min(bestOut0, minutes(r, d.bottom().name()));
             }
         }
         for (CaveStack.Descent d : stack.descents()) {
-            if (d.fromLayer() == 1) {
+            if (d.fromLayer() == 1 && !"dropper".equals(d.name())) {
                 double leg = minutes(r, d.top().name()) - bestOut0;
                 assertTrue(leg > 9 && leg < 19, d.top().name() + " leg " + leg + " min");
             }
@@ -95,7 +99,7 @@ class CaveStackTest {
         for (int layer = 0; layer < CavePlanner.LAYERS - 1; layer++) {
             List<CaveStack.Descent> pair = new ArrayList<>();
             for (CaveStack.Descent d : stack.descents()) {
-                if (d.fromLayer() == layer) {
+                if (d.fromLayer() == layer && !"dropper".equals(d.name())) {
                     pair.add(d);
                 }
             }
@@ -148,7 +152,8 @@ class CaveStackTest {
     void manySeedsPlanWithoutFailing() {
         for (long seed = 20; seed < 26; seed++) {
             CaveStack stack = CaveStack.plan(64, seed * 7919L);
-            assertEquals(6, stack.descents().size(), "seed " + seed);
+            long mainDescents = stack.descents().stream().filter(d -> !"dropper".equals(d.name())).count();
+            assertEquals(CaveStack.DESCENTS_PER_PAIR * (CavePlanner.LAYERS - 1), mainDescents, "seed " + seed);
         }
     }
 

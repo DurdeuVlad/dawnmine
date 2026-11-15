@@ -27,7 +27,7 @@ class EncounterSitesTest {
 
     @Test
     void sitesStandOnCaveFloorsAwayFromTheHubAndSafeRooms() {
-        int[] perLayer = new int[3];
+        int[] perLayer = new int[STACK.layers()];
         for (EncounterSites.Site s : SITES.sites()) {
             perLayer[s.layer()]++;
             CaveSheet sheet = STACK.sheet(s.layer());
@@ -36,7 +36,10 @@ class EncounterSitesTest {
                 assertTrue(Math.abs(s.x()) + Math.abs(s.z()) >= EncounterSites.HUB_CLEARANCE, "clear of the hub");
             }
             assertFalse(Rock.protectedColumn(s.x(), s.z()), "not in the hub or forecourt");
-            assertEquals(new String[] {"upper", "middle", "chaos"}[s.layer()], s.region());
+            // Layers beyond the catalog's own tiers (e.g. the M12e nether layer) reuse the
+            // deepest tier's region id, same clamp EncounterSites.plan itself uses.
+            String[] regions = {"upper", "middle", "chaos"};
+            assertEquals(regions[Math.min(s.layer(), regions.length - 1)], s.region());
         }
         System.out.println("  encounter sites per layer " + java.util.Arrays.toString(perLayer));
         for (int layer = 0; layer < 3; layer++) {
