@@ -13,11 +13,12 @@ import org.junit.jupiter.api.Test;
 
 class LootSitesTest {
     private static final CaveStack STACK = CaveStack.plan(64, 1);
-    private static final LootSites SITES = LootSites.plan(STACK, 1);
+    private static final Landmarks LANDMARKS = Landmarks.plan(STACK, 1);
+    private static final LootSites SITES = LootSites.plan(STACK, LANDMARKS, 1);
 
     @Test
     void deterministicAndUniqueIds() {
-        LootSites again = LootSites.plan(STACK, 1);
+        LootSites again = LootSites.plan(STACK, LANDMARKS, 1);
         assertEquals(SITES.sites(), again.sites());
         Set<String> ids = new HashSet<>();
         for (LootSites.Site s : SITES.sites()) {
@@ -64,6 +65,19 @@ class LootSitesTest {
         }
         assertTrue(foundSharedColumn, "fixture seed never exercised a cross-layer shared column - "
                 + "pick a different seed so this regression test actually tests something");
+    }
+
+    /** Review finding: a site chosen purely from open-floor/hub-clearance checks could land
+     * inside a landmark's footprint and silently overwrite part of its authored content. */
+    @Test
+    void noSiteLandsInsideALandmarkFootprint() {
+        for (LootSites.Site s : SITES.sites()) {
+            for (Landmarks.Placement p : LANDMARKS.placements()) {
+                if (p.layer() != s.layer()) continue;
+                assertFalse(s.x() >= p.minX() && s.x() <= p.maxX() && s.z() >= p.minZ() && s.z() <= p.maxZ(),
+                        "loot site " + s.id() + " lands inside landmark " + p.type() + " at " + p.x() + "," + p.z());
+            }
+        }
     }
 
     @Test

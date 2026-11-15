@@ -72,7 +72,7 @@ public final class CaveTerrain {
                             plan.palette().get(i), false).blockState();
                 }
                 future.complete(new Marks(plan, states, com.dwurdy.dawnmine.cave.EncounterSites.plan(stack, plan, seed),
-                        com.dwurdy.dawnmine.cave.LootSites.plan(stack, seed)));
+                        com.dwurdy.dawnmine.cave.LootSites.plan(stack, plan, seed)));
             } catch (Throwable t) {
                 LOGGER.error("[dawnmine] landmark planning failed for seed {}", seed, t);
                 future.completeExceptionally(t);
