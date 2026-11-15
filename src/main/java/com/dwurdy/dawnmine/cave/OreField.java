@@ -20,7 +20,13 @@ import java.util.Map;
 public final class OreField {
     /** One catalogued ore as the field sees it. {@code sizeMin}/{@code sizeMax} (inclusive) bound
      * an ordinary vein's block count directly - M12a: researched per-ore rarity, not a multiplier. */
-    public record Ore(String id, int weight, int sizeMin, int sizeMax) { }
+    public record Ore(String id, int weight, int sizeMin, int sizeMax) {
+        public Ore {
+            if (sizeMin < 1 || sizeMax < sizeMin) {
+                throw new IllegalArgumentException("invalid ore vein size range " + sizeMin + ".." + sizeMax);
+            }
+        }
+    }
 
     public static final int CELL = 12;
     /** Vein growth stays within this Chebyshev distance of its anchor. */

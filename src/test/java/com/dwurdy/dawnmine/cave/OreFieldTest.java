@@ -2,6 +2,7 @@ package com.dwurdy.dawnmine.cave;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -20,7 +21,9 @@ class OreFieldTest {
         for (int layer = 0; layer < 3; layer++) {
             List<OreField.Ore> table = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
-                table.add(new OreField.Ore("test:l" + layer + "_ore" + i, i == 9 ? 1 : 5, 5, 9));
+                // ore9 is the rarest and uses a fixed size (sizeMin == sizeMax) to exercise that branch.
+                table.add(new OreField.Ore("test:l" + layer + "_ore" + i, i == 9 ? 1 : 5,
+                        i == 9 ? 2 : 5, i == 9 ? 2 : 9));
             }
             t.add(table);
         }
@@ -53,6 +56,12 @@ class OreFieldTest {
 
     private static long count(OreField.Blocks b) {
         return b.byColumn().values().stream().mapToLong(c -> c.length / 2).sum();
+    }
+
+    @Test
+    void oreRejectsAnInvalidSizeRange() {
+        assertThrows(IllegalArgumentException.class, () -> new OreField.Ore("test:bad", 1, 5, 2));
+        assertThrows(IllegalArgumentException.class, () -> new OreField.Ore("test:bad", 1, 0, 2));
     }
 
     @Test
