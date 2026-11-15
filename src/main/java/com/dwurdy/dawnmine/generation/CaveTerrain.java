@@ -124,7 +124,8 @@ public final class CaveTerrain {
             for (OreCatalog.Tier tier : OreCatalog.Tier.values()) {
                 List<OreField.Ore> table = new ArrayList<>();
                 for (OreCatalog.Entry e : catalog.resourceEntries(tier)) {
-                    table.add(new OreField.Ore(e.blockId().toString(), e.weight(), e.maxVeinSize()));
+                    OreRarity.Range size = OreRarity.sizeFor(e.blockId().toString());
+                    table.add(new OreField.Ore(e.blockId().toString(), e.weight(), size.min(), size.max()));
                 }
                 tables.add(table);
             }
