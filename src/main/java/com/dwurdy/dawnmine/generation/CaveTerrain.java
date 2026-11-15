@@ -23,6 +23,13 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 public final class CaveTerrain {
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
     private static final BlockState WATER = Blocks.WATER.defaultBlockState();
+    private static final BlockState COBBLESTONE = Blocks.COBBLESTONE.defaultBlockState();
+    private static final BlockState MOSSY_COBBLESTONE = Blocks.MOSSY_COBBLESTONE.defaultBlockState();
+    private static final BlockState ANDESITE = Blocks.ANDESITE.defaultBlockState();
+    private static final BlockState GRANITE = Blocks.GRANITE.defaultBlockState();
+    private static final BlockState DIRT = Blocks.DIRT.defaultBlockState();
+    private static final BlockState NETHERRACK = Blocks.NETHERRACK.defaultBlockState();
+    private static final BlockState BASALT = Blocks.BASALT.defaultBlockState();
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     /** Least-recently-used cache; each value (including a failure) is shared by every waiter. */
     private static final java.util.LinkedHashMap<String, CompletableFuture<CaveStack>> CACHE =
@@ -216,6 +223,35 @@ public final class CaveTerrain {
                 });
     }
 
+    /** Rock variety for the floor and ceiling surfaces a player actually sees: layer 0 mixes in
+     * cobblestone, a mossy ("moist") variant, andesite, granite and the odd dirt patch instead of
+     * plain stone throughout; layer 3 (the nether layer) is netherrack with basalt patches instead
+     * of overworld stone. Null means "leave the plain rock as-is". Deterministic per column so a
+     * reset regenerates the same look. */
+    private static BlockState wallPaletteState(int layer, long seed, int x, int z) {
+        long h = mix(seed ^ (layer * 0x9E3779B97F4A7C15L) ^ ((long) x * 0xC2B2AE3D27D4EB4FL)
+                ^ ((long) z * 0x165667B19E3779F9L));
+        int r = (int) (Long.remainderUnsigned(h, 100));
+        if (layer == 0) {
+            if (r < 45) return null; // plain stone majority
+            if (r < 65) return COBBLESTONE;
+            if (r < 75) return MOSSY_COBBLESTONE;
+            if (r < 85) return ANDESITE;
+            if (r < 93) return GRANITE;
+            return DIRT;
+        }
+        if (layer == 3) {
+            return r < 75 ? NETHERRACK : BASALT;
+        }
+        return null;
+    }
+
+    private static long mix(long z) {
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
+    }
+
     /** Opens the planned cave cells inside one freshly filled chunk. */
     public static void carve(ChunkAccess chunk, CaveStack stack, long seed) {
         int minX = chunk.getPos().getMinBlockX();
@@ -234,6 +270,11 @@ public final class CaveTerrain {
                     int top = floor + sheet.heightAt(x, z);
                     for (int y = floor + 1; y <= top; y++) {
                         chunk.setBlockState(pos.set(x, y, z), AIR, false);
+                    }
+                    BlockState wallPalette = wallPaletteState(layer, seed, x, z);
+                    if (wallPalette != null) {
+                        chunk.setBlockState(pos.set(x, floor, z), wallPalette, false);
+                        chunk.setBlockState(pos.set(x, top + 1, z), wallPalette, false);
                     }
                 }
                 int[] spans = stack.tubeSpans(x, z);
@@ -318,7 +359,18 @@ public final class CaveTerrain {
         for (int layer = 0; layer < stack.layers(); layer++) {
             CaveSheet sheet = stack.sheet(layer);
             if (sheet.isOpen(x, z)) {
-                open(states, minY, sheet.floorAt(x, z) + 1, sheet.floorAt(x, z) + sheet.heightAt(x, z));
+                int floor = sheet.floorAt(x, z);
+                int top = floor + sheet.heightAt(x, z);
+                open(states, minY, floor + 1, top);
+                BlockState wallPalette = wallPaletteState(layer, seed, x, z);
+                if (wallPalette != null) {
+                    if (floor >= minY && floor < minY + height) {
+                        states[floor - minY] = wallPalette;
+                    }
+                    if (top + 1 >= minY && top + 1 < minY + height) {
+                        states[top + 1 - minY] = wallPalette;
+                    }
+                }
             }
         }
         int[] spans = stack.tubeSpans(x, z);

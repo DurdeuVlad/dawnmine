@@ -35,8 +35,9 @@ public final class OreField {
     public static final int MOTHERLODE_VEINS = 45;
     public static final int MOTHERLODE_RADIUS = 12;
     public static final int MOTHERLODE_REACH = 14;
-    /** Expected veins per cell on layers 0, 1, 2 (richer deeper). */
-    public static final double[] VEINS_PER_CELL = {7.5, 11.0, 15.0};
+    /** Expected veins per cell on layers 0, 1, 2 (richer deeper). Kept sparse: a player should be
+     * mining for a while, not filling an inventory with diamonds in minutes. */
+    public static final double[] VEINS_PER_CELL = {4.0, 5.8, 7.3};
     /** A buried anchor sits up to 3 blocks outside its cell, so a vein reaches REACH + 3 past the cell edge. */
     private static final int CELL_MARGIN = REACH + 3;
     private static final int LODE_MARGIN = MOTHERLODE_RADIUS + MOTHERLODE_REACH + 3;

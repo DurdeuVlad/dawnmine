@@ -13,12 +13,18 @@
         { "type": "minecraft:item", "weight": 4, "name": "minecraft:raw_iron",
           "functions": [ { "function": "minecraft:set_count",
             "count": { "type": "minecraft:uniform", "min": 1, "max": 3 } } ] },
+        { "type": "minecraft:item", "weight": 3, "name": "create:raw_zinc",
+          "functions": [ { "function": "minecraft:set_count",
+            "count": { "type": "minecraft:uniform", "min": 1, "max": 3 } } ] },
+        { "type": "minecraft:item", "weight": 2, "name": "butchery:sulfur",
+          "functions": [ { "function": "minecraft:set_count",
+            "count": { "type": "minecraft:uniform", "min": 1, "max": 3 } } ] },
+        { "type": "minecraft:item", "weight": 1, "name": "fungidelight:truffle",
+          "functions": [ { "function": "minecraft:set_count",
+            "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] },
         { "type": "minecraft:item", "weight": 3, "name": "minecraft:torch",
           "functions": [ { "function": "minecraft:set_count",
-            "count": { "type": "minecraft:uniform", "min": 2, "max": 8 } } ] },
-        { "type": "minecraft:item", "weight": 2, "name": "minecraft:rail",
-          "functions": [ { "function": "minecraft:set_count",
-            "count": { "type": "minecraft:uniform", "min": 1, "max": 6 } } ] }
+            "count": { "type": "minecraft:uniform", "min": 2, "max": 8 } } ] }
       ]
     }
   ]
