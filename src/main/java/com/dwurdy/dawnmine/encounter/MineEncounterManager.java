@@ -114,7 +114,7 @@ public final class MineEncounterManager {
         MineEncounterCatalog.Composition composition = selectComposition(
                 data.seed(), siteId, region.compositions());
         if (composition == null) return false;
-        List<SpawnRequest> requests = resolveRequests(mine, composition);
+        List<SpawnRequest> requests = resolveRequests(mine, composition, regionId);
         if (requests == null) {
             markUnplaceable(server, siteId);
             return false;
@@ -523,13 +523,24 @@ public final class MineEncounterManager {
     }
 
     public static boolean canResolveRequests(ServerLevel level, MineEncounterCatalog.Composition composition) {
-        return resolveRequests(level, composition) != null;
+        return resolveRequests(level, composition, null) != null;
     }
 
+    /** M14b: {@code regionId} applies an admin's mob-roster overrides for that layer, if any -
+     * null (the audit/validation caller above) means "no region, no overrides". A removed
+     * entity is dropped from the base/bonus lists before resolution; an added entity is resolved
+     * the same lenient way bonus entities already are (skipped, not failed, if unavailable). */
     private static List<SpawnRequest> resolveRequests(ServerLevel level,
-            MineEncounterCatalog.Composition composition) {
+            MineEncounterCatalog.Composition composition, String regionId) {
+        java.util.Set<ResourceLocation> removed = regionId == null ? java.util.Set.of()
+                : com.dwurdy.dawnmine.config.DawnmineOverrides.mobRemovals(regionId).stream()
+                        .map(ResourceLocation::tryParse).filter(java.util.Objects::nonNull)
+                        .collect(java.util.stream.Collectors.toSet());
         List<SpawnRequest> result = new ArrayList<>();
         for (MineEncounterCatalog.EntityCount entry : composition.entities()) {
+            if (removed.contains(entry.entityId())) {
+                continue;
+            }
             List<SpawnRequest> resolved = resolveHostileEntries(level, entry, entry.count());
             if (resolved == null) {
                 LOGGER.error("[dawnmine] Encounter '{}' requires base entity {}, which this server cannot "
@@ -541,9 +552,21 @@ public final class MineEncounterManager {
         // Bonus entities (e.g. Born in Chaos) are additive extras: skip any that
         // this server can't resolve instead of failing the whole composition.
         for (MineEncounterCatalog.EntityCount entry : composition.bonusEntities()) {
+            if (removed.contains(entry.entityId())) {
+                continue;
+            }
             List<SpawnRequest> resolved = resolveHostileEntries(level, entry, entry.count());
             if (resolved == null) continue;
             result.addAll(resolved);
+        }
+        if (regionId != null) {
+            for (String added : com.dwurdy.dawnmine.config.DawnmineOverrides.mobAdds(regionId)) {
+                ResourceLocation id = ResourceLocation.tryParse(added);
+                if (id == null) continue;
+                List<SpawnRequest> resolved = resolveHostileEntries(level,
+                        new MineEncounterCatalog.EntityCount(id, 1), 1);
+                if (resolved != null) result.addAll(resolved);
+            }
         }
         return result;
     }

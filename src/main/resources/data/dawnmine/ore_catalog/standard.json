@@ -296,7 +296,7 @@
     },
     {
       "block": "minecraft:ancient_debris",
-      "tier": "chaos",
+      "tier": "nether",
       "weight": 1,
       "max_vein_size": 1,
       "requires_correct_tool": true,
@@ -307,7 +307,7 @@
     },
     {
       "block": "minecraft:nether_quartz_ore",
-      "tier": "chaos",
+      "tier": "nether",
       "weight": 4,
       "max_vein_size": 2,
       "requires_correct_tool": true,
@@ -336,7 +336,7 @@
     },
     {
       "block": "born_in_chaos_v1:dark_metal_deposit",
-      "tier": "chaos",
+      "tier": "nether",
       "weight": 1,
       "max_vein_size": 1,
       "requires_correct_tool": true,

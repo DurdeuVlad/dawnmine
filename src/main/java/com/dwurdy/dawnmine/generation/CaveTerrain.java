@@ -9,9 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 /**
@@ -156,18 +159,38 @@ public final class CaveTerrain {
             }
             List<List<OreField.Ore>> tables = new ArrayList<>();
             OreCatalog.Tier[] tiers = OreCatalog.Tier.values();
-            // M12e: a layer beyond the catalog's own tiers (the new nether layer) reuses the
-            // deepest tier's ore table rather than needing a new catalog tier/schema.
+            // M14a: one real catalog tier per cave layer (upper/middle/chaos/nether) - no more
+            // reusing the deepest tier's table for a layer beyond the catalog's own tiers.
+            if (tiers.length != CavePlanner.LAYERS) {
+                throw new IllegalStateException("OreCatalog.Tier has " + tiers.length
+                        + " values but the cave stack has " + CavePlanner.LAYERS + " layers");
+            }
+            double[] veinsPerCell = new double[CavePlanner.LAYERS];
             for (int layer = 0; layer < CavePlanner.LAYERS; layer++) {
-                OreCatalog.Tier tier = tiers[Math.min(layer, tiers.length - 1)];
+                OreCatalog.Tier tier = tiers[layer];
                 List<OreField.Ore> table = new ArrayList<>();
                 for (OreCatalog.Entry e : catalog.resourceEntries(tier)) {
-                    OreRarity.Range size = OreRarity.sizeFor(e.blockId().toString());
-                    table.add(new OreField.Ore(e.blockId().toString(), e.weight(), size.min(), size.max()));
+                    String blockId = e.blockId().toString();
+                    OreRarity.Range size = OreRarity.sizeFor(blockId);
+                    int weight = e.weight();
+                    int sizeMin = size.min();
+                    int sizeMax = size.max();
+                    // M14b: an admin's per-block override replaces weight and/or vein size,
+                    // leaving whichever half wasn't set at the shipped value.
+                    var override = com.dwurdy.dawnmine.config.DawnmineOverrides.ore(tier.id(), blockId);
+                    if (override.isPresent()) {
+                        var o = override.get();
+                        if (o.weight() != null) weight = o.weight();
+                        if (o.veinMin() != null) sizeMin = o.veinMin();
+                        if (o.veinMax() != null) sizeMax = o.veinMax();
+                    }
+                    table.add(new OreField.Ore(blockId, weight, sizeMin, sizeMax));
                 }
                 tables.add(table);
+                veinsPerCell[layer] = com.dwurdy.dawnmine.config.DawnmineOverrides.density(tier.id())
+                        .orElse(OreField.VEINS_PER_CELL[Math.min(layer, OreField.VEINS_PER_CELL.length - 1)]);
             }
-            OreField field = new OreField(stack, seed, tables);
+            OreField field = new OreField(stack, seed, tables, veinsPerCell);
             int n = field.oreCount();
             BlockState[] states = new BlockState[n];
             for (int i = 0; i < n; i++) {
@@ -252,6 +275,15 @@ public final class CaveTerrain {
         return z ^ (z >>> 31);
     }
 
+    /** A real stair block for one tread of a staircase descent, facing the direction of travel. */
+    private static BlockState stairState(CaveStack.StairTread tread) {
+        Direction facing = tread.dx() > 0 ? Direction.EAST : tread.dx() < 0 ? Direction.WEST
+                : tread.dz() > 0 ? Direction.SOUTH : Direction.NORTH;
+        return Blocks.COBBLESTONE_STAIRS.defaultBlockState()
+                .setValue(StairBlock.FACING, facing)
+                .setValue(StairBlock.HALF, Half.BOTTOM);
+    }
+
     /** Opens the planned cave cells inside one freshly filled chunk. */
     public static void carve(ChunkAccess chunk, CaveStack stack, long seed) {
         int minX = chunk.getPos().getMinBlockX();
@@ -289,6 +321,9 @@ public final class CaveTerrain {
                 if (dropperFloor != null) {
                     chunk.setBlockState(pos.set(x, dropperFloor + 1, z), WATER, false);
                     chunk.setBlockState(pos.set(x, dropperFloor + 2, z), WATER, false);
+                }
+                for (CaveStack.StairTread tread : stack.stairTreadsAt(x, z)) {
+                    chunk.setBlockState(pos.set(x, tread.floor(), z), stairState(tread), false);
                 }
             }
         }
@@ -345,7 +380,9 @@ public final class CaveTerrain {
         Marks marks = marks(stack, seed);
         int[] markYs = marks.plan().columns().get(CaveStack.key(x, z));
         Integer dropperFloor = stack.dropperLandingFloor(x, z);
-        boolean any = stack.tubeSpans(x, z) != null || oreYs != null || markYs != null || dropperFloor != null;
+        List<CaveStack.StairTread> treads = stack.stairTreadsAt(x, z);
+        boolean any = stack.tubeSpans(x, z) != null || oreYs != null || markYs != null
+                || dropperFloor != null || !treads.isEmpty();
         for (int layer = 0; layer < stack.layers() && !any; layer++) {
             any = stack.sheet(layer).isOpen(x, z);
         }
@@ -384,6 +421,11 @@ public final class CaveTerrain {
                 if (y >= minY && y < minY + height) {
                     states[y - minY] = WATER;
                 }
+            }
+        }
+        for (CaveStack.StairTread tread : treads) {
+            if (tread.floor() >= minY && tread.floor() < minY + height) {
+                states[tread.floor() - minY] = stairState(tread);
             }
         }
         if (oreYs != null) {

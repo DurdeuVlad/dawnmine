@@ -59,6 +59,7 @@ public class Dawnmine {
         MineEncounterManager.register();
         com.dwurdy.dawnmine.teleporter.TeleporterManager.register();
         modEventBus.addListener(this::onRegisterGameTests);
+        NeoForge.EVENT_BUS.addListener(com.dwurdy.dawnmine.encounter.MineLootManager::onLootTableLoad);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
@@ -116,6 +117,16 @@ public class Dawnmine {
     }
 
     private void onServerStarted(ServerStartedEvent event) {
+        com.dwurdy.dawnmine.config.DawnmineOverrides.load(event.getServer());
+        // M14b follow-up (found by independent review): loot tables load via LootTableLoadEvent
+        // during server resource init, which runs before this event - so on a fresh boot, the
+        // very first load of this mod's own chest tables would see an empty override store even
+        // though a previous session's overrides are now loaded into memory. Forcing one resource
+        // reload here, with overrides already present, makes a restart behave the same as an
+        // admin running '/reload' by hand, instead of silently needing that extra step.
+        if (!com.dwurdy.dawnmine.config.DawnmineOverrides.isEmpty()) {
+            event.getServer().reloadResources(event.getServer().getPackRepository().getSelectedIds());
+        }
         MineEncounterManager.validateEntityRegistry();
         MineManager.get(event.getServer()).onServerStarted();
         MineDailyReset.get(event.getServer()).onServerStarted();

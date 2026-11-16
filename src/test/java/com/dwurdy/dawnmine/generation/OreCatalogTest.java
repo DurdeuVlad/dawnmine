@@ -25,11 +25,12 @@ class OreCatalogTest {
         OreCatalog.OreCatalogSnapshot reloaded = OreCatalog.parseSnapshot(Map.of(
                 RESOURCE_A, resource("minecraft:coal_ore", "upper", 5),
                 RESOURCE_B, resource("minecraft:gold_ore", "middle", 2),
-                id("dawnmine:test/c"), resource("minecraft:diamond_ore", "chaos", 1)));
+                id("dawnmine:test/c"), resource("minecraft:diamond_ore", "chaos", 1),
+                id("dawnmine:test/d"), resource("minecraft:ancient_debris", "nether", 1)));
 
         assertEquals(List.of("coal_ore"), first.entries(OreCatalog.Tier.UPPER).stream()
                 .map(entry -> entry.blockId().getPath()).toList());
-        assertEquals(3, reloaded.entries().size());
+        assertEquals(4, reloaded.entries().size());
         assertFalse(first.fingerprint().equals(reloaded.fingerprint()));
         assertTrue(reloaded.completeness(Set.of(), Set.of()).unassignedTiers().isEmpty());
     }
@@ -59,10 +60,12 @@ class OreCatalogTest {
                 RESOURCE_A, resource("minecraft:coal_ore", "upper", 4),
                 RESOURCE_B, resource("minecraft:gold_ore", "middle", 2),
                 id("dawnmine:test/c"), resource("minecraft:diamond_ore", "chaos", 1),
+                id("dawnmine:test/d"), resource("minecraft:ancient_debris", "nether", 1),
                 id("dawnmine:test/encounter"), encounter("born_in_chaos_v1:infected_diamond_ore",
                         "chaos", encounterEntity.toString())));
         Set<ResourceLocation> blocks = Set.of(id("minecraft:coal_ore"), id("minecraft:gold_ore"),
-                id("minecraft:diamond_ore"), id("born_in_chaos_v1:infected_diamond_ore"));
+                id("minecraft:diamond_ore"), id("minecraft:ancient_debris"),
+                id("born_in_chaos_v1:infected_diamond_ore"));
 
         OreCatalog.Completeness missing = snapshot.completeness(Set.of(), blocks, Set.of());
         OreCatalog.Completeness available = snapshot.completeness(Set.of(), blocks, Set.of(encounterEntity),
@@ -79,9 +82,10 @@ class OreCatalogTest {
         OreCatalog.OreCatalogSnapshot snapshot = OreCatalog.parseSnapshot(Map.of(
                 RESOURCE_A, resource("minecraft:coal_ore", "upper", 4),
                 RESOURCE_B, resource("minecraft:gold_ore", "middle", 2),
-                id("dawnmine:test/c"), resource("minecraft:diamond_ore", "chaos", 1)));
+                id("dawnmine:test/c"), resource("minecraft:diamond_ore", "chaos", 1),
+                id("dawnmine:test/d"), resource("minecraft:ancient_debris", "nether", 1)));
         Set<ResourceLocation> blocks = Set.of(id("minecraft:coal_ore"), id("minecraft:gold_ore"),
-                id("minecraft:diamond_ore"));
+                id("minecraft:diamond_ore"), id("minecraft:ancient_debris"));
 
         OreCatalog.Completeness missing = snapshot.completeness(Set.of(), blocks, Set.of(), Set.of());
         OreCatalog.Completeness available = snapshot.completeness(Set.of(), blocks, Set.of(),

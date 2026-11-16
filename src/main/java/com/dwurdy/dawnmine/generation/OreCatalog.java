@@ -46,13 +46,15 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
     public enum Tier {
         UPPER,
         MIDDLE,
-        CHAOS;
+        CHAOS,
+        NETHER;
 
         static Tier parse(String value) {
             return switch (value.toLowerCase(Locale.ROOT)) {
                 case "upper" -> UPPER;
                 case "middle" -> MIDDLE;
                 case "chaos" -> CHAOS;
+                case "nether" -> NETHER;
                 default -> throw new IllegalArgumentException("unknown ore depth tier: " + value);
             };
         }
@@ -62,7 +64,7 @@ public final class OreCatalog extends SimpleJsonResourceReloadListener {
          * load, not mid-generation inside the ore or motif pass. */
         public static boolean isKnown(String value) {
             return switch (value.toLowerCase(Locale.ROOT)) {
-                case "upper", "middle", "chaos" -> true;
+                case "upper", "middle", "chaos", "nether" -> true;
                 default -> false;
             };
         }

@@ -36,10 +36,9 @@ class EncounterSitesTest {
                 assertTrue(Math.abs(s.x()) + Math.abs(s.z()) >= EncounterSites.HUB_CLEARANCE, "clear of the hub");
             }
             assertFalse(Rock.protectedColumn(s.x(), s.z()), "not in the hub or forecourt");
-            // Layers beyond the catalog's own tiers (e.g. the M12e nether layer) reuse the
-            // deepest tier's region id, same clamp EncounterSites.plan itself uses.
-            String[] regions = {"upper", "middle", "chaos"};
-            assertEquals(regions[Math.min(s.layer(), regions.length - 1)], s.region());
+            // M14a: one real region per layer, no more reuse-clamp for the nether layer.
+            String[] regions = {"upper", "middle", "chaos", "nether"};
+            assertEquals(regions[s.layer()], s.region());
         }
         System.out.println("  encounter sites per layer " + java.util.Arrays.toString(perLayer));
         for (int layer = 0; layer < STACK.layers(); layer++) {

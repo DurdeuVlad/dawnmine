@@ -24,7 +24,7 @@ public final class LootSites {
      * of a single container. */
     private static final int VAULT_EVERY = 5;
     private static final int VAULT_EXTRA_BOXES = 2;
-    private static final String[] REGIONS = {"upper", "middle", "chaos"};
+    private static final String[] REGIONS = {"upper", "middle", "chaos", "nether"};
     private static final int INDEX_CELL = 48;
     /** Alternates crate/locker so a region's loot doesn't read as one repeated prop. */
     private static final String[] KINDS = {"crate", "locker"};
@@ -88,7 +88,7 @@ public final class LootSites {
                                 && Math.abs(x) + Math.abs(z) >= HUB_CLEARANCE && !Rock.protectedColumn(x, z)
                                 && !insideAnyLandmark(landmarks, layer, x, z)
                                 && !out.byColumn.containsKey(columnKey(layer, x, z))) {
-                            String region = REGIONS[Math.min(layer, REGIONS.length - 1)];
+                            String region = REGIONS[layer];
                             String kind = KINDS[rng.nextInt(KINDS.length)];
                             String anchorId = id(layer, x, z);
                             out.add(new Site(anchorId, layer, region, x, sheet.floorAt(x, z) + 1, z, kind));

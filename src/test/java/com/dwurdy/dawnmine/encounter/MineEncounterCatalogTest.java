@@ -1,6 +1,7 @@
 package com.dwurdy.dawnmine.encounter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,10 +29,10 @@ class MineEncounterCatalogTest {
         MineEncounterCatalog.Profile profile = bundled();
         assertEquals("standard", profile.id());
         assertEquals(600, profile.totalPopulationCap());
-        assertEquals(List.of("upper", "middle", "chaos"),
-                List.of("upper", "middle", "chaos").stream()
+        assertEquals(List.of("upper", "middle", "chaos", "nether"),
+                List.of("upper", "middle", "chaos", "nether").stream()
                         .filter(id -> profile.region(id) != null).toList());
-        for (String regionId : List.of("upper", "middle", "chaos")) {
+        for (String regionId : List.of("upper", "middle", "chaos", "nether")) {
             MineEncounterCatalog.Region region = profile.region(regionId);
             assertTrue(region.compositions().size() >= 2);
             for (MineEncounterCatalog.Composition composition : region.compositions()) {
@@ -48,7 +49,7 @@ class MineEncounterCatalogTest {
     void bundledProfileCarriesExplicitLevelsThatDeepenByRegion() throws Exception {
         MineEncounterCatalog.Profile profile = bundled();
         int previousMinimum = 0;
-        for (String regionId : List.of("upper", "middle", "chaos")) {
+        for (String regionId : List.of("upper", "middle", "chaos", "nether")) {
             int regionMinimum = profile.region(regionId).compositions().stream()
                     .mapToInt(MineEncounterCatalog.Composition::level).min().orElseThrow();
             assertTrue(regionMinimum > previousMinimum,
@@ -61,6 +62,44 @@ class MineEncounterCatalogTest {
         }
     }
 
+    /** M14c: the pair the owner's depth-escalation ask flagged as most at risk of feeling
+     * identical - chaos already uses wither_skeleton/blaze, so nether's own roster must still
+     * read as noticeably more mobs, higher level, and at least as varied, not just "the same
+     * threat with different names." */
+    @Test
+    void netherEscalatesOverChaosInPopulationAndLevel() throws Exception {
+        MineEncounterCatalog.Profile profile = bundled();
+        MineEncounterCatalog.Region chaos = profile.region("chaos");
+        MineEncounterCatalog.Region nether = profile.region("nether");
+        double chaosAvgPop = chaos.compositions().stream()
+                .mapToInt(MineEncounterCatalog.Composition::population).average().orElseThrow();
+        double netherAvgPop = nether.compositions().stream()
+                .mapToInt(MineEncounterCatalog.Composition::population).average().orElseThrow();
+        assertTrue(netherAvgPop > chaosAvgPop,
+                "nether average population " + netherAvgPop + " does not exceed chaos's " + chaosAvgPop);
+        double chaosAvgLevel = chaos.compositions().stream()
+                .mapToInt(MineEncounterCatalog.Composition::level).average().orElseThrow();
+        double netherAvgLevel = nether.compositions().stream()
+                .mapToInt(MineEncounterCatalog.Composition::level).average().orElseThrow();
+        assertTrue(netherAvgLevel > chaosAvgLevel,
+                "nether average level " + netherAvgLevel + " does not exceed chaos's " + chaosAvgLevel);
+        java.util.Set<net.minecraft.resources.ResourceLocation> chaosEntities = chaos.compositions().stream()
+                .flatMap(c -> c.entities().stream()).map(MineEncounterCatalog.EntityCount::entityId)
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Set<net.minecraft.resources.ResourceLocation> netherEntities = nether.compositions().stream()
+                .flatMap(c -> c.entities().stream()).map(MineEncounterCatalog.EntityCount::entityId)
+                .collect(java.util.stream.Collectors.toSet());
+        assertTrue(netherEntities.size() >= chaosEntities.size(),
+                "nether has fewer distinct base entity types (" + netherEntities.size()
+                        + ") than chaos (" + chaosEntities.size() + ")");
+        // The exact overlap the owner's planning conversation flagged as a risk: nether's own
+        // roster should read as distinctly nether-themed, not a repeat of chaos's signature mobs.
+        assertFalse(netherEntities.contains(net.minecraft.resources.ResourceLocation.parse("minecraft:wither_skeleton")),
+                "nether roster reuses chaos's wither_skeleton");
+        assertFalse(netherEntities.contains(net.minecraft.resources.ResourceLocation.parse("minecraft:blaze")),
+                "nether roster reuses chaos's blaze");
+    }
+
     @Test
     void missingAndOutOfRangeLevelAreRejected() {
         String validComposition = "{\"id\":\"x\",\"weight\":1,\"level\":3,\"threat\":\"t\","
@@ -68,7 +107,8 @@ class MineEncounterCatalogTest {
         String profile = "{\"id\":\"standard\",\"totalPopulationCap\":4,\"regions\":["
                 + "{\"id\":\"upper\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
                 + "{\"id\":\"middle\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
-                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + validComposition + "]}]}";
+                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + validComposition + "]},"
+                + "{\"id\":\"nether\",\"populationCap\":2,\"compositions\":[" + validComposition + "]}]}";
         assertEquals(3, MineEncounterCatalog.parse(JsonParser.parseString(profile)
                 .getAsJsonObject()).region("upper").compositions().get(0).level());
         String missingLevel = profile.replace("\"level\":3,", "");
@@ -93,7 +133,8 @@ class MineEncounterCatalogTest {
         String profile = "{\"id\":\"standard\",\"totalPopulationCap\":4,\"regions\":["
                 + "{\"id\":\"upper\",\"populationCap\":2,\"compositions\":[" + composition + "]},"
                 + "{\"id\":\"middle\",\"populationCap\":2,\"compositions\":[" + composition + "]},"
-                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + composition + "]}]}";
+                + "{\"id\":\"chaos\",\"populationCap\":2,\"compositions\":[" + composition + "]},"
+                + "{\"id\":\"nether\",\"populationCap\":2,\"compositions\":[" + composition + "]}]}";
         MineEncounterCatalog.Composition parsed = MineEncounterCatalog.parse(
                 JsonParser.parseString(profile).getAsJsonObject())
                 .region("upper").compositions().get(0);

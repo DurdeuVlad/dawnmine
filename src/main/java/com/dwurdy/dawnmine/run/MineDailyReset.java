@@ -79,6 +79,10 @@ public final class MineDailyReset {
     private List<OwnedVolume> mineVolumes = List.of();
     private List<Long> resetColumns = List.of();
     private boolean columnsBuilt;
+    /** M14d: last 10%-bucket of cleanup progress already announced to admins, so a reset that
+     * takes a while says something while it runs instead of only on completion. -1 means nothing
+     * announced yet this reset. */
+    private int lastCleanupProgressBucket = -1;
     private int probesIssued;
     private final TreeMap<Integer, CompletableFuture<Optional<CompoundTag>>> probes = new TreeMap<>();
     private int settleTicks;
@@ -227,6 +231,7 @@ public final class MineDailyReset {
         mineVolumes = List.of();
         resetColumns = List.of();
         columnsBuilt = false;
+        lastCleanupProgressBucket = -1;
         probesIssued = 0;
         probes.clear();
         settleTicks = 0;
@@ -344,6 +349,20 @@ public final class MineDailyReset {
         }
         issueProbes(mine, cursor);
         entitiesDiscarded += discardOwnedEntities(mine);
+        // M14d: a reset can take minutes on a large shell; say something every 10% instead of
+        // leaving admins to poll '/dawnmine reset status' themselves or hear nothing until it's
+        // done. Never fires at 0% (nothing to report yet) or past completion (the finish log
+        // below already covers that).
+        if (!resetColumns.isEmpty() && cursor < resetColumns.size()) {
+            int percent = (int) (100L * cursor / resetColumns.size());
+            int bucket = percent / 10;
+            if (bucket > lastCleanupProgressBucket && bucket > 0) {
+                lastCleanupProgressBucket = bucket;
+                MineMessages.notifyAdmins(server, Commands.LEVEL_GAMEMASTERS,
+                        "Daily mine reset: cleanup " + (bucket * 10) + "% done (" + cursor + "/"
+                                + resetColumns.size() + " columns).");
+            }
+        }
         if (cursor >= resetColumns.size()) {
             settleTicks++;
             if (settleTicks >= SETTLE_TICKS) {

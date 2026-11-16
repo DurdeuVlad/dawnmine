@@ -125,6 +125,11 @@ public final class MineGenerator {
     private int pregenMaxZ;
     private boolean pregenComplete;
     private boolean pregenCompletionLogged;
+    /** M14d: completed-column count and last 10%-bucket announced to admins, so whole-shell
+     * pregeneration (typically the longer of the two reset phases) says something while it runs
+     * too, not only cleanup. Reset alongside the other pregen bookkeeping in resetRegionPregen. */
+    private int pregenCompletedCount;
+    private int lastPregenProgressBucket = -1;
     private long lastLookaheadScan = Long.MIN_VALUE;
     private static final TicketType<ChunkPos> GENERATION_TICKET = TicketType.create(
             "dawnmine_preparation", Comparator.comparingLong(ChunkPos::toLong));
@@ -579,6 +584,8 @@ public final class MineGenerator {
         pregenPlanned.clear();
         pregenComplete = false;
         pregenCompletionLogged = false;
+        pregenCompletedCount = 0;
+        lastPregenProgressBucket = -1;
         int radius = DawnmineConfig.mineRegionRadiusChunks();
         int sizeX = data.boundMaxChunkX() - data.boundMinChunkX() + 1;
         int sizeZ = data.boundMaxChunkZ() - data.boundMinChunkZ() + 1;
@@ -611,12 +618,27 @@ public final class MineGenerator {
             if (future.isCompletedExceptionally() || future.isCancelled()) {
                 LOGGER.warn("[dawnmine] Region pregen chunk {} failed; skipping column.",
                         new ChunkPos(entry.getKey()));
+                pregenCompletedCount++; // counted either way - it will never be retried
                 return true;
             }
-            return future.isDone()
-                    || mine.getChunkSource().hasChunk(
-                            ChunkPos.getX(entry.getKey()), ChunkPos.getZ(entry.getKey()));
+            boolean done = future.isDone() || mine.getChunkSource().hasChunk(
+                    ChunkPos.getX(entry.getKey()), ChunkPos.getZ(entry.getKey()));
+            if (done) {
+                pregenCompletedCount++;
+            }
+            return done;
         });
+        // M14d: every 10% of the whole shell, not just on completion.
+        int totalColumns = (pregenMaxX - pregenMinX + 1) * (pregenMaxZ - pregenMinZ + 1);
+        if (totalColumns > 0 && pregenCompletedCount < totalColumns) {
+            int bucket = (int) (100L * pregenCompletedCount / totalColumns) / 10;
+            if (bucket > lastPregenProgressBucket && bucket > 0) {
+                lastPregenProgressBucket = bucket;
+                com.dwurdy.dawnmine.command.MineMessages.notifyAdmins(server, net.minecraft.commands.Commands.LEVEL_GAMEMASTERS,
+                        "Daily mine reset: pregeneration " + (bucket * 10) + "% done (" + pregenCompletedCount + "/"
+                                + totalColumns + " columns).");
+            }
+        }
         int issued = 0;
         while (pregenRequests.size() < PREGEN_WINDOW && issued < PREGEN_ISSUE_PER_TICK) {
             Long packed = pregenPriority.pollFirst();

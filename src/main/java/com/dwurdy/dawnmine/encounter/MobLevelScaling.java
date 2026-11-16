@@ -38,7 +38,19 @@ public final class MobLevelScaling {
     public static final double SPEED_BAND_6_TO_8 = 0.25;
     public static final double SPEED_BAND_9_PLUS = 0.40;
 
+    /** M14b: band ids an admin can target with {@code /dawnmine config difficulty}, in the same
+     * 1-2 / 3-5 / 6-8 / 9+ shape the hardcoded bonuses above always had - the override just
+     * replaces the bonus for whichever band a level falls into. */
+    public static final String[] BAND_IDS = {"1-2", "3-5", "6-8", "9+"};
+
     private MobLevelScaling() { }
+
+    private static String bandIdFor(int level) {
+        if (level <= 2) return BAND_IDS[0];
+        if (level <= 5) return BAND_IDS[1];
+        if (level <= 8) return BAND_IDS[2];
+        return BAND_IDS[3];
+    }
 
     /**
      * Writes the {@code dawnmineLevel} tag, shows a colored {@code "Lv. <N> <Name>"} nametag,
@@ -74,24 +86,36 @@ public final class MobLevelScaling {
         return ChatFormatting.RED;
     }
 
-    /** Fractional MAX_HEALTH bonus for a composition level, in [0, 1.20]. */
+    /** Fractional MAX_HEALTH bonus for a composition level, in [0, 1.20] unless overridden. */
     public static double healthBonusMultiplier(int level) {
+        var override = com.dwurdy.dawnmine.config.DawnmineOverrides.difficulty(bandIdFor(level));
+        if (override.isPresent() && override.get().health() != null) {
+            return override.get().health();
+        }
         if (level <= 2) return 0.0;
         if (level <= 5) return HEALTH_BAND_3_TO_5;
         if (level <= 8) return HEALTH_BAND_6_TO_8;
         return HEALTH_BAND_9_PLUS;
     }
 
-    /** Fractional ATTACK_DAMAGE bonus for a composition level, in [0, 1.00]. */
+    /** Fractional ATTACK_DAMAGE bonus for a composition level, in [0, 1.00] unless overridden. */
     public static double damageBonusMultiplier(int level) {
+        var override = com.dwurdy.dawnmine.config.DawnmineOverrides.difficulty(bandIdFor(level));
+        if (override.isPresent() && override.get().damage() != null) {
+            return override.get().damage();
+        }
         if (level <= 2) return 0.0;
         if (level <= 5) return DAMAGE_BAND_3_TO_5;
         if (level <= 8) return DAMAGE_BAND_6_TO_8;
         return DAMAGE_BAND_9_PLUS;
     }
 
-    /** Fractional MOVEMENT_SPEED bonus for a composition level, in [0, 0.40]. */
+    /** Fractional MOVEMENT_SPEED bonus for a composition level, in [0, 0.40] unless overridden. */
     public static double speedBonusMultiplier(int level) {
+        var override = com.dwurdy.dawnmine.config.DawnmineOverrides.difficulty(bandIdFor(level));
+        if (override.isPresent() && override.get().speed() != null) {
+            return override.get().speed();
+        }
         if (level <= 2) return 0.0;
         if (level <= 5) return SPEED_BAND_3_TO_5;
         if (level <= 8) return SPEED_BAND_6_TO_8;

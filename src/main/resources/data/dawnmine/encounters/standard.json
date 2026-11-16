@@ -168,6 +168,71 @@
           "bonusEntities": []
         }
       ]
+    },
+    {
+      "id": "nether",
+      "populationCap": 200,
+      "compositions": [
+        {
+          "id": "nether_piglin_patrol",
+          "weight": 3,
+          "level": 9,
+          "threat": "A tight patrol from the deepest tier presses together.",
+          "counterplay": "Separate them with a corner before any can land a hit; they hit hard at this depth.",
+          "entities": [
+            { "id": "minecraft:zombified_piglin", "count": 3 }
+          ],
+          "bonusEntities": []
+        },
+        {
+          "id": "nether_piglin_surge",
+          "weight": 2,
+          "level": 10,
+          "threat": "A larger patrol floods a chamber from several angles at once.",
+          "counterplay": "Retreat to a corridor so only one can close at a time; do not stand and trade.",
+          "entities": [
+            { "id": "minecraft:zombified_piglin", "count": 4 }
+          ],
+          "bonusEntities": []
+        },
+        {
+          "id": "nether_magma_ambush",
+          "weight": 2,
+          "level": 9,
+          "threat": "Bouncing, fire-touched attackers close distance unpredictably.",
+          "counterplay": "Keep moving and strike on the landing, not the bounce; avoid melee while they're airborne.",
+          "entities": [
+            { "id": "minecraft:magma_cube", "count": 3 }
+          ],
+          "bonusEntities": []
+        },
+        {
+          "id": "nether_brute_elite",
+          "weight": 1,
+          "level": 11,
+          "threat": "A single, heavily armored elite hits far harder than anything found above this depth.",
+          "counterplay": "Bring the best gear the mine has offered so far; fight at a chokepoint, not in the open.",
+          "entities": [
+            { "id": "minecraft:piglin_brute", "count": 1 }
+          ],
+          "bonusEntities": [
+            { "id": "minecraft:magma_cube", "count": 2 }
+          ]
+        },
+        {
+          "id": "nether_hoglin_charge",
+          "weight": 1,
+          "level": 10,
+          "threat": "An aggressive charger closes distance in a straight, unpredictable rush.",
+          "counterplay": "Sidestep the charge rather than block it head-on, then punish the recovery.",
+          "entities": [
+            { "id": "minecraft:hoglin", "count": 1 }
+          ],
+          "bonusEntities": [
+            { "id": "minecraft:zombified_piglin", "count": 1 }
+          ]
+        }
+      ]
     }
   ]
 }
