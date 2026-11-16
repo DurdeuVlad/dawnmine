@@ -37,7 +37,7 @@ public final class OreField {
     public static final int MOTHERLODE_REACH = 14;
     /** Expected veins per cell on layers 0, 1, 2 (richer deeper). Kept sparse: a player should be
      * mining for a while, not filling an inventory with diamonds in minutes. */
-    public static final double[] VEINS_PER_CELL = {4.0, 5.8, 7.3};
+    public static final double[] VEINS_PER_CELL = {4.0, 5.8, 7.7};
     /** A buried anchor sits up to 3 blocks outside its cell, so a vein reaches REACH + 3 past the cell edge. */
     private static final int CELL_MARGIN = REACH + 3;
     private static final int LODE_MARGIN = MOTHERLODE_RADIUS + MOTHERLODE_REACH + 3;
@@ -57,6 +57,7 @@ public final class OreField {
     private final Rock rock;
     private final long seed;
     private final List<List<Ore>> tables;
+    private final double[] veinsPerCell;
     private final List<Ore> ids = new ArrayList<>();
     private final List<Motherlode> motherlodes = new ArrayList<>();
     private final LinkedHashMap<Long, List<Vein>> cellCache = new LinkedHashMap<>(256, 0.75f, true);
@@ -65,10 +66,17 @@ public final class OreField {
     private final LinkedHashMap<Long, Blocks> chunkCache = new LinkedHashMap<>(64, 0.75f, true);
 
     public OreField(CaveStack stack, long seed, List<List<Ore>> tables) {
+        this(stack, seed, tables, VEINS_PER_CELL);
+    }
+
+    /** M14b: an admin's per-layer density override replaces {@link #VEINS_PER_CELL} wholesale
+     * (not a multiplier on it), so the effective density is always exactly what was set. */
+    public OreField(CaveStack stack, long seed, List<List<Ore>> tables, double[] veinsPerCell) {
         this.stack = stack;
         this.rock = new Rock(stack);
         this.seed = seed;
         this.tables = tables;
+        this.veinsPerCell = veinsPerCell;
         for (List<Ore> table : tables) {
             for (Ore ore : table) {
                 if (!ids.contains(ore)) {
@@ -180,7 +188,7 @@ public final class OreField {
     private List<Vein> growCell(int layer, int gx, int gz) {
         Rng rng = new Rng(seed ^ (layer * 0x9E3779B97F4A7C15L) ^ (gx * 0xC2B2AE3D27D4EB4FL)
                 ^ (gz * 0x165667B19E3779F9L));
-        double expected = VEINS_PER_CELL[Math.min(layer, VEINS_PER_CELL.length - 1)];
+        double expected = veinsPerCell[Math.min(layer, veinsPerCell.length - 1)];
         int count = (int) expected + (rng.nextDouble() < expected - (int) expected ? 1 : 0);
         List<Vein> veins = new ArrayList<>();
         for (int k = 0; k < count; k++) {
@@ -350,17 +358,34 @@ public final class OreField {
         }
     }
 
-    /** Wide open space around the point, so the lode sits in a cavern a player can reach. */
-    private static boolean openAround(CaveSheet sheet, int x, int z) {
-        int open = 0;
-        for (int dz = -6; dz <= 6; dz += 2) {
-            for (int dx = -6; dx <= 6; dx += 2) {
-                if (sheet.isOpen(x + dx, z + dz)) {
-                    open++;
+    /** Enough real wall nearby for a vein to actually anchor on, not just open space. A wide,
+     * perfectly open cavern can score very high on raw openness yet have almost no rock-adjacent
+     * column within reach - {@link #lode}'s own anchor search ({@code wallAnchor}, called with a
+     * box of exactly {@code MOTHERLODE_RADIUS*2} centred on the point) is what this must predict,
+     * so it samples that same box, not a wider one that could pass on wall it'll never reach.
+     * Found live: a spot that was 79% open within a wider radius still grew zero ore, because
+     * only ~12% of its open columns actually touched a wall. */
+    private boolean openAround(CaveSheet sheet, int x, int z) {
+        int wallAdjacent = 0;
+        for (int dz = -MOTHERLODE_RADIUS; dz < MOTHERLODE_RADIUS; dz += 2) {
+            for (int dx = -MOTHERLODE_RADIUS; dx < MOTHERLODE_RADIUS; dx += 2) {
+                int cx = x + dx;
+                int cz = z + dz;
+                if (!sheet.isOpen(cx, cz)) {
+                    continue;
+                }
+                int floor = sheet.floorAt(cx, cz);
+                int top = floor + sheet.heightAt(cx, cz);
+                for (int y = floor + 1; y <= Math.min(top, floor + 3); y++) {
+                    if (rock.solid(cx + 1, y, cz) || rock.solid(cx - 1, y, cz)
+                            || rock.solid(cx, y, cz + 1) || rock.solid(cx, y, cz - 1)) {
+                        wallAdjacent++;
+                        break;
+                    }
                 }
             }
         }
-        return open >= 25;
+        return wallAdjacent >= 25;
     }
 
     // ---------- terrain tests (shared with landmarks) ----------

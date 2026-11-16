@@ -47,6 +47,26 @@ public final class DawnmineCommand {
             (context, builder) -> SharedSuggestionProvider.suggest(MineManager
                     .get(context.getSource().getServer()).data().checkpointStations().stream()
                     .map(MineRunData.CheckpointStation::id).toList(), builder);
+    /** M14b: the four real cave-layer regions, lowercase, matching every /dawnmine config
+     * subcommand that takes a <layer> argument. */
+    private static final List<String> LAYER_NAMES = List.of("upper", "middle", "chaos", "nether");
+    private static final SuggestionProvider<CommandSourceStack> LAYERS =
+            (context, builder) -> SharedSuggestionProvider.suggest(LAYER_NAMES, builder);
+    private static final SuggestionProvider<CommandSourceStack> DIFFICULTY_BANDS =
+            (context, builder) -> SharedSuggestionProvider.suggest(
+                    com.dwurdy.dawnmine.encounter.MobLevelScaling.BAND_IDS, builder);
+    private static final SuggestionProvider<CommandSourceStack> ORE_BLOCK_IDS =
+            (context, builder) -> SharedSuggestionProvider.suggest(
+                    OreCatalog.active().entries().keySet().stream()
+                            .map(net.minecraft.resources.ResourceLocation::toString), builder);
+    private static final SuggestionProvider<CommandSourceStack> ENTITY_IDS =
+            (context, builder) -> SharedSuggestionProvider.suggest(
+                    net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.keySet().stream()
+                            .map(net.minecraft.resources.ResourceLocation::toString), builder);
+    private static final SuggestionProvider<CommandSourceStack> ITEM_IDS =
+            (context, builder) -> SharedSuggestionProvider.suggest(
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.keySet().stream()
+                            .map(net.minecraft.resources.ResourceLocation::toString), builder);
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         LiteralArgumentBuilder<CommandSourceStack> root = literal("dawnmine")
@@ -97,7 +117,17 @@ public final class DawnmineCommand {
                                 .then(argument("value", StringArgumentType.greedyString())
                                         .executes(ctx -> configSet(ctx.getSource(),
                                                 StringArgumentType.getString(ctx, "key"),
-                                                StringArgumentType.getString(ctx, "value")))))));
+                                                StringArgumentType.getString(ctx, "value"))))))
+                .then(oreOverrideCommand())
+                .then(densityOverrideCommand())
+                .then(mobsOverrideCommand())
+                .then(difficultyOverrideCommand())
+                .then(lootOverrideCommand())
+                .then(literal("overrides")
+                        .executes(ctx -> overridesShow(ctx.getSource()))
+                        .then(literal("show").executes(ctx -> overridesShow(ctx.getSource())))
+                        .then(literal("save").executes(ctx -> overridesSave(ctx.getSource())))
+                        .then(literal("reload").executes(ctx -> overridesReload(ctx.getSource())))));
 
         root.then(literal("recover").requires(src -> src.hasPermission(ADMIN_LEVEL))
                 .executes(ctx -> recoverCheck(ctx.getSource()))
@@ -172,6 +202,12 @@ public final class DawnmineCommand {
             lines.add("  /dawnmine teleporter unbind - remove the link without changing world blocks");
             lines.add("  /dawnmine config get [key]  - show settings");
             lines.add("  /dawnmine config set <key> <value> - change a setting");
+            lines.add("  /dawnmine config ore <layer> list|set <block> weight <n>|set <block> veinsize <min> <max>|reset <block>");
+            lines.add("  /dawnmine config density <layer> get|set <veinsPerCell>|reset");
+            lines.add("  /dawnmine config mobs <layer> list|add <entity>|remove <entity>|reset");
+            lines.add("  /dawnmine config difficulty list|<band> set health|damage|speed <n>|<band> reset");
+            lines.add("  /dawnmine config loot <layer> list|add <item> <weight> <min> <max>|remove <item>|reset");
+            lines.add("  /dawnmine config overrides show|save|reload  - the above overrides as a whole");
             lines.add("  /dawnmine recover check     - inspect saved state");
             lines.add("  /dawnmine recover repair    - fix a failed/partial setup");
             lines.add("  /dawnmine reset status      - daily reset schedule and progress");
@@ -753,6 +789,323 @@ public final class DawnmineCommand {
             MineMessages.tell(src, "Unknown setting '" + name + "'. Valid keys: " + String.join(", ", ConfigKeys.names()));
             return 0;
         });
+    }
+
+    // ------------------------------------------------------------------
+    // M14b: overrides (ore, density, mobs, difficulty, loot)
+    // ------------------------------------------------------------------
+
+    private static LiteralArgumentBuilder<CommandSourceStack> oreOverrideCommand() {
+        var weight = argument("n", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 1000))
+                .executes(ctx -> overrideOreWeight(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "block"),
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "n")));
+        var veinMax = argument("max", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 64))
+                .executes(ctx -> overrideOreVeinSize(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "block"),
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "min"),
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "max")));
+        var veinMin = argument("min", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 64)).then(veinMax);
+        var block = argument("block", StringArgumentType.word()).suggests(ORE_BLOCK_IDS)
+                .then(literal("weight").then(weight))
+                .then(literal("veinsize").then(veinMin));
+        var resetBlock = argument("block", StringArgumentType.word()).suggests(ORE_BLOCK_IDS)
+                .executes(ctx -> overrideOreReset(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "block")));
+        var layer = argument("layer", StringArgumentType.word()).suggests(LAYERS)
+                .then(literal("list").executes(ctx -> overrideOreList(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))))
+                .then(literal("set").then(block))
+                .then(literal("reset").then(resetBlock));
+        return literal("ore").then(layer);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> densityOverrideCommand() {
+        var set = argument("veinsPerCell", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0.1, 100))
+                .executes(ctx -> overrideDensitySet(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(ctx, "veinsPerCell")));
+        var layer = argument("layer", StringArgumentType.word()).suggests(LAYERS)
+                .then(literal("get").executes(ctx -> overrideDensityGet(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))))
+                .then(literal("set").then(set))
+                .then(literal("reset").executes(ctx -> overrideDensityReset(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))));
+        return literal("density").then(layer);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> mobsOverrideCommand() {
+        var add = argument("entity", StringArgumentType.word()).suggests(ENTITY_IDS)
+                .executes(ctx -> overrideMobsAdd(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "entity")));
+        var remove = argument("entity", StringArgumentType.word()).suggests(ENTITY_IDS)
+                .executes(ctx -> overrideMobsRemove(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "entity")));
+        var layer = argument("layer", StringArgumentType.word()).suggests(LAYERS)
+                .then(literal("list").executes(ctx -> overrideMobsList(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))))
+                .then(literal("add").then(add))
+                .then(literal("remove").then(remove))
+                .then(literal("reset").executes(ctx -> overrideMobsReset(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))));
+        return literal("mobs").then(layer);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> difficultyOverrideCommand() {
+        var multiplier = argument("multiplier", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(0, 10))
+                .executes(ctx -> overrideDifficultySet(ctx.getSource(), StringArgumentType.getString(ctx, "band"),
+                        StringArgumentType.getString(ctx, "stat"),
+                        com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(ctx, "multiplier")));
+        var stat = argument("stat", StringArgumentType.word())
+                .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("health", "damage", "speed"), b))
+                .then(multiplier);
+        var band = argument("band", StringArgumentType.word()).suggests(DIFFICULTY_BANDS)
+                .then(literal("set").then(stat))
+                .then(literal("reset").executes(ctx -> overrideDifficultyReset(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "band"))));
+        return literal("difficulty")
+                .then(literal("list").executes(ctx -> overrideDifficultyList(ctx.getSource())))
+                .then(band);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> lootOverrideCommand() {
+        var max = argument("max", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 64))
+                .executes(ctx -> overrideLootAdd(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "item"),
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "weight"),
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "min"),
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "max")));
+        var min = argument("min", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 64)).then(max);
+        var weight = argument("weight", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 1000)).then(min);
+        var add = argument("item", StringArgumentType.word()).suggests(ITEM_IDS).then(weight);
+        var remove = argument("item", StringArgumentType.word()).suggests(ITEM_IDS)
+                .executes(ctx -> overrideLootRemove(ctx.getSource(), StringArgumentType.getString(ctx, "layer"),
+                        StringArgumentType.getString(ctx, "item")));
+        var layer = argument("layer", StringArgumentType.word()).suggests(LAYERS)
+                .then(literal("list").executes(ctx -> overrideLootList(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))))
+                .then(literal("add").then(add))
+                .then(literal("remove").then(remove))
+                .then(literal("reset").executes(ctx -> overrideLootReset(ctx.getSource(),
+                        StringArgumentType.getString(ctx, "layer"))));
+        return literal("loot").then(layer);
+    }
+
+    private static boolean badLayer(CommandSourceStack src, String layer) {
+        if (LAYER_NAMES.contains(layer)) {
+            return false;
+        }
+        MineMessages.tell(src, "Unknown layer '" + layer + "'. Valid: " + String.join(", ", LAYER_NAMES));
+        return true;
+    }
+
+    private static boolean badBand(CommandSourceStack src, String band) {
+        if (List.of(com.dwurdy.dawnmine.encounter.MobLevelScaling.BAND_IDS).contains(band)) {
+            return false;
+        }
+        MineMessages.tell(src, "Unknown difficulty band '" + band + "'. Valid: "
+                + String.join(", ", com.dwurdy.dawnmine.encounter.MobLevelScaling.BAND_IDS));
+        return true;
+    }
+
+    private static int overrideOreList(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        var overrides = com.dwurdy.dawnmine.config.DawnmineOverrides.oreOverridesForLayer(layer);
+        if (overrides.isEmpty()) {
+            MineMessages.tell(src, "No ore overrides set for " + layer + ".");
+            return 1;
+        }
+        List<String> lines = new ArrayList<>();
+        lines.add("=== Ore overrides: " + layer + " ===");
+        overrides.forEach((block, o) -> lines.add("  " + block + ": weight=" + o.weight()
+                + " veinsize=" + o.veinMin() + ".." + o.veinMax()));
+        MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static int overrideOreWeight(CommandSourceStack src, String layer, String block, int weight) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.setOreWeight(layer, block, weight);
+        MineMessages.tell(src, block + " weight in " + layer + " set to " + weight
+                + " (applies at the next /dawnmine reset; run '/dawnmine config overrides save' to persist)");
+        return 1;
+    }
+
+    private static int overrideOreVeinSize(CommandSourceStack src, String layer, String block, int min, int max) {
+        if (badLayer(src, layer)) return 0;
+        if (max < min) {
+            MineMessages.tell(src, "max must be >= min");
+            return 0;
+        }
+        com.dwurdy.dawnmine.config.DawnmineOverrides.setOreVeinSize(layer, block, min, max);
+        MineMessages.tell(src, block + " vein size in " + layer + " set to " + min + ".." + max
+                + " (applies at the next /dawnmine reset; run '/dawnmine config overrides save' to persist)");
+        return 1;
+    }
+
+    private static int overrideOreReset(CommandSourceStack src, String layer, String block) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.resetOre(layer, block);
+        MineMessages.tell(src, block + " in " + layer + " reset to the shipped default"
+                + " (applies at the next /dawnmine reset)");
+        return 1;
+    }
+
+    private static int overrideDensityGet(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        var value = com.dwurdy.dawnmine.config.DawnmineOverrides.density(layer);
+        MineMessages.tell(src, layer + " density = "
+                + (value.isPresent() ? value.get() + " (override)" : "(shipped default)"));
+        return 1;
+    }
+
+    private static int overrideDensitySet(CommandSourceStack src, String layer, double veinsPerCell) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.setDensity(layer, veinsPerCell);
+        MineMessages.tell(src, layer + " density set to " + veinsPerCell
+                + " (applies at the next /dawnmine reset; run '/dawnmine config overrides save' to persist)");
+        return 1;
+    }
+
+    private static int overrideDensityReset(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.resetDensity(layer);
+        MineMessages.tell(src, layer + " density reset to the shipped default (applies at the next /dawnmine reset)");
+        return 1;
+    }
+
+    private static int overrideMobsList(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        List<String> lines = new ArrayList<>();
+        lines.add("=== Mob roster overrides: " + layer + " ===");
+        com.dwurdy.dawnmine.config.DawnmineOverrides.mobAdds(layer).forEach(id -> lines.add("  +" + id));
+        com.dwurdy.dawnmine.config.DawnmineOverrides.mobRemovals(layer).forEach(id -> lines.add("  -" + id));
+        if (lines.size() == 1) {
+            lines.add("  (no overrides set)");
+        }
+        MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static int overrideMobsAdd(CommandSourceStack src, String layer, String entity) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.addMob(layer, entity);
+        MineMessages.tell(src, entity + " added to " + layer + "'s mob roster"
+                + " (applies to the next encounter spawned there; run '/dawnmine config overrides save' to persist)");
+        return 1;
+    }
+
+    private static int overrideMobsRemove(CommandSourceStack src, String layer, String entity) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.removeMob(layer, entity);
+        MineMessages.tell(src, entity + " removed from " + layer + "'s mob roster"
+                + " (applies to the next encounter spawned there; a composition that requires this"
+                + " entity may simply stop spawning rather than spawn without it)");
+        return 1;
+    }
+
+    private static int overrideMobsReset(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.resetMobs(layer);
+        MineMessages.tell(src, layer + "'s mob roster reset to the shipped default");
+        return 1;
+    }
+
+    private static int overrideDifficultyList(CommandSourceStack src) {
+        List<String> lines = new ArrayList<>();
+        lines.add("=== Difficulty band overrides ===");
+        for (String band : com.dwurdy.dawnmine.encounter.MobLevelScaling.BAND_IDS) {
+            var o = com.dwurdy.dawnmine.config.DawnmineOverrides.difficulty(band);
+            lines.add("  " + band + ": "
+                    + (o.isPresent() ? "health=" + o.get().health() + " damage=" + o.get().damage()
+                            + " speed=" + o.get().speed() : "(shipped default)"));
+        }
+        MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static int overrideDifficultySet(CommandSourceStack src, String band, String stat, double multiplier) {
+        if (badBand(src, band)) return 0;
+        Double health = stat.equals("health") ? multiplier : null;
+        Double damage = stat.equals("damage") ? multiplier : null;
+        Double speed = stat.equals("speed") ? multiplier : null;
+        if (health == null && damage == null && speed == null) {
+            MineMessages.tell(src, "Unknown stat '" + stat + "'. Valid: health, damage, speed");
+            return 0;
+        }
+        com.dwurdy.dawnmine.config.DawnmineOverrides.setDifficulty(band, health, damage, speed);
+        MineMessages.tell(src, "band " + band + " " + stat + " set to " + multiplier
+                + " (applies to newly-spawned mobs immediately; run '/dawnmine config overrides save' to persist)");
+        return 1;
+    }
+
+    private static int overrideDifficultyReset(CommandSourceStack src, String band) {
+        if (badBand(src, band)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.resetDifficulty(band);
+        MineMessages.tell(src, "band " + band + " reset to the shipped default");
+        return 1;
+    }
+
+    private static int overrideLootList(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        List<String> lines = new ArrayList<>();
+        lines.add("=== Loot overrides: " + layer + " ===");
+        com.dwurdy.dawnmine.config.DawnmineOverrides.lootAdds(layer).forEach(e -> lines.add("  +" + e.item()
+                + " weight=" + e.weight() + " count=" + e.min() + ".." + e.max()));
+        com.dwurdy.dawnmine.config.DawnmineOverrides.lootRemovals(layer).forEach(id -> lines.add("  -" + id));
+        if (lines.size() == 1) {
+            lines.add("  (no overrides set)");
+        }
+        MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static int overrideLootAdd(CommandSourceStack src, String layer, String item, int weight, int min, int max) {
+        if (badLayer(src, layer)) return 0;
+        if (max < min) {
+            MineMessages.tell(src, "max must be >= min");
+            return 0;
+        }
+        com.dwurdy.dawnmine.config.DawnmineOverrides.addLoot(layer, item, weight, min, max);
+        MineMessages.tell(src, item + " added to " + layer + "'s loot"
+                + " (applies after the next '/reload'; run '/dawnmine config overrides save' to persist, then '/reload')");
+        return 1;
+    }
+
+    private static int overrideLootRemove(CommandSourceStack src, String layer, String item) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.removeLoot(layer, item);
+        MineMessages.tell(src, item + " marked removed from " + layer + "'s loot. This only actually"
+                + " takes an admin-added item out - a shipped entry cannot be surgically removed from"
+                + " the base table without editing the loot_table JSON directly.");
+        return 1;
+    }
+
+    private static int overrideLootReset(CommandSourceStack src, String layer) {
+        if (badLayer(src, layer)) return 0;
+        com.dwurdy.dawnmine.config.DawnmineOverrides.resetLoot(layer);
+        MineMessages.tell(src, layer + "'s loot overrides cleared (applies after the next '/reload')");
+        return 1;
+    }
+
+    private static int overridesShow(CommandSourceStack src) {
+        List<String> lines = new ArrayList<>();
+        lines.add("=== Dawnmine overrides (in-memory; may differ from the saved file until 'save') ===");
+        lines.addAll(com.dwurdy.dawnmine.config.DawnmineOverrides.describe());
+        MineMessages.tellLines(src, lines);
+        return 1;
+    }
+
+    private static int overridesSave(CommandSourceStack src) {
+        com.dwurdy.dawnmine.config.DawnmineOverrides.save(src.getServer());
+        MineMessages.tell(src, "Overrides saved.");
+        MineMessages.notifyAdmins(src.getServer(), ADMIN_LEVEL, adminName(src) + " saved dawnmine config overrides");
+        return 1;
+    }
+
+    private static int overridesReload(CommandSourceStack src) {
+        com.dwurdy.dawnmine.config.DawnmineOverrides.load(src.getServer());
+        MineMessages.tell(src, "Overrides reloaded from disk; any unsaved in-memory change is discarded.");
+        return 1;
     }
 
     private static String adminName(CommandSourceStack src) {

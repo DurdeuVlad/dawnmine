@@ -13,8 +13,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
+import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
+import net.neoforged.neoforge.event.LootTableLoadEvent;
 import org.slf4j.Logger;
 
 /**
@@ -39,6 +45,7 @@ public final class MineLootManager {
             ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/upper_crate"),
             ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/middle_crate"),
             ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/chaos_crate"),
+            ResourceLocation.fromNamespaceAndPath("dawnmine", "chests/nether_crate"),
     };
 
     private MineLootManager() { }
@@ -81,6 +88,7 @@ public final class MineLootManager {
         int tier = switch (site.region()) {
             case "middle" -> 1;
             case "chaos" -> 2;
+            case "nether" -> 3;
             default -> 0;
         };
         container.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, CHEST_LOOT_TABLES[tier]),
@@ -95,5 +103,40 @@ public final class MineLootManager {
                 MineEncounterManager.spawnSite(server, guardClaim, site.region(), pos, 6);
             }
         }
+    }
+
+    /** M14b: appends an admin's extra loot entries (never removes - see the class javadoc on
+     * {@code DawnmineOverrides} for why removal of a shipped entry isn't supported) to one of
+     * this mod's own 4 chest tables when it loads. NeoForge fires this for every loot table on
+     * every reload; non-dawnmine tables and layers with nothing added return immediately. */
+    public static void onLootTableLoad(LootTableLoadEvent event) {
+        String layer = switch (event.getName().toString()) {
+            case "dawnmine:chests/upper_crate" -> "upper";
+            case "dawnmine:chests/middle_crate" -> "middle";
+            case "dawnmine:chests/chaos_crate" -> "chaos";
+            case "dawnmine:chests/nether_crate" -> "nether";
+            default -> null;
+        };
+        if (layer == null) {
+            return;
+        }
+        var adds = com.dwurdy.dawnmine.config.DawnmineOverrides.lootAdds(layer);
+        if (adds.isEmpty()) {
+            return;
+        }
+        LootPool.Builder pool = LootPool.lootPool()
+                .setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
+                .name("dawnmine_override_add");
+        for (var entry : adds) {
+            Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getOptional(net.minecraft.resources.ResourceLocation.parse(entry.item())).orElse(null);
+            if (item == null) {
+                LOGGER.warn("[dawnmine] loot override for {} names an unknown item {}; skipped", layer, entry.item());
+                continue;
+            }
+            pool.add(LootItem.lootTableItem(item).setWeight(entry.weight())
+                    .apply(SetItemCountFunction.setCount(UniformGenerator.between(entry.min(), entry.max()))));
+        }
+        event.getTable().addPool(pool.build());
     }
 }

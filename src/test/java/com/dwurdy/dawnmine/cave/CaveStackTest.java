@@ -69,17 +69,21 @@ class CaveStackTest {
         for (String line : r.lines()) {
             assertFalse(line.contains("not reachable"), line);
         }
-        // Layer 0: a rush from the hub to the way down targets CaveStack.TARGET_BLOCKS_PER_PAIR[0]
-        // (1500 blocks, about 6 minutes at a rush); each deeper layer is reached sooner than a
-        // flat per-layer pace would give, by design (the mine tapers with depth).
+        // Layer 0: a rush from the hub to a way down, placed as far out as the layer safely
+        // allows. The 8 compass directions wind through the cave differently, so actual walking
+        // time varies noticeably by direction - this bound is wide enough to cover that spread,
+        // not just the single direction tested before staircases were spread radially around
+        // the whole hub.
         for (CaveStack.Descent d : stack.descents()) {
             if (d.fromLayer() == 0) {
                 double t = minutes(r, d.top().name());
-                assertTrue(t > 3 && t < 9, d.top().name() + " at " + t + " min");
+                assertTrue(t > 2.5 && t < 12, d.top().name() + " at " + t + " min");
             }
         }
-        // Layer 1: the next leg, targeting the pair's own distance on top of the best way out of
-        // layer 0.
+        // Layer 1: with 8 entrances and 8 exits now, this is a many-to-many comparison, not a
+        // single matched route - the single best layer-0 exit can legitimately sit right next to
+        // one specific layer-1 stair (a short leg) while being far from another (a long one), so
+        // this only sanity-checks the leg is positive and not absurd, not a tight pacing target.
         double bestOut0 = Double.MAX_VALUE;
         for (CaveStack.Descent d : stack.descents()) {
             if (d.fromLayer() == 0) {
@@ -89,7 +93,7 @@ class CaveStackTest {
         for (CaveStack.Descent d : stack.descents()) {
             if (d.fromLayer() == 1) {
                 double leg = minutes(r, d.top().name()) - bestOut0;
-                assertTrue(leg > 2 && leg < 12, d.top().name() + " leg " + leg + " min");
+                assertTrue(leg > 1 && leg < 15, d.top().name() + " leg " + leg + " min");
             }
         }
     }
@@ -144,8 +148,9 @@ class CaveStackTest {
                     CaveStack.Waypoint a = d.top();
                     CaveStack.Waypoint b = pair.get(j).top();
                     double apart = Math.hypot(a.x() - b.x(), a.z() - b.z());
+                    // Fixed radial placement spreads the 8 tops around the whole hub by design -
+                    // no upper "sit together" bound applies, only "distinct, not duplicates".
                     assertTrue(apart >= 100, "ways down are apart: " + apart);
-                    assertTrue(apart <= 450, "ways down sit together: " + apart);
                     assertFalse(d.name().equals(pair.get(j).name()), "distinct characters");
                 }
             }
@@ -176,28 +181,10 @@ class CaveStackTest {
         }
     }
 
-    /** No tunnel column may lie in the ridge of the layer it leaves, so a tunnel can never cut a ridge. */
-    @Test
-    void tunnelsNeverCrossTheRidgeOfTheLayerAbove() {
-        long seed = 4;
-        CaveStack stack = CaveStack.plan(64, seed);
-        int[][] entries = {{36, 0}};
-        for (int layer = 0; layer < CavePlanner.LAYERS - 1; layer++) {
-            CavePlanner.Fields fields = CavePlanner.fields(CavePlanner.Spec.layer(layer, 64), seed);
-            java.util.BitSet ridge = CaveStack.ridge(layer, fields, entries);
-            assertTrue(ridge.cardinality() > 5_000, "the ridge exists on layer " + layer);
-            List<int[]> landings = new ArrayList<>();
-            for (CaveStack.Descent d : stack.descents()) {
-                if (d.fromLayer() != layer) {
-                    continue;
-                }
-                for (int k = 0; k < d.length(); k++) {
-                    assertFalse(ridge.get(fields.index(d.xs()[k], d.zs()[k])),
-                            d.top().name() + " crosses the ridge at " + d.xs()[k] + "," + d.zs()[k]);
-                }
-                landings.add(new int[] {d.xs()[d.length() - 1], d.zs()[d.length() - 1]});
-            }
-            entries = landings.toArray(new int[0][]);
-        }
-    }
+    // The ridge mechanism (one long rock wall forcing a detour) was removed when staircases
+    // became fixed, radially-placed spots: at a guaranteed 1500+ block straight-line distance
+    // from the hub in every direction, "a real journey rather than a short hop" is already
+    // guaranteed by the placement itself, and a ridge built from entries spread symmetrically in
+    // all 8 compass directions has no single "far side" left to sit on. See git history for the
+    // removed CaveStack.ridge and this test's prior form.
 }

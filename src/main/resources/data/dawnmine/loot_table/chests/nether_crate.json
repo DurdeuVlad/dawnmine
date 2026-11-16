@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 2, "max": 3 },
+      "entries": [
+        { "type": "minecraft:item", "weight": 5, "name": "minecraft:quartz",
+          "functions": [ { "function": "minecraft:set_count",
+            "count": { "type": "minecraft:uniform", "min": 2, "max": 6 } } ] },
+        { "type": "minecraft:item", "weight": 2, "name": "minecraft:ancient_debris" },
+        { "type": "minecraft:item", "weight": 2, "name": "born_in_chaos_v1:pieceofdarkmetal",
+          "functions": [ { "function": "minecraft:set_count",
+            "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] },
+        { "type": "minecraft:item", "weight": 1, "name": "minecraft:diamond" },
+        { "type": "minecraft:item", "weight": 2, "name": "minecraft:torch",
+          "functions": [ { "function": "minecraft:set_count",
+            "count": { "type": "minecraft:uniform", "min": 2, "max": 6 } } ] }
+      ]
+    }
+  ]
+}

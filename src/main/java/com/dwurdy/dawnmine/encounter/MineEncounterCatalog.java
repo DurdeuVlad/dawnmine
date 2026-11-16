@@ -159,7 +159,7 @@ public final class MineEncounterCatalog extends SimpleJsonResourceReloadListener
                 throw new JsonParseException("duplicate region id '" + regionId + "'");
             }
         }
-        for (String required : List.of("upper", "middle", "chaos")) {
+        for (String required : List.of("upper", "middle", "chaos", "nether")) {
             if (!regions.containsKey(required)) {
                 throw new JsonParseException("profile is missing required region '" + required + "'");
             }

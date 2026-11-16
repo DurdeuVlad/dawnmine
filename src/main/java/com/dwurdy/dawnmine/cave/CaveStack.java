@@ -8,29 +8,32 @@ import java.util.Map;
 
 /**
  * The whole mine's cave terrain: {@link CavePlanner#LAYERS} stacked layers, each spanning the
- * shell, joined by three descent tunnels per layer pair. Pure and deterministic.
+ * shell, joined by {@value #DESCENTS_PER_PAIR} staircases per layer pair. Pure and deterministic.
  *
- * <p>Pacing: the way down each layer is placed by measured walking distance. The layer's
- * entry (the hub forecourt, or where the descents above land) to each outgoing descent is
- * about {@link #TARGET_BLOCKS} blocks of walking (a rush at 4.3 blocks/s is roughly 15 minutes),
- * and the three descents differ in length and steepness and sit hundreds of blocks apart, so
- * there are at least three different ways down.
+ * <p>Placement: each layer's staircases sit at a fixed, predictable spot - evenly spread around
+ * the hub by compass direction, as far out as the smaller of this layer and the one below it can
+ * safely hold (see {@link #fixedRadialTops}) - not found only by exploring. A player who picks a
+ * direction and walks knows a way down exists. Each layer pair's 8 angles are rotated a further
+ * 1/16 turn from the pair above it, so a landing from one pair never sits directly in line, at a
+ * similar radius, with the next pair's own outgoing staircase in the same direction.
  *
- * <p>A descent is a 3-wide, {@value #TUBE_HEIGHT}-high tunnel whose floor never falls faster
- * than 1 block per 2 steps, level for {@value #FLAT} steps at each end, ending in an open
- * column of the layer below. Both layers keep a pinned, level landing around each end and are
- * closed around the tunnel in between, so the tunnel never undercuts a floor or opens onto a cliff.
+ * <p>A staircase is a 3-wide, {@value #TUBE_HEIGHT}-high tunnel whose floor falls by exactly one
+ * block per forward step (never rounded, never two steps at once), level for {@value #FLAT}
+ * steps at each end, ending in an open column of the layer below. Both layers keep a pinned,
+ * level landing around each end and are closed around the tunnel in between, so the tunnel never
+ * undercuts a floor or opens onto a cliff.
  */
 public final class CaveStack {
-    /** Target walking distance, entry to the way down, per layer pair (layer 0->1, 1->2, 2->3):
-     * each successive layer is reached sooner and is itself smaller, so the mine tapers rather
-     * than repeating the same scale at every depth. */
-    public static final int[] TARGET_BLOCKS_PER_PAIR = {1500, 2500, 3500};
-    public static final int DESCENTS_PER_PAIR = 1;
+    /** A real, fixed, findable staircase down from every layer, spread evenly around the hub -
+     * not one organic "found while exploring" route, so a player can head in any direction and
+     * know a way down exists roughly that far out. */
+    public static final int DESCENTS_PER_PAIR = 8;
     public static final int TUBE_HEIGHT = 5;
     public static final int FLAT = 12;
-    private static final double[] SLOPES = {0.5, 0.25, 0.4};
-    private static final String[] NAMES = {"steep", "gentle", "bypass"};
+    /** Every staircase steps down by exactly one block per forward step - never a fractional or
+     * rounded drop - so it is always a real, walkable staircase, never a ramp that can round two
+     * steps together into an awkward or impassable ledge. */
+    private static final double SLOPE = 1.0;
     private static final int EXCL_FROM = FLAT + 4;
     private static final int EXCL_RADIUS = 3;
     private static final int PIN_RADIUS = 8;
@@ -38,11 +41,6 @@ public final class CaveStack {
     private static final double PIN_BLEND = 90.0;
     private static final int EDGE_MARGIN = 40;
     private static final int ATTEMPTS = 8;
-    private static final int CLUSTER = 450;
-    private static final int RIDGE_OFFSET = 300;
-    private static final int RIDGE_HALF_THICKNESS = 5;
-    private static final int RIDGE_GAP_HALF = 80;
-    private static final int RIDGE_GAP_FROM_EDGE = 100;
 
     /** A named point to measure walking distance to (feet position). */
     public record Waypoint(String name, int x, int y, int z) { }
@@ -59,16 +57,65 @@ public final class CaveStack {
         }
     }
 
+    /** One stepped-down tread of a staircase: the floor block to replace with an actual stair
+     * block, and the horizontal direction of travel (exactly one of dx/dz is +-1), so
+     * {@code CaveTerrain} (which owns all actual block-state decisions) can orient it correctly.
+     * Kept Minecraft-type-free like the rest of this package - {@code CaveTerrain} does the
+     * {@code Direction}/{@code BlockState} translation. */
+    public record StairTread(int floor, int dx, int dz) { }
+
     private final CaveSheet[] sheets;
     private final List<Descent> descents;
     private final Map<Long, int[]> tubeColumns;
     private final Map<Long, Integer> dropperLandings;
+    private final Map<Long, List<StairTread>> stairTreads;
 
     private CaveStack(CaveSheet[] sheets, List<Descent> descents) {
         this.sheets = sheets;
         this.descents = List.copyOf(descents);
         this.tubeColumns = buildTubeColumns(descents);
         this.dropperLandings = buildDropperLandings(descents);
+        this.stairTreads = buildStairTreads(descents);
+    }
+
+    /** Every stair tread at this column (almost always 0 or 1, but a different layer pair's
+     * descent can rarely cross the same horizontal column at a different height - same reason
+     * {@link #tubeSpans} returns a list rather than one value, not a single value that would
+     * silently lose one of them). Never null; empty when no descent steps down through here. */
+    public List<StairTread> stairTreadsAt(int x, int z) {
+        return stairTreads.getOrDefault(key(x, z), List.of());
+    }
+
+    private static Map<Long, List<StairTread>> buildStairTreads(List<Descent> descents) {
+        Map<Long, List<StairTread>> out = new HashMap<>();
+        for (Descent d : descents) {
+            int n = d.length();
+            for (int i = 1; i < n; i++) {
+                if (d.floors()[i] == d.floors()[i - 1]) {
+                    continue; // a flat landing step - leave its floor as plain rock
+                }
+                int dx = Integer.compare(d.xs()[i], d.xs()[i - 1]);
+                int dz = Integer.compare(d.zs()[i], d.zs()[i - 1]);
+                // Lay the tread across the tube's full width, same lateral axis buildTubeColumns
+                // uses, so the staircase reads as a staircase across all 3 lanes, not just the
+                // one a player happens to be centred on.
+                int lateralX = dx != 0 ? 0 : 1;
+                int lateralZ = dx != 0 ? 1 : 0;
+                for (int l = -1; l <= 1; l++) {
+                    StairTread tread = new StairTread(d.floors()[i], dx, dz);
+                    List<StairTread> at = out.computeIfAbsent(
+                            key(d.xs()[i] + l * lateralX, d.zs()[i] + l * lateralZ), k -> new ArrayList<>());
+                    // Only a genuine duplicate (same floor, e.g. this same descent's own lateral
+                    // spread touching itself on a turn) is skipped - a different floor at the
+                    // same column is a different layer pair's descent crossing here and must
+                    // keep its own tread, not silently lose it to whichever pair ran last.
+                    if (at.stream().noneMatch(t -> t.floor() == tread.floor())) {
+                        at.add(tread);
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     /** M12e: the bottom floor Y of a dropper shaft landing in this column, or null. A dropper's
@@ -164,10 +211,8 @@ public final class CaveStack {
         fields[0] = CavePlanner.fields(specs[0], seed);
         List<CavePlanner.Pin> inPins = new ArrayList<>();
         BitSet excludedIn = new BitSet();
-        int[][] entries = {{36, 0}};
         for (int k = 0; k < layers; k++) {
             CavePlanner.Fields fk = fields[k];
-            excludedIn.or(ridge(k, fk, entries));
             CaveSheet pass1 = CavePlanner.finish(fk, inPins, excludedIn);
             if (k == layers - 1) {
                 finals[k] = pass1;
@@ -176,15 +221,13 @@ public final class CaveStack {
             fields[k + 1] = CavePlanner.fields(specs[k + 1], seed);
             CaveSheet next0 = CavePlanner.finish(fields[k + 1], List.of(), new BitSet());
 
-            int[] dist = WalkDistance.from(pass1, entries);
-            int targetBlocks = TARGET_BLOCKS_PER_PAIR[Math.min(k, TARGET_BLOCKS_PER_PAIR.length - 1)];
-            int[][] tops = chooseTops(pass1, fk, dist, seed + k * 31L + attempt * 1_000_003L, k == 0, targetBlocks);
+            int[][] tops = fixedRadialTops(pass1, specs[k], specs[k + 1],
+                    seed + k * 31L + attempt * 1_000_003L, k, k == 0);
             List<Descent> pair = new ArrayList<>();
             List<CavePlanner.Pin> outPins = new ArrayList<>();
             List<CavePlanner.Pin> nextPins = new ArrayList<>();
             BitSet excludedOut = new BitSet();
             BitSet excludedNext = new BitSet();
-            int[][] landings = new int[tops.length][];
             for (int j = 0; j < tops.length; j++) {
                 Descent made = buildDescent(k, j, tops[j], pass1, next0, specs[k], specs[k + 1],
                         fk, fields[k + 1], seed + attempt * 1_000_003L, pair, hubBox(k), excludedIn);
@@ -197,7 +240,6 @@ public final class CaveStack {
                         made.floors()[0], PIN_HEIGHT, PIN_BLEND));
                 nextPins.add(CavePlanner.Pin.point(made.xs()[n], made.zs()[n], PIN_RADIUS,
                         made.floors()[n], PIN_HEIGHT, PIN_BLEND));
-                landings[j] = new int[] {made.xs()[n], made.zs()[n]};
                 excludeAlong(made, specs[k], specs[k + 1], fk, fields[k + 1], excludedOut, excludedNext);
             }
             all.addAll(pair);
@@ -209,58 +251,8 @@ public final class CaveStack {
             fields[k] = null; // free the noise arrays once the layer is final
             inPins = nextPins;
             excludedIn = excludedNext;
-            entries = landings;
         }
         return new CaveStack(finals, all);
-    }
-
-    /** A long rock ridge across the layer with one wide gap at the far end from where the layer is
-     * entered, so the way down is a real journey rather than a short hop. The ridge runs across
-     * the map between the entry side and the far side; alternate layers use alternate directions. */
-    static BitSet ridge(int layer, CavePlanner.Fields f, int[][] entries) {
-        CavePlanner.Spec sp = f.spec();
-        double ex = 0;
-        double ez = 0;
-        int minAcross = Integer.MAX_VALUE;
-        int maxAcross = Integer.MIN_VALUE;
-        boolean vertical = layer % 2 == 1;
-        for (int[] e : entries) {
-            ex += e[0];
-            ez += e[1];
-            int a = vertical ? e[0] : e[1];
-            minAcross = Math.min(minAcross, a);
-            maxAcross = Math.max(maxAcross, a);
-        }
-        ex /= entries.length;
-        ez /= entries.length;
-        double along = vertical ? ez : ex;   // position along the ridge
-        double across = vertical ? ex : ez;  // position across it
-        // the ridge sits between the entries and the middle of the map, with every entry on one side
-        int c = layer == 0 ? 250 : (across > 0 ? minAcross - RIDGE_OFFSET : maxAcross + RIDGE_OFFSET);
-        int gap = along >= 0 ? -(RIDGE_GAP_FROM_EDGE) : RIDGE_GAP_FROM_EDGE;
-        int edge = Math.min(sp.maxX(), sp.maxZ());
-        gap = gap < 0 ? -edge + RIDGE_GAP_FROM_EDGE : edge - RIDGE_GAP_FROM_EDGE;
-        BitSet out = new BitSet();
-        for (int z = sp.minZ(); z <= sp.maxZ(); z++) {
-            for (int x = sp.minX(); x <= sp.maxX(); x++) {
-                int a = vertical ? z : x;
-                int cr = vertical ? x : z;
-                if (Math.abs(cr - c) > RIDGE_HALF_THICKNESS || Math.abs(a - gap) <= RIDGE_GAP_HALF) {
-                    continue;
-                }
-                boolean nearEntry = false;
-                for (int[] e : entries) {
-                    if (Math.abs(e[0] - x) < 40 && Math.abs(e[1] - z) < 40) {
-                        nearEntry = true;
-                        break;
-                    }
-                }
-                if (!nearEntry) {
-                    out.set(f.index(x, z));
-                }
-            }
-        }
-        return out;
     }
 
     /** Layer 0 keeps clear of the hub box. */
@@ -268,72 +260,54 @@ public final class CaveStack {
         return layer == 0;
     }
 
-    /** Picks three outgoing descent tops by walking distance, hashed for variety and kept apart. */
-    private static int[][] chooseTops(CaveSheet s, CavePlanner.Fields f, int[] dist, long seed,
-                                      boolean hubLayer, int targetBlocks) {
-        int w = s.sizeX();
-        int max = 0;
-        for (int v : dist) {
-            max = Math.max(max, v);
-        }
-        int target = Math.min(targetBlocks * 10, (int) (max * 0.9));
-        int lo = (int) (target * 0.93);
-        int hi = target;
-        List<int[]> picked = new ArrayList<>();
-        int[] spacings = {250, 150, 100};
-        for (int spacing : spacings) {
-            picked.clear();
-            for (int j = 0; j < DESCENTS_PER_PAIR; j++) {
-                long bestHash = Long.MIN_VALUE;
-                int bestX = 0;
-                int bestZ = 0;
-                boolean found = false;
-                for (int i = 0; i < dist.length; i++) {
-                    int dd = dist[i];
-                    if (dd < lo || dd > hi) {
-                        continue;
-                    }
-                    int x = s.minX() + i % w;
-                    int z = s.minZ() + i / w;
-                    if (x < s.minX() + EDGE_MARGIN + 60 || x > s.maxX() - EDGE_MARGIN - 60
-                            || z < s.minZ() + EDGE_MARGIN + 60 || z > s.maxZ() - EDGE_MARGIN - 60) {
-                        continue;
-                    }
-                    if (hubLayer && Math.abs(x) < 200 && Math.abs(z) < 200) {
-                        continue;
-                    }
-                    boolean apart = true;
-                    for (int[] p : picked) {
-                        double dd2 = StrictMath.hypot(p[0] - x, p[1] - z);
-                        // the ways down sit together (so the layer below is entered in one region
-                        // and its own way down is a long walk away) yet well apart from each other
-                        if (dd2 < spacing || dd2 > CLUSTER) {
-                            apart = false;
-                            break;
-                        }
-                    }
-                    if (!apart) {
-                        continue;
-                    }
-                    long h = mix(seed * 0x9E3779B97F4A7C15L + i * 0xBF58476D1CE4E5B9L + j);
-                    if (!found || h > bestHash) {
-                        found = true;
-                        bestHash = h;
-                        bestX = x;
-                        bestZ = z;
-                    }
+    /** Picks {@link #DESCENTS_PER_PAIR} staircase tops, one per compass direction evenly spread
+     * around the hub at a fixed radius - not found by exploring, but a real, predictable spot a
+     * player can walk straight toward. The radius is clamped to what BOTH this layer and the one
+     * below it (per {@code CavePlanner.LAYER_EXTENT_SCALE}, each layer can be a different size)
+     * can actually hold - a top placed near this layer's own edge but beyond the smaller layer
+     * below leaves no landing within reach, since every candidate would sit far outside the
+     * slope-distance window {@code buildDescent} requires. */
+    private static int[][] fixedRadialTops(CaveSheet s, CavePlanner.Spec spec, CavePlanner.Spec nextSpec,
+                                           long seed, int pairIndex, boolean hubLayer) {
+        // Always as far out as the smaller of the two layers safely allows - a fixed numeric
+        // target (an earlier version of this method had one) is never reachable anyway once a
+        // deeper layer's own shrink (CavePlanner.LAYER_EXTENT_SCALE) is accounted for, so using
+        // it was misleading rather than meaningful.
+        int radius = Math.min(Math.min(spec.maxX(), spec.maxZ()), Math.min(nextSpec.maxX(), nextSpec.maxZ()))
+                - EDGE_MARGIN - 80;
+        int[][] tops = new int[DESCENTS_PER_PAIR][];
+        for (int j = 0; j < DESCENTS_PER_PAIR; j++) {
+            // Rotated 1/16 turn per layer pair so a landing from the pair above never lines up,
+            // at a similar radius, with this pair's own outgoing staircase in the same direction
+            // - otherwise that gap can read as a short hop rather than a real leg of the journey.
+            double angle = 2 * Math.PI * j / DESCENTS_PER_PAIR + pairIndex * (Math.PI / DESCENTS_PER_PAIR);
+            int tx = (int) Math.round(radius * Math.cos(angle));
+            int tz = (int) Math.round(radius * Math.sin(angle));
+            Rng rng = new Rng(seed ^ 0x5441495253544F50L ^ (j * 0x9E3779B97F4A7C15L));
+            int[] found = null;
+            for (int attempt = 0; attempt < 800 && found == null; attempt++) {
+                int spread = 24 + attempt / 3;
+                int x = tx + rng.nextInt(spread * 2 + 1) - spread;
+                int z = tz + rng.nextInt(spread * 2 + 1) - spread;
+                if (x <= spec.minX() + EDGE_MARGIN || x >= spec.maxX() - EDGE_MARGIN
+                        || z <= spec.minZ() + EDGE_MARGIN || z >= spec.maxZ() - EDGE_MARGIN) {
+                    continue;
                 }
-                if (!found) {
-                    break;
+                if (hubLayer && Math.abs(x) < 200 && Math.abs(z) < 200) {
+                    continue;
                 }
-                picked.add(new int[] {bestX, bestZ});
+                if (!s.isOpen(x, z) || s.heightAt(x, z) < 6 || Rock.protectedColumn(x, z)) {
+                    continue;
+                }
+                found = new int[] {x, z};
             }
-            if (picked.size() == DESCENTS_PER_PAIR) {
-                return picked.toArray(new int[0][]);
+            if (found == null) {
+                throw new IllegalStateException("could not find a staircase top near angle "
+                        + Math.round(Math.toDegrees(angle)) + " degrees, radius " + radius);
             }
+            tops[j] = found;
         }
-        throw new IllegalStateException("fewer than " + DESCENTS_PER_PAIR + " descent sites at distance "
-                + target / 10 + " blocks (reachable maximum " + max / 10 + ")");
+        return tops;
     }
 
     private static long mix(long z) {
@@ -349,7 +323,7 @@ public final class CaveStack {
         int px = top[0];
         int pz = top[1];
         int fA = a.floorAt(px, pz);
-        double slope = SLOPES[j];
+        double slope = SLOPE;
         int reach = 400;
         int tried = 0;
         // candidate landing columns around the top, tried in hash order (a fixed, seed-dependent shuffle)
@@ -390,17 +364,20 @@ public final class CaveStack {
             }
             int len = path[0].length;
             int[] floors = new int[len];
-            int m = len - 2 * FLAT;
             for (int i = 0; i < len; i++) {
                 if (i < FLAT) {
                     floors[i] = fA;
                 } else if (i >= len - FLAT) {
                     floors[i] = fB;
                 } else {
-                    floors[i] = fA - (int) Math.round(drop * (i - FLAT + 1) / (double) (m + 1));
+                    // Exactly one block down per step, never a rounded or fractional drop, so
+                    // every staircase is genuinely walkable - any slack between a longer routed
+                    // path and the real drop becomes a flat landing near the bottom, not a step
+                    // that's taller or shorter than one block.
+                    floors[i] = fA - Math.min(drop, i - FLAT + 1);
                 }
             }
-            return new Descent(layer, NAMES[j], path[0], path[1], floors);
+            return new Descent(layer, "stair" + j, path[0], path[1], floors);
         }
         return null;
     }

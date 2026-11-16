@@ -20,7 +20,7 @@ public final class EncounterSites {
     public static final double CELL_CHANCE = 0.75;
     /** No patrol site within this Manhattan distance of the hub. */
     public static final int HUB_CLEARANCE = 80;
-    private static final String[] REGIONS = {"upper", "middle", "chaos"};
+    private static final String[] REGIONS = {"upper", "middle", "chaos", "nether"};
     private static final int INDEX_CELL = 32;
 
     private final List<Site> sites = new ArrayList<>();
@@ -61,7 +61,7 @@ public final class EncounterSites {
                         int z = cz * CELL + rng.nextInt(CELL);
                         if (sheet.isOpen(x, z) && sheet.heightAt(x, z) >= 4
                                 && Math.abs(x) + Math.abs(z) >= HUB_CLEARANCE && !Rock.protectedColumn(x, z)) {
-                            out.add(new Site(id(layer, x, z), layer, REGIONS[Math.min(layer, 2)],
+                            out.add(new Site(id(layer, x, z), layer, REGIONS[layer],
                                     x, sheet.floorAt(x, z) + 1, z, "patrol"));
                             break;
                         }
@@ -72,7 +72,7 @@ public final class EncounterSites {
         for (Landmarks.Placement p : landmarks.placements()) {
             for (Landmarks.Hook h : p.hooks()) {
                 if (h.kind().equals("encounter") && !p.safe()) {
-                    out.add(new Site(id(p.layer(), h.x(), h.z()), p.layer(), REGIONS[Math.min(p.layer(), 2)],
+                    out.add(new Site(id(p.layer(), h.x(), h.z()), p.layer(), REGIONS[p.layer()],
                             h.x(), h.y(), h.z(), p.type().id));
                 }
             }

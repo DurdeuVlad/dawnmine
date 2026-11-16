@@ -37,8 +37,8 @@ class LootSitesTest {
             assertTrue(sheet.isOpen(s.x(), s.z()) && s.y() == sheet.floorAt(s.x(), s.z()) + 1, "loot site on the floor");
             assertTrue(Math.abs(s.x()) + Math.abs(s.z()) >= LootSites.HUB_CLEARANCE, "clear of the hub");
             assertFalse(Rock.protectedColumn(s.x(), s.z()), "not in the hub or forecourt");
-            String[] regions = {"upper", "middle", "chaos"};
-            assertEquals(regions[Math.min(s.layer(), regions.length - 1)], s.region());
+            String[] regions = {"upper", "middle", "chaos", "nether"};
+            assertEquals(regions[s.layer()], s.region());
             assertEquals(s, SITES.atColumn(s.layer(), s.x(), s.z()), "exact-column lookup must find its own site");
         }
         System.out.println("  loot sites per layer " + java.util.Arrays.toString(perLayer));
