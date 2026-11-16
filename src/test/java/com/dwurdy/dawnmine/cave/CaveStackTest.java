@@ -93,6 +93,24 @@ class CaveStackTest {
         }
     }
 
+    /** Regression test for a real live failure: on this exact seed, the chaos-to-nether descent's
+     * landing point was in a small region that {@code CavePlanner.finish}'s region-joining picked
+     * as "not main" (main was chosen purely by size, with nothing telling it to keep the layer's
+     * own entry point), so it got silently closed back to solid rock - stranding the only way into
+     * layer 3 with no error anywhere. Confirmed live via {@code /dawnmine census}: its route report
+     * showed "L2-steep-bottom: not reachable". Fixed by having {@code finish} treat a non-hub
+     * layer's first pin (always its incoming landing) as the region to keep, the same way the hub
+     * layer already keeps its forecourt. */
+    @Test
+    void chaosToNetherLandingIsReachableOnThePreviouslyFailingLiveSeed() {
+        CaveStack stack = CaveStack.plan(64, -3212210442399364488L);
+        CensusReport r = walk(stack);
+        assertTrue(r.startWalkable());
+        for (String line : r.lines()) {
+            assertFalse(line.contains("not reachable"), line);
+        }
+    }
+
     @Test
     void descentsAreDistinctGentleAndMeetBothLayers() {
         CaveStack stack = CaveStack.plan(64, 9);
