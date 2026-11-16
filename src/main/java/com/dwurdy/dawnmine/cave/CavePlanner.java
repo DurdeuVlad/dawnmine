@@ -237,6 +237,14 @@ public final class CavePlanner {
                 throw new IllegalStateException("forecourt pin was not kept: floor=" + floor[pinIndex]
                         + " height=" + height[pinIndex]);
             }
+        } else if (!pins.isEmpty()) {
+            // A non-hub layer has no forecourt, but its first pin is always the landing of the
+            // descent that connects it to the layer above - joinRegions must treat that pin's own
+            // region as the one to keep (not just whichever region happens to be largest), or a
+            // landing that lands in a small pocket can be silently erased as a "tiny region",
+            // stranding the only way into this layer with no error anywhere.
+            Pin entry = pins.get(0);
+            pinIndex = (entry.z0() - spec.minZ()) * w + (entry.x0() - spec.minX());
         }
         for (Pin pin : pins) {
             int pi = (pin.z0() - spec.minZ()) * w + (pin.x0() - spec.minX());
@@ -246,6 +254,18 @@ public final class CavePlanner {
         }
 
         joinRegions(spec, floor, height, w, d, pinIndex, excluded);
+
+        // The pin that joinRegions was told to keep must still be open afterward - if it isn't,
+        // that is exactly the "landing silently erased" bug this pinIndex plumbing exists to
+        // prevent, and it must fail loudly (triggering CaveStack's retry) rather than ship a
+        // layer nothing can reach.
+        for (Pin pin : pins) {
+            int pi = (pin.z0() - spec.minZ()) * w + (pin.x0() - spec.minX());
+            if (height[pi] <= 0) {
+                throw new IllegalStateException("anchor at " + pin.x0() + "," + pin.z0()
+                        + " was closed while joining regions");
+            }
+        }
 
         byte[] packed = new byte[w * d];
         for (int i = 0; i < packed.length; i++) {
