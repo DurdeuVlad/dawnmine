@@ -166,11 +166,16 @@ public final class CensusService {
             this.radius = radius;
             this.width = radius * 2;
             this.total = width * width;
-            // Bands are the three cave layers; gaps between them hold only descent tunnels.
+            // Bands are the cave layers; gaps between them hold only descent tunnels. M12e added a
+            // fourth, nether-themed layer below chaos - without its own band here, every chunk
+            // section in its Y range gets skipped by the scan entirely (see scanChunk's bandMinY/
+            // bandMaxY section-skip check below), so the census would never see any of its blocks,
+            // real or not, and every route/waypoint reaching into it would read as unreachable.
             List<CensusSnapshot.Band> bands = List.of(
                     new CensusSnapshot.Band("upper", 24, 127),
                     new CensusSnapshot.Band("middle", -30, 23),
-                    new CensusSnapshot.Band("chaos", -64, -31));
+                    new CensusSnapshot.Band("chaos", -64, -31),
+                    new CensusSnapshot.Band("nether", -92, -65));
             this.snapshot = new CensusSnapshot(bands);
             this.bandMinY = bands.stream().mapToInt(CensusSnapshot.Band::minY).min().orElse(0);
             this.bandMaxY = bands.stream().mapToInt(CensusSnapshot.Band::maxY).max().orElse(-1);

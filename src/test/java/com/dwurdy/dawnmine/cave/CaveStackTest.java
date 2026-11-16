@@ -22,7 +22,8 @@ class CaveStackTest {
         CensusSnapshot snap = new CensusSnapshot(List.of(
                 new CensusSnapshot.Band("L0", 24, 127),
                 new CensusSnapshot.Band("L1", -30, 23),
-                new CensusSnapshot.Band("L2", -64, -31)));
+                new CensusSnapshot.Band("L2", -64, -31),
+                new CensusSnapshot.Band("L3", -92, -65)));
         stack.addTo(snap);
         for (int x = -21; x <= 21; x++) {
             for (int z = -21; z <= 21; z++) {
